@@ -1,0 +1,19 @@
+<div id="login">
+  <form method="post" action="<?=url_for('/admin/auth') ?>">
+    <table>
+      <tr>
+        <th colspan="2">ログイン</th>
+      </tr>
+      <tr>
+        <td>ユーザID</td>
+        <td><input type="text" name="admin[login_name]" value="<?= $_POST['admin']['login_name'] ?>"></td>
+      </tr>
+      <tr>
+        <td>パスワード</td>
+        <td><input type="password" name="admin[password]"></td>
+      </tr>
+    </table>
+    <input class="btn btn-primary" type="submit" value="ログイン">
+  </form>
+</div>
+

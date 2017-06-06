@@ -1,0 +1,60 @@
+<?php
+/**
+ * @author  Yohei Yoshikawa
+ *
+ * Copyright (c) 2013 Yohei Yoshikawa (http://yoo-s.com/)
+ */
+
+require_once dirname(__FILE__).'/../lib/setting.php';
+require_once 'PgsqlEntity.php';
+
+$pgsq_entity = new PgsqlEntity();
+$schema_sql = 'SELECT version FROM schema_info;';
+$schema_version = (int) $pgsq_entity->fetch_result($schema_sql);
+
+echo "current schema version: {$schema_version}\n";
+
+if (!$schema_version && $schema_version !== 0) {
+    $schema_info_sql  = "CREATE TABLE schema_info (version integer NOT NULL);";
+    $schema_info_sql .= "INSERT INTO schema_info (version) VALUES (0);";
+    $pgsq_entity->query($schema_info_sql);
+    $schema_version = 0;
+}
+
+$updated = false;
+
+if ($dp = opendir(BASE_DIR . 'db/migrate')) {
+    while ($file = readdir($dp)) {
+        if (preg_match("/^(\d{3})_/", $file, $matches)) {
+            $version = (int) $matches[1];
+            if ($schema_version < $version) {
+                $files[$version] = $file;
+            }
+        }
+    }
+}
+
+if ($files) {
+    foreach ($files as $version => $file) {
+        if ($schema_version < $version) {
+            $sql = trim(file_get_contents(BASE_DIR . "db/migrate/{$file}"));
+            
+            echo($file).PHP_EOL;
+            if (!empty($sql) && $pgsq_entity->query($sql)) {
+                echo $file, "\n";
+                echo $sql, "\n";
+                $schema_version = $version;
+                $updated = true;
+            }
+        }
+    }
+    $sql = "BEGIN;{$sql};\nUPDATE schema_info SET version = {$schema_version};COMMIT;";
+    $pgsq_entity->query($sql);
+}
+
+if ($updated) {
+    exit("updated schema version: {$schema_version}\n");
+} else {
+    exit("no migrations for update\n");
+}
+?>
