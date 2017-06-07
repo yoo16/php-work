@@ -1,7 +1,5 @@
 <?php
 /**
- * @author  Yohei Yoshikawa
- *
  * Copyright (c) 2013 Yohei Yoshikawa (http://yoo-s.com/)
  */
 
@@ -30,12 +28,10 @@ if ($dp = opendir(BASE_DIR . 'db/migrate/rollback')) {
                 echo($file).PHP_EOL;
                 echo($sql).PHP_EOL;
 
-                if (!empty($sql) && $pgsq_entity->query($sql)) {
-                    $schema_version = $version - 1;
-                    $sql = "BEGIN;{$sql};\nUPDATE schema_info SET version = {$schema_version};COMMIT;";
-                    echo($sql).PHP_EOL;
-                    $pgsq_entity->query($sql);
-
+                $update_version = $version - 1;
+                $sql = "BEGIN;{$sql};\nUPDATE schema_info SET version = {$update_version};COMMIT;";
+                $result = $pgsq_entity->query($sql);
+               if ($result) {
                     $rollback = true;
                 }
                 break;

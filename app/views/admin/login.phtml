@@ -1,19 +1,8 @@
-<div id="login">
-  <form method="post" action="<?=url_for('/admin/auth') ?>">
-    <table>
-      <tr>
-        <th colspan="2">ログイン</th>
-      </tr>
-      <tr>
-        <td>ユーザID</td>
-        <td><input type="text" name="admin[login_name]" value="<?= $_POST['admin']['login_name'] ?>"></td>
-      </tr>
-      <tr>
-        <td>パスワード</td>
-        <td><input type="password" name="admin[password]"></td>
-      </tr>
-    </table>
-    <input class="btn btn-primary" type="submit" value="ログイン">
+<div class="card card-container">
+  <p id="profile-name" class="profile-name-card"></p>
+  <form class="form-signin" method="post" action="<?= url_for('/admin/auth') ?>">
+    <input type="text" id="inputEmail" class="form-control input" placeholder="<?= LABEL_MAIL ?>" name="login_name" value="<?= $_POST['user']['email'] ?>" required autofocus>
+    <input type="password" class="form-control input" placeholder="<?= LABEL_PASSWORD ?>" name="password" required>
+    <button class="btn btn-lg btn-primary btn-block btn-signin" type="submit"><?= LABEL_LOGIN  ?></button>
   </form>
 </div>
-

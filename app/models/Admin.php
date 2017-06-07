@@ -1,15 +1,15 @@
 <?php
 /**
- * User
+ * Admin
  *
  * @package 
  * @author  Yohei Yoshikawa
  * @create  2013-04-15 16:33:13
  */
 
-require_once 'vo/_User.php';
+require_once 'vo/_Admin.php';
 
-class User extends _User {
+class Admin extends _Admin {
 
     function __construct($params=null) {
         parent::__construct($params);        

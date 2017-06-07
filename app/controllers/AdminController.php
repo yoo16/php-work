@@ -11,16 +11,49 @@ class AdminController extends AppController {
 
     var $name = 'admin';
     var $layout = 'admin';
-    var $escape_auth_actions = array('login', 'logout', 'auth');
+    var $escape_auth_actions = array('login', 'logout', 'auth', 'new', 'add');
 
     function before_action($action) {
         parent::before_action($action);
         $this->checkLogin($action);
     }
 
+    function checkAdminTable() {
+        $admin = new Admin();
+        $admin->selectOne();
+        if (!$admin->value) {
+            $this->redirect_to('new');
+            exit;
+        }
+    }
+
+    function action_new() {
+
+    }
+
+    function action_add() {
+        $admin = new Admin();
+        $admin->selectOne();
+        if ($admin->value) {
+            $this->redirect_to('index'); 
+            exit;
+        }
+
+        $_POST['password'] = hash('sha256', $_POST['password'], false);
+
+        $admin = new Admin();
+        $admin->takeValues($_POST);
+        $admin->insert();
+        if ($admin->value['id']) {
+            $this->redirect_to('login');
+        } else {
+            $this->redirect_to('new');
+        }
+    }
+
     function checkLogin($action) {
         if (!in_array($action, $this->escape_auth_actions)) {
-            $this->admin = AppSession::getAdminSession('admin');
+            $this->admin = AppSession::getSession('admin', 'admin');
             if (!$this->admin['id']) {
                 $this->redirect_to('admin/login');
                 return;
@@ -30,7 +63,6 @@ class AdminController extends AppController {
 
    /**
     * トップページ
-    * セッションクリア＆一覧画面リダイレクト
     *
     * @param
     * @return void
@@ -47,12 +79,17 @@ class AdminController extends AppController {
      **/ 
     function auth() {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $posts = $_POST['admin'];
-            if (ADMIN_ID == $posts['login_name'] && ADMIN_PW == $posts['password']) {
-                $admin['id'] = 1;
-                AppSession::setAdminSession('admin', $admin);
+            $_POST['password'] = hash('sha256', $_POST['password'], false);
+
+            $admin = new Admin();
+            $admin->where("login_name = '{$_POST['login_name']}'")
+                  ->where("password = '{$_POST['password']}'")
+                  ->selectOne();
+
+            if ($admin->value) {
+                AppSession::setSession('admin', $admin->value, 'admin');
             }
-            $this->admin = AppSession::getAdminSession('admin');
+            $this->admin = AppSession::getSession('admin', 'admin');
             if ($this->admin['id'] > 0) {
                 $this->default_page();
                 exit;
@@ -68,6 +105,7 @@ class AdminController extends AppController {
     * @return void
     */ 
     function action_login() {
+        $this->checkAdminTable();
     }
 
    /**
@@ -77,7 +115,7 @@ class AdminController extends AppController {
     * @return void
     */ 
     function action_logout() {
-        AppSession::clearAdminSession($this->sid, 'admin');
+        AppSession::clearSession('admin', 'admin');
         $this->redirect_to('admin/login');
     }
 

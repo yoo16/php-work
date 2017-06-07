@@ -52,7 +52,7 @@ class PgsqlEntity extends Entity {
         $rs = $this->query($sql);
         if ($rs) {
             $result = pg_fetch_result($rs, 0, 0);
-            return ($result) ? $result : null;
+            return (isset($result)) ? $result : null;
         } else {
             return false;
         }
@@ -270,13 +270,14 @@ class PgsqlEntity extends Entity {
             $value = $this->sqlValue($this->value[$key]);
             $set_values[] = "{$key} = {$value}";
         }
-        if (isset($this->columns['updated_at'])) $set_values = "updated_at = current_timestamp";
+        if (isset($this->columns['updated_at'])) $set_values[] = "updated_at = current_timestamp";
+        if ($set_values) $set_value = implode(',', $set_values);
 
-        $set_value = implode(',', $set_values);
-
-        if (!$this->conditions) $this->conditions[] = "{$this->id_column} = {$this->id}";
-        $condition = $this->sqlConditions($this->conditions);
-        $sql = "UPDATE {$this->name} SET {$set_value} WHERE {$condition};";
+        if ($set_value) {
+            if (!$this->conditions) $this->conditions[] = "{$this->id_column} = {$this->id}";
+            $condition = $this->sqlConditions($this->conditions);
+            $sql = "UPDATE {$this->name} SET {$set_value} WHERE {$condition};";
+        }
 
         return $sql;
     }

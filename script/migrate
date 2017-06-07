@@ -10,15 +10,18 @@ require_once 'PgsqlEntity.php';
 
 $pgsq_entity = new PgsqlEntity();
 $schema_sql = 'SELECT version FROM schema_info;';
-$schema_version = (int) $pgsq_entity->fetch_result($schema_sql);
+$schema_version = $pgsq_entity->fetch_result($schema_sql);
 
-echo "current schema version: {$schema_version}\n";
+if (!is_null($schema_version)) $schema_version = (int) $schema_version;
+echo($schema_sql).PHP_EOL;
+echo("current schema version: {$schema_version}").PHP_EOL;
 
-if (!$schema_version && $schema_version !== 0) {
+if (!is_int($schema_version)) {
     $schema_info_sql  = "CREATE TABLE schema_info (version integer NOT NULL);";
     $schema_info_sql .= "INSERT INTO schema_info (version) VALUES (0);";
     $pgsq_entity->query($schema_info_sql);
     $schema_version = 0;
+    echo($schema_info_sql).PHP_EOL;
 }
 
 $updated = false;
@@ -36,24 +39,22 @@ if ($dp = opendir(BASE_DIR . 'db/migrate')) {
 
 if ($files) {
     foreach ($files as $version => $file) {
-        if ($schema_version < $version) {
-            $sql = trim(file_get_contents(BASE_DIR . "db/migrate/{$file}"));
-            
-            echo($file).PHP_EOL;
-            if (!empty($sql) && $pgsq_entity->query($sql)) {
-                echo $file, "\n";
-                echo $sql, "\n";
-                $schema_version = $version;
-                $updated = true;
-            }
+        $sql = trim(file_get_contents(BASE_DIR . "db/migrate/{$file}"));
+        echo($file).PHP_EOL;
+        if ($result = $pgsq_entity->query($sql)) {
+            $update_version = $version;
+            $updated = true;
+        } else {
+            echo("migrate error!! version: {$version}").PHP_EOL;
         }
     }
-    $sql = "BEGIN;{$sql};\nUPDATE schema_info SET version = {$schema_version};COMMIT;";
-    $pgsq_entity->query($sql);
+    $schema_sql = "UPDATE schema_info SET version = {$update_version};";
+    $pgsq_entity->query($schema_sql);
+    echo($schema_sql).PHP_EOL;
 }
 
 if ($updated) {
-    exit("updated schema version: {$schema_version}\n");
+    exit("updated schema version: {$update_version}\n");
 } else {
     exit("no migrations for update\n");
 }
