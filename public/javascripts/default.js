@@ -41,7 +41,7 @@ function loadSampleHtmlTag(i) {
     }
     tag+= '<div>';
     tag+= '<h2>' + file + '</h2>';
-    tag+= '<p><img src="images/' + file + '" /></p>';
+    tag+= '<p><img src="../images/' + file + '" /></p>';
     tag+= '</div>';
     return tag;
 }

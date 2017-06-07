@@ -52,6 +52,12 @@ class Controller {
     }
 
     function construct_url($params, $config = array()) {
+        if (empty($config['ROOT_CONTROLLER_NAME'])) $config['ROOT_CONTROLLER_NAME'] = ROOT_CONTROLLER_NAME;
+        if (empty($config['DISPATCHER'])) $config['DISPATCHER'] = defined('DISPATCHER') ? DISPATCHER : false;
+        if (empty($config['EXPAND_PARAMS'])) $config['EXPAND_PARAMS'] = defined('EXPAND_PARAMS') ? EXPAND_PARAMS : false;
+        if (empty($config['INDEX_VISIBLE'])) $config['INDEX_VISIBLE'] = defined('INDEX_VISIBLE') ? INDEX_VISIBLE : false;
+        if (empty($config['DEFAULT_EXTENSION'])) $config['DEFAULT_EXTENSION'] = defined('DEFAULT_EXTENSION') ? DEFAULT_EXTENSION : false;
+
         if (empty($params['controller'])) $params['controller'] = $config['ROOT_CONTROLLER_NAME'];
         $has_extension = isset($params['.extension']);
 

@@ -20,6 +20,8 @@ class FormHelper {
     static function select($params, $selected=null, $value_key=null, $label_key=null, $values=null) {
         $params = self::checkParams($params, $selected, $value_key, $label_key, $values);
 
+        if (!$params['class']) $params['class'] = 'form-control';
+
         $tag.= self::unselectOption($params);
         $tag.= self::selectOptions($params, $params['selected']);
 
@@ -382,19 +384,10 @@ class FormHelper {
      * @return string
      */
     static function selectAttribute($params) {
-        $default_attributes = array('id', 'name', 'class');
-        foreach ($default_attributes as $key) {
-            if (in_array($key, $params)) {
-                $attribute = $params[$key];
-                if ($attribute = $params[$key]) {
-                    if ($key == 'id' && $params['form_id']) {
-                        $tag.= "{$attribute}_{$params['form_id']}";
-                    } else {
-                        $tag.= " {$key}=\"{$attribute}\"";
-                    }
-                }
-            }
-        }
+        if ($params['id']) $tag.= " id=\"{$params['id']}\"";
+        if ($params['class']) $tag.= " class=\"{$params['class']}\"";
+        $tag.= " name=\"{$params['name']}\"";
+
         $attributes = $params['attributes'];
         if (is_array($attributes)) {
             foreach ($attributes as $key => $attribute) {
@@ -510,8 +503,8 @@ class FormHelper {
 
                 $checked = self::checkedTag($value, $selected);
 
-                $input_tag = "<input type=\"radio\" id=\"{$id_name}\" class=\"{$class_name}\" name=\"{$name}\" value=\"{$value}\"{$checked}{$attribute}>\n";
-                $tag.= "<label class=\"radio inline\" for=\"{$id_name}\">{$input_tag}{$label}</label>\n";
+                $input_tag = "&nbsp;<input type=\"radio\" id=\"{$id_name}\" class=\"{$class_name}\" name=\"{$name}\" value=\"{$value}\"{$checked}{$attribute}>\n";
+                $tag.= "<label class=\"radio inline\" for=\"{$id_name}\">{$input_tag}&nbsp;{$label}</label>&nbsp;\n";
 
             }
         }
@@ -577,19 +570,20 @@ class FormHelper {
         $value_key = $params['value_key'];
         $label_key = $params['label_key'];
 
-        $escape_columns = array('id', 'class');
-        $attribute = self::selectAttribute($params, $escape_columns);
+        $params['class'] = ' form-check-input';
+        $attribute = self::selectAttribute($params);
+        $div_class = $params['div_class'];
         if (is_array($values)) {
             foreach ($values as $key => $option) {
                 $value = $option[$value_key];
                 $label = self::convertLabel($option, $params);
-                $id = "{$params['id']}_{$option['value']}";
+                $id = "{$params['id']}_{$value}";
 
                 if ($option['class']) $class = " class=\"{$option['class']}\"";
                 if ($selected) $checked = (in_array($value, $selected))? ' checked="checked"' : '';
 
-                $_tag = "<input id=\"{$id}\" type=\"checkbox\" value=\"{$value}\"{$checked}{$attribute}>";
-                $tag.= "<div><label for=\"{$id}\">\n{$_tag}\n{$label}\n</label></div>\n";
+                $_tag = "&nbsp;<input id=\"{$id}\" type=\"checkbox\" value=\"{$value}\"{$checked}{$attribute}>\n";
+                $tag.= "<div class=\"{$div_class}\"><label for=\"{$id}\" class=\"form-check-label\">\n{$_tag}\n{$label}\n</label></div>\n";
             }
         }
         return $tag;
