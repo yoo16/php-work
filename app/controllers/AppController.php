@@ -9,7 +9,9 @@
 require_once '_AppController.php';
 
 class AppController extends _AppController {
+    var $title = HTML_TITLE;
     var $csv_options = array('gender', 'prefecture');
+    var $layout = 'root';
 
     function before_action($action) {
         parent::before_action($action);

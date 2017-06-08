@@ -1,6 +1,6 @@
 <?php
 /**
- * Messageヘルパー
+ * Message Helper
  *
  * @author  Yohei Yoshikawa 
  * @create  2010/02/06 

@@ -1,6 +1,6 @@
 <?php
 /**
- * formタグヘルパー
+ * FormHelper
  *
  * @author  Yohei Yoshikawa 
  * @create  2010/02/06 
@@ -18,6 +18,8 @@ class FormHelper {
      * @return string
      */
     static function select($params, $selected=null, $value_key=null, $label_key=null, $values=null) {
+        if (!$params) return;
+
         $params = self::checkParams($params, $selected, $value_key, $label_key, $values);
 
         if (!$params['class']) $params['class'] = 'form-control';
@@ -38,6 +40,8 @@ class FormHelper {
      * @return string
      */
     static function selectDate($params, $selected=null) {
+        if (!$params) return;
+        
         $params['class'].= ' form-control action-change-date';
         $params = self::checkParams($params);
         if ($params['formatter']) $format_label = DateHelper::formatters($params['formatter']);
@@ -294,16 +298,15 @@ class FormHelper {
      */
     static function selectOptions($params, $selected=null) {
         if ($params['csv_path']) {
-            if (file_exists($params['csv_path'])) {
-                $values = CsvLite::options($params['csv_path']);
-            }
+            $values = CsvLite::options($params['csv_path']);
         } else {
             $values = $params['values'];
         }
 
-        $value_key = $params['value_key'];
-        $label_key = $params['label_key'];
-        $class_key = ($params['class_key'])? $params['class_key'] : 'input-large';
+        $value_key = $params['value_key'] ? $params['value_key'] : 'value';
+        $label_key = $params['label_key'] ? $params['label_key'] : 'label';
+        $class_key = $params['class_key'] ? $params['class_key'] : '';
+
 
         if (is_array($values)) {
             foreach ($values as $key => $option) {
@@ -422,7 +425,7 @@ class FormHelper {
      * @return String
      */
     static function convertLabel($values, $params) {
-        $label_keys = $params['label_key'];
+        $label_keys = $params['label_key'] ? $params['label_key'] : 'label';
         if (is_array($label_keys)) {
             foreach ($label_keys as $label_key) {
                 $labels[] = $values[$label_key];
@@ -474,9 +477,7 @@ class FormHelper {
         $params = self::checkParams($params, $selected, $value_key, $label_key, $values);
 
         if ($params['csv_path']) {
-            if (file_exists($params['csv_path'])) {
-                $values = CsvLite::options($params['csv_path']);
-            }
+            $values = CsvLite::options($params['csv_path']);
         }
         if ($values) $params['values'] = $values;
         if ($selected) $params['selected'] = $selected;
@@ -661,5 +662,3 @@ class FormHelper {
         }
     }
 }
-
-?>

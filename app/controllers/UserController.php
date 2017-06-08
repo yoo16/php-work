@@ -5,7 +5,6 @@
  * @author  Yohei Yoshikawa
  * @create  2012/10/03 
  */
-
 require_once 'AppController.php';
  
 class UserController extends AppController {
@@ -151,13 +150,12 @@ class UserController extends AppController {
     * @return void
     */ 
     function action_login() {
-        AppSession::clearSession('posts');
+        $user = new User();
+        $this->user = $user->value;
     }
 
    /**
     * action_logout
-    *
-    * ログアウト
     *
     * @access public
     * @param
@@ -169,7 +167,7 @@ class UserController extends AppController {
     }
 
    /**
-    * 認証
+    * default_page
     *
     * @access public
     * @param
@@ -181,7 +179,7 @@ class UserController extends AppController {
 
 
    /**
-    * 登録
+    * regist
     *
     * @access public
     * @param
@@ -189,11 +187,11 @@ class UserController extends AppController {
     */ 
     function regist() {
         $this->user = AppSession::getSession('posts');
-        var_dump($this->flash['error']);
+        $this->errors = $this->flash['errors'];
     }
 
    /**
-    * 登録
+    * add
     *
     * @access public
     * @param
@@ -210,7 +208,7 @@ class UserController extends AppController {
         $user->save();
 
         if ($user->errors) {
-            $this->flash['error'] = $user->errors;
+            $this->flash['errors'] = $user->errors;
             $this->redirect_to('regist');
         } else {
             $this->redirect_to('login');

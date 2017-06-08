@@ -18,17 +18,13 @@ class AdminController extends AppController {
         $this->checkLogin($action);
     }
 
-    function checkAdminTable() {
+    function action_new() {
         $admin = new Admin();
         $admin->selectOne();
-        if (!$admin->value) {
-            $this->redirect_to('new');
+        if ($admin->value) {
+            $this->redirect_to('index'); 
             exit;
         }
-    }
-
-    function action_new() {
-
     }
 
     function action_add() {
@@ -58,6 +54,15 @@ class AdminController extends AppController {
                 $this->redirect_to('admin/login');
                 return;
             }
+        }
+    }
+
+    function checkAdminTable() {
+        $admin = new Admin();
+        $admin->selectOne();
+        if (!$admin->value) {
+            $this->redirect_to('new');
+            exit;
         }
     }
 

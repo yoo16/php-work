@@ -36,6 +36,8 @@ define('LABEL_EDIT', '編集');
 define('LABEL_NEW', '新規');
 define('LABEL_NEW_ADD', '新規追加');
 define('LABEL_ADD', '追加');
+define('LABEL_CREATE', '作成');
+define('LABEL_INIT', '初期化');
 define('LABEL_SORT_ORDER', '並び順');
 define('LABEL_JSON', 'JSON');
 define('LABEL_CSV', 'CSV');
@@ -53,6 +55,7 @@ define('LABEL_FAVORITE', 'よく使う');
 define('LABEL_SELECT', '選択');
 define('LABEL_PRINT', '印刷');
 define('LABEL_RELOAD', '再読み込み');
+define('LABEL_IMPORT', 'インポート');
 
 define('LABEL_BUSINESS_YEAR', '年度');
 define('LABEL_CURRENT_BUSINESS_YEAR', '今年度');
@@ -67,23 +70,6 @@ define('LETTER_PERSONAL_LAST_WORD', '様');
 define('LABEL_USER', 'ユーザ');
 define('LABEL_STAFF', 'スタッフ');
 define('LABEL_ADMIN', '管理者');
-
-define('LABEL_BUTTON_SEARCH', LABEL_SEARCH);
-define('LABEL_BUTTON_CANCEL', LABEL_CANCEL);
-define('LABEL_BUTTON_BACK', LABEL_BACK);
-define('LABEL_BUTTON_CONFIRM', LABEL_CONFIRM);
-define('LABEL_BUTTON_SEND', LABEL_SEND);
-define('LABEL_BUTTON_SAVE', LABEL_SAVE);
-define('LABEL_BUTTON_UPDATE', LABEL_UPDATE);
-define('LABEL_BUTTON_DELETE', LABEL_DELETE);
-define('LABEL_BUTTON_EDIT', LABEL_EDIT);
-define('LABEL_BUTTON_ADD', LABEL_ADD);
-define('LABEL_BUTTON_SORT_ORDER', LABEL_SORT_ORDER);
-define('LABEL_BUTTON_JSON', LABEL_JSON);
-define('LABEL_BUTTON_CSV', LABEL_CSV);
-define('LABEL_BUTTON_CLOSE', LABEL_CLOSE);
-define('LABEL_BUTTON_CLEAR', LABEL_CLEAR);
-define('LABEL_BUTTON_SEARCH', LABEL_SEARCH);
 
 
 define('MESSAGE_DELETE', '削除しますか？');

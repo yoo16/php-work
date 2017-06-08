@@ -2,8 +2,6 @@
 /**
  * Controller 
  *
- * @author  Yohei Yoshikawa
- *
  * Copyright (c) 2013 Yohei Yoshikawa (http://yoo-s.com/)
  */
 
@@ -62,7 +60,7 @@ class Controller {
         $has_extension = isset($params['.extension']);
 
         if (empty($params['action'])) $params['action'] = 'index';
-        if ($params['action'] == 'index' && !($is_static || $config['INDEX_VISIBLE'] || $has_extension)) unset($params['action']);
+        if ($params['action'] == 'index' && !($config['INDEX_VISIBLE'] || $has_extension)) unset($params['action']);
 
         if (!$config['DISPATCHER'] || !$config['EXPAND_PARAMS'] || $is_static) {
             if (isset($params['controller']) && $params['controller'] !== $config['ROOT_CONTROLLER_NAME']) {
@@ -91,7 +89,7 @@ class Controller {
             if (substr($key, 0, 1) == '.') unset($params[$key]);
         }
 
-        if (!$is_static && $config['DISPATCHER']) {
+        if ($config['DISPATCHER']) {
             if (is_bool($config['DISPATCHER'])) {
                 $url = 'dispatch.php?' . $str_cai;
             } else {
@@ -380,30 +378,10 @@ class Controller {
             }
         }
 
-        if (is_bool($option)) $params['.secure'] = $option;
-
-        if (is_bool($params['.secure'])) {
-            if ($params['.secure']) {
-                if (defined('HTTPS_BASE_URL')) {
-                    $url_base = HTTPS_BASE_URL;
-                } else {
-                    if (defined('HTTPS_PORT') && is_int(HTTPS_PORT) && HTTPS_PORT !== 443) $port = ":" . HTTPS_PORT;
-                    $url_base = preg_replace('|^http://([^/:]+)(:\d+)?|', 'https://\1' . $port , $this->base);
-                }
-            } else {
-                if (defined('HTTP_BASE_URL')) {
-                    $url_base = HTTP_BASE_URL;
-                } else {
-                    if (defined('HTTP_PORT') && is_int(HTTP_PORT) && HTTP_PORT !== 80) $port = ":" . HTTP_PORT;
-                    $url_base = preg_replace('|^https://([^/:]+)(:\d+)?|', 'http://\1' . $port , $this->base);
-                }
-            }
-        } else {
-            if (is_array($option)) {
-                $params = array_merge($option, $params);
-            } elseif (isset($option)) {
-                $params['id'] = $option;
-            }
+        if (is_array($option)) {
+            $params = array_merge($option, $params);
+        } elseif (isset($option)) {
+            $params['id'] = $option;
         }
 
         if (!isset($url)) {
@@ -412,7 +390,7 @@ class Controller {
             $url = Controller::construct_url($params);
         }
 
-        return $url_base . $url;
+        return $url;
     }
 
     function content_type($encofing = null) {
@@ -541,4 +519,3 @@ class Controller {
     function before_rendering() {}
     function before_invocation() {}
 }
-?>

@@ -1,4 +1,11 @@
 <?php
+/**
+ * MysqlEntity 
+ *
+ * under construction
+ * 
+ * Copyright (c) 2013 Yohei Yoshikawa (http://yoo-s.com/)
+ */
 
 //check
 if (!defined('DB_HOST')) exit('Not found DB_HOST in setting file.');
@@ -404,4 +411,3 @@ class MysqlEntity extends Entity {
         }
     }
 }
-?>

@@ -1,4 +1,10 @@
 <?php
+/**
+ * SampleController 
+ *
+ * @author  Yohei Yoshikawa
+ * @create  2012/10/03 
+ */
 require_once 'AppController.php';
 
 class SampleController extends AppController {

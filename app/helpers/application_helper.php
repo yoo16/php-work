@@ -11,13 +11,17 @@ require_once 'localize/jp.php';
 
 require_once 'message_helper.php';
 
-/**
- * ラベル有効
- *
- * @param Boolean $value
- * @return String
- */
-function labelActive($value) {
-    return ($value) ? '○' : '×';
+function undefineLabel($key, $value) {
+      if (!defined($key)) {
+          $tag = undefineLabelTag();
+      }
+      if (defined($key)) {
+          $tag.= $value;
+      }
+      return $tag;
 }
-?>
+
+function undefineLabelTag($key, $value) {
+      $tag = '<label class="badge badge-danger">Undefined</label>';
+      return $tag;
+}

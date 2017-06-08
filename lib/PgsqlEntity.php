@@ -2,11 +2,8 @@
 /**
  * PgsqlEntity 
  *
- * @author  Yohei Yoshikawa
- *
- * Copyright (c) 2013 Yohei Yoshikawa (http://yoo-s.com/)
+ * @copyright  Copyright (c) 2017 Yohei Yoshikawa (http://yoo-s.com/)
  */
- 
 if (!defined('PG_INFO')) exit('not found PG_INFO');
 
 require_once 'Entity.php';
@@ -16,6 +13,58 @@ class PgsqlEntity extends Entity {
     var $group_columns = false;
     var $joins = array();
     var $pg_info = PG_INFO;
+
+    static function createDatabase($values) {
+        if (!$values) return;
+        
+        $database_name = $values['dbname'];
+        if (!$database_name) return;
+
+        $database_user = $values['user']? $values['user'] : 'postgres';
+        $host = $values['host']? $values['host'] : 'localhost';
+        $port = $values['port']? $values['port'] : '5432';
+
+        $cmd = "createdb -U {$database_user} -E UTF8 --host {$host} --port {$port} {$database_name} 2>&1";
+
+        exec($cmd, $output, $return);
+
+        $results['cmd'] = $cmd;
+        $results['output'] = $output;
+        $results['return'] = $return;
+        return $results;
+    }
+
+    static function pgInfo() {
+        if (!defined('PG_INFO')) return;
+        $values = explode(' ', PG_INFO);
+        foreach ($values as $value) {
+            if (is_numeric(strpos($value, 'dbname='))) {
+                $results['dbname'] = trim(str_replace('dbname=', '', $value));
+            }
+            if (is_numeric(strpos($value, 'user='))) {
+                $results['user'] = trim(str_replace('user=', '', $value));
+            }
+            if (is_numeric(strpos($value, 'port='))) {
+                $results['port'] = trim(str_replace('port=', '', $value));
+            }
+            if (is_numeric(strpos($value, 'host='))) {
+                $results['host'] = trim(str_replace('host=', '', $value));
+            }
+        }
+        $results['pg_info'] = PG_INFO;
+        return $results;
+    }
+
+    static function initDb() {
+        $path = BASE_DIR."script/init_db";
+        $cmd = "php {$path} 2>&1";
+        exec($cmd, $output, $return);
+
+        $results['cmd'] = $cmd;
+        $results['output'] = $output;
+        $results['return'] = $return;
+        return $results;
+    }
 
     function connection() {
         return pg_connect($this->pg_info);
@@ -117,8 +166,8 @@ class PgsqlEntity extends Entity {
     }
 
     public function delete($id = null) {
-        if (is_int($id)) $this->id = $id;
-        if (is_int($this->id)) {
+        if (is_numeric($id)) $this->id = (int) $id;
+        if (is_numeric($this->id)) {
             $this->conditions = null;
             $this->conditions[] = "{$this->id_column} = {$this->id}";
         }
@@ -283,7 +332,7 @@ class PgsqlEntity extends Entity {
     }
 
     private function deleteSql() {
-        if (!$this->value) return;
+        if (!$this->id) return;
         $where = $this->whereSql($params);
         if ($where) $sql = "DELETE FROM {$this->name} {$where};";
         return $sql;

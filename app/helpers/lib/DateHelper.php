@@ -1,6 +1,6 @@
 <?php
 /**
- * 日付ヘルパー
+ * DateHelper
  *
  * @author  Yohei Yoshikawa 
  * @create  2010/02/06 

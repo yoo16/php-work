@@ -1,23 +1,69 @@
 
 <div class="hero-unit">
 
-  <h1>Hello, world!</h1>
+  <h1>Hello, ProjectManager!</h1>
 
-  <p>This is a template for a simple marketing or informational website. It includes a large callout called the hero unit and three supporting pieces of content. Use it as a starting point to create something more unique.</p>
+  <h2>Application Information</h2>
+  <table class="table">
+    <tr>
+      <th>setting file path</th>
+      <td><?= undefineLabel('APP_SETTING_FILE_PATH', APP_SETTING_FILE_PATH) ?></td>
+    </tr>
+  </table>
 
-  <p><a class="btn btn-primary btn-large">Learn more &raquo;</a></p>
+  <h2>Application Setting</h2>
+  <table class="table">
+    <tr>
+      <th>file path</th>
+      <td><?= BASE_DIR."app/application_setting.php" ?></td>
+    </tr>
+    <tr>
+      <th>APP_NAME</th>
+      <td><?= undefineLabel('APP_NAME', APP_NAME) ?></td>
+    </tr>
+    <tr>
+      <th>HTML_TITLE</th>
+      <td><?= undefineLabel('HTML_TITLE', HTML_TITLE) ?></td>
+    </tr>
+    <tr>
+      <th>VERSION</th>
+      <td><?= undefineLabel('VERSION', VERSION) ?></td>
+    </tr>
+  </table>
 
+  <h2>PostgreSQL</h2>
+  <table class="table">
+    <tr>
+      <th>PG_INFO</th>
+      <td><?= undefineLabel('PG_INFO', PG_INFO) ?></td>
+    </tr>
+    <tr>
+      <th>pg_connection()</th>
+      <td>
+      <? if ($this->pg_connection): ?>
+      <?= $this->pg_connection ?>
+      <? else: ?>
+      <?= undefineLabelTag() ?>
+      <? endif ?>
+      </td>
+    </tr>
+  </table>
+  <form>
+  <input class="btn btn-primary" type="submit" name="" value="<?= LABEL_CREATE ?>">
+  </form>
 
-  <div class="draggable ui-widget-content">
-    <h2>Heading</h2>
+  <h2>Defined</h2>
+  <? if (is_array($this->defined_constants)): ?>
 
-    <p>Drag me around</p>
+  <table class="table">
+  <? foreach ($this->defined_constants as $key => $defined_constatnt): ?>
+  <tr>
+    <td><?= $key ?></td>
+    <td><?= $defined_constatnt ?></td>
+  </tr>
+  <? endforeach ?>
+  </table>
 
-    <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui. </p>
-
-    <p><a class="btn" href="#">View details &raquo;</a></p>
-
-  </div>
+  <? endif ?>
 
 </div>
-

@@ -1,4 +1,4 @@
 <?php
-    define('APP_NAME', 'sample');
-    define('HTML_TITLE', 'sample');
+    define('APP_NAME', 'PHPWORK');
+    define('HTML_TITLE', 'PHPWORK');
     define('VERSION', '0.1.0');

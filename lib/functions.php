@@ -1,4 +1,10 @@
 <?php
+/**
+ * global function
+ * 
+ * Copyright (c) 2013 Yohei Yoshikawa (http://yoo-s.com/)
+ */
+
 function jsonDump($object, $file = null, $line = null) {
     $dump = json_encode($object);
     error_log("<DUMP> {$file}:{$line}\n{$dump}");
@@ -25,4 +31,3 @@ function random_string($length = "8", $elemstr = "abcdefghkmnpqrstuvwxyzABCDEFGH
     }
     return $random_string;
 } 
-?>

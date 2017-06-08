@@ -1,5 +1,13 @@
 <?php
 /**
+ * helpers 
+ *
+ * TODO class or global function
+ *
+ * Copyright (c) 2013 Yohei Yoshikawa (http://yoo-s.com/)
+ */
+
+/**
 * url_for_session
 *
 * @param int $sid
@@ -104,5 +112,3 @@ function datetimeformat($date) {
         return null;
     }
 }
-
-?>

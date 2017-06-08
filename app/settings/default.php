@@ -1,5 +1,5 @@
 <?php
-define('PROJECT_NAME', 'web_app');
+define('PROJECT_NAME', 'phpwork');
 define('LOG_DIR', BASE_DIR.'log/');
 
 ini_set('error_log', LOG_DIR.date('Ymd').'.log');
@@ -15,8 +15,6 @@ define('DB_DIR', BASE_DIR.'db/');
 define('DEBUG', true);
 
 define('PG_INFO', 'host=localhost user=postgres dbname=test');
-define('ADMIN_ID', 'admin');
-define('ADMIN_PW', 'admin');
 
 define('MAIL_SETTING_FILE', DB_DIR.'mail/default.csv');
 require_once 'functions.php';
