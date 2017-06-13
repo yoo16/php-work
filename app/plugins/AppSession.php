@@ -45,10 +45,11 @@ class AppSession {
     * @return object
     */
     static function getSession($key, $session_key=null, $default_value = null, $sid = 0) {
+        $value = null;
         if ($session_key) {
             $value = $_SESSION[APP_NAME][$session_key][$sid][$key];
-        } else {
-            $value = $_SESSION[APP_NAME][$sid][$key];
+        } else if ($key) {
+            if (isset($_SESSION[APP_NAME][$sid][$key])) $value = $_SESSION[APP_NAME][$sid][$key];
         }
         if (is_null($value)) $value = $default_value;
         return $value;
@@ -283,5 +284,3 @@ class AppSession {
     }
 
 }
-
-?>

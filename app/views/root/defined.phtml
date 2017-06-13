@@ -1,0 +1,18 @@
+
+<div class="hero-unit">
+
+  <h2>Defined</h2>
+  <? if (is_array($this->defined_constants)): ?>
+
+  <table class="table">
+  <? foreach ($this->defined_constants as $key => $defined_constatnt): ?>
+  <tr>
+    <td><?= $key ?></td>
+    <td><?= $defined_constatnt ?></td>
+  </tr>
+  <? endforeach ?>
+  </table>
+
+  <? endif ?>
+
+</div>

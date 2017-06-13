@@ -1,5 +1,6 @@
 <?php
 define('PROJECT_NAME', 'phpwork');
+define('DEFAULT_LOCALE', 'ja');
 define('LOG_DIR', BASE_DIR.'log/');
 
 ini_set('error_log', LOG_DIR.date('Ymd').'.log');

@@ -1,469 +1,406 @@
 <?php
 /**
- * PgsqlEntity 
+ * Entity 
  *
- * @copyright  Copyright (c) 2017 Yohei Yoshikawa (http://yoo-s.com/)
+ * Copyright (c) 2013 Yohei Yoshikawa (http://yoo-s.com/)
  */
-if (!defined('PG_INFO')) exit('not found PG_INFO');
 
-require_once 'Entity.php';
+class Entity {
+    var $conditions = array();
+    var $columns = array();
+    var $errors = array();
+    var $value;
+    var $id = null;
+    var $id_column = 'id';
 
-class PgsqlEntity extends Entity {
-    var $extra_columns = false;
-    var $group_columns = false;
-    var $joins = array();
-    var $pg_info = PG_INFO;
-
-    static function createDatabase($values) {
-        if (!$values) return;
-        
-        $database_name = $values['dbname'];
-        if (!$database_name) return;
-
-        $database_user = $values['user']? $values['user'] : 'postgres';
-        $host = $values['host']? $values['host'] : 'localhost';
-        $port = $values['port']? $values['port'] : '5432';
-
-        $cmd = "createdb -U {$database_user} -E UTF8 --host {$host} --port {$port} {$database_name} 2>&1";
-
-        exec($cmd, $output, $return);
-
-        $results['cmd'] = $cmd;
-        $results['output'] = $output;
-        $results['return'] = $return;
-        return $results;
+    function __construct() {
+        $this->defaultValue();
     }
 
-    static function pgInfo() {
-        if (!defined('PG_INFO')) return;
-        $values = explode(' ', PG_INFO);
-        foreach ($values as $value) {
-            if (is_numeric(strpos($value, 'dbname='))) {
-                $results['dbname'] = trim(str_replace('dbname=', '', $value));
-            }
-            if (is_numeric(strpos($value, 'user='))) {
-                $results['user'] = trim(str_replace('user=', '', $value));
-            }
-            if (is_numeric(strpos($value, 'port='))) {
-                $results['port'] = trim(str_replace('port=', '', $value));
-            }
-            if (is_numeric(strpos($value, 'host='))) {
-                $results['host'] = trim(str_replace('host=', '', $value));
-            }
-        }
-        $results['pg_info'] = PG_INFO;
-        return $results;
-    }
+    function results() { trigger_error('results is not implemented', E_USER_ERROR); }
+    function count()   { trigger_error(  'count is not implemented', E_USER_ERROR); } 
+    function select()   { trigger_error(  'select is not implemented', E_USER_ERROR); }
+    function insert()  { trigger_error( 'insert is not implemented', E_USER_ERROR); }
+    function update()  { trigger_error( 'update is not implemented', E_USER_ERROR); }
+    function delete()  { trigger_error( 'delete is not implemented', E_USER_ERROR); }
 
-    static function initDb() {
-        $path = BASE_DIR."script/init_db";
-        $cmd = "php {$path} 2>&1";
-        exec($cmd, $output, $return);
+    function before_save() {}
+    function before_insert() {}
+    function before_update() {}
 
-        $results['cmd'] = $cmd;
-        $results['output'] = $output;
-        $results['return'] = $return;
-        return $results;
-    }
-
-    function connection() {
-        return pg_connect($this->pg_info);
-    }
-
-    function query($sql) {
-        $this->sql = $sql;
-        $pg = $this->connection();
-        if (defined('DEBUG') && DEBUG) error_log("<SQL> {$sql}");
-        return pg_query($pg, $sql);
-    }
-    
-    function fetch_rows($sql) {
-        $rs = $this->query($sql);
-        if ($rs) {
-            $rows = pg_fetch_all($rs);
-            return $rows;
+    /**
+     * reload
+     * 
+     * @param
+     * @return object
+     */
+    public function reload() {
+        if (isset($this->id)) {
+            $this->select($this->id);
         } else {
-            return;
+            $this->value = null;
         }
-    }
-
-    function fetch_row($sql) {
-        $rs = $this->query($sql);
-        if ($rs) {
-            $row = pg_fetch_array($rs, null, PGSQL_ASSOC);
-            return ($row) ? $row : null;
-        } else {
-            return;
-        }
-    }
-
-    function fetch_result($sql) {
-        $rs = $this->query($sql);
-        if ($rs) {
-            $result = pg_fetch_result($rs, 0, 0);
-            return (isset($result)) ? $result : null;
-        } else {
-            return false;
-        }
-    }
-
-    public function fetch($id, $params=null) {
-        if (!$id) return;
-        $this->conditions[] = "{$this->id_column} = {$id}";
-        $this->selectOne($params);
-        return $value;
-    }
-
-    public function select($params = null) {
-        $sql = $this->selectSql($params);
-        $values = $this->fetch_rows($sql);
-        $values = $this->castRows($values, $params);
-        unset($this->id);
-        return $values;
-    }
-
-    public function selectOne($params = null) {
-        $sql = $this->selectSql($params);
-        $value = $this->fetch_row($sql);
-
-        $this->value = $this->castRow($value);
-        if (is_array($this->value) && isset($this->value[$this->id_column])) {
-            $this->id = (int) $this->value[$this->id_column];
-        }
-        $this->_value = $this->value;
         return $this->value;
     }
 
-    public function insert() {
-        $sql = $this->insertSql();
-
-        if ($this->is_none_id_column) {
-            $result = $this->query($sql);
-            return true;
-        } else {
-            $result = $this->fetch_result($sql);
-            if ($result) {
-                $this->id = (int) $result;
-                $this->value[$this->id_column] = $this->id;
-                return true;
-            } else {
-                return false;
+    /**
+     * default
+     * 
+     * @param
+     * @return bool
+     */
+    public function defaultValue() {
+        if ($this->columns) {
+            foreach ($this->columns as $column_name => $column) {
+                if ($column_name === $this->id_column) continue;
+                if (isset($column['default'])) {
+                    $this->value[$column_name] = $this->cast($column['type'], $columns['default']);
+                }
             }
         }
     }
 
-    public function update() {
-        $sql = $this->updateSql();
-        if (!$sql) return false;
+    /**
+     * save
+     * 
+     * @param
+     * @return bool
+     */
+    public function save() {
+        $this->validate();
+        if (empty($this->errors)) {
+            if ($this->before_save() !== false) {
+                if ($this->isNew()) {
+                    if ($this->before_insert() !== false) {
+                        $is_success = $this->insert();
+                    }
+                } else {
+                    if ($this->before_update() !== false) {
+                        $changes = $this->changes();
+                        if (count($changes) > 0) {
+                            $is_success = $this->update();
+                        } else {
+                            if (defined('DEBUG') && DEBUG) error_log("<UPDATE> {$this->name}:{$this->id} has no changes");
+                            $is_success = true;
+                        }
+                    }
+                }
+            }
+            if (defined('DEBUG') && DEBUG) error_log("<SAVE> Canceled");
+        } else {
+            if (defined('DEBUG') && DEBUG) error_log("<ERROR> " . print_r($this->errors, true));
+        }
+        if (!$is_success) $this->addError('db', 'error');
+        return $is_success;
+    }
 
-        $result = $this->query($sql);
-        if ($result !== false) {
-            $this->_value = $this->value;
+    /**
+     * isNew
+     * 
+     * @param
+     * @return void
+     */
+    public function isNew() {
+        return empty($this->id);
+    }
+
+    /**
+     * validate
+     * 
+     * @param
+     * @return Class
+     */
+    public function validate() {
+        if (empty($this->columns)) trigger_error('illegal columns definition', E_USER_ERROR);
+
+        $this->value[$this->id_column] = $this->id; 
+        $this->errors = array();
+        foreach ($this->columns as $column_name => $column) {
+            if ($column === $this->id_column) continue;
+            if ($column['required'] && (is_null($this->value[$column_name]) || $this->value[$column_name] === '')) {
+                $this->addError($column_name, 'required');
+            } else {
+                $this->value[$column_name] = $this->cast($type, $this->value[$column_name]);
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * takeValues
+     * 
+     * @param  array $values
+     * @return Class
+     */
+    public function takeValues($values) {
+        if (!$values) return $this;
+        foreach ($values as $key => $value) {
+            $this->value[$key] = $value;
+        }
+        $this->castRow($this->value);
+        return $this;
+    }
+
+    /**
+     * addError
+     * 
+     * @param  string $column
+     * @param  string $message
+     * @return array
+     */
+    public function addError($column, $message) {
+        if (isset($column) && isset($message)) {
+            $this->errors[] = array('column' => $column, 'message' => $message);
+        }
+    }
+
+    /**
+     * getErrorMessage
+     * 
+     * @param  string $column
+     * @return array
+     */
+    public function getErrorMessage($column) {
+        $messages = array();
+        foreach ($this->errors as $error) {
+            if ($error['column'] === $column) {
+                $messages[] = $error['message'];
+            }
+        }
+        return $messages;
+    }
+
+    /**
+     * hasChanges
+     * 
+     * @param
+     * @return bool
+     */
+    public function hasChanges() {
+        if (isset($this->_value)) {
+            $changes = $this->changes();
+            return count($changes) > 0;
+        } else {
             return true;
+        }
+    }
+
+    /**
+     * changes
+     * 
+     * @param bool changed
+     * @return bool
+     */
+    public function changes($changed = false) {
+        if (isset($this->_value)) {
+            $changes = array();
+            foreach ($this->columns as $key => $type) {
+                if ($this->value[$key] !== $this->_value[$key]) {
+                    $changes[$key] = ($changed) ? $this->value[$key] : $this->_value[$key];
+                }
+            }
+            return $changes;
         } else {
             return false;
         }
     }
 
-    public function delete($id = null) {
-        if (is_numeric($id)) $this->id = (int) $id;
-        if (is_numeric($this->id)) {
-            $this->conditions = null;
-            $this->conditions[] = "{$this->id_column} = {$this->id}";
-        }
-
-        $sql = $this->deleteSql();
-        $result = $this->query($sql);
-
-        if ($result !== false) {
-            unset($this->id);
-            return true;
-        }
-        return false;
+    public function applyCast() {
+        $this->castRow($this->value);
     }
 
-    public function where($condition) {
-        $this->conditions[] = $condition; 
-        return $this;
+    private function castString($value) {
+        if (is_string($value)) return $value;
+        return (string) $value;
     }
 
-    public function order($column, $desc=false) {
-        $value['column'] = $column;
-        $value['desc'] = $desc;
-        $this->orders[] = $value; 
-        return $this;
+    private function castBool($value) {
+        if (is_bool($value)) return $value;
+        return in_array($value, array('t', 'true', '1'));
     }
 
-    public function initWhere($condition) {
-        $this->condition = null;
-        return $this->where($condition);
-    }
+    private function castTimestamp($value) {
+        if ($value === '') return null;
 
-    public function initOrder($order) {
-        $this->order = null;
-        return $this->orders($order);
-    }
-
-    public function limit($limit) {
-        $this->limit = $limit; 
-        return $this;
-    }
-
-    public function offset($offset) {
-        $this->offset = $offset; 
-        return $this;
-    }
-
-    function set_join($table, $conditions, $type = 'INNER') {
-        $this->joins = array();
-        $this->add_join($table, $conditions, $type);
-    }
-
-    function add_join($table, $conditions, $type = 'INNER') {
-        if (is_array($conditions)) {
-            foreach ($conditions as $i => $condition) {
-                $conditions[$i] = "({$table}.{$condition})";
+        if (is_string($value)) {
+            preg_match('/^(\d{4})-(\d{1,2})-(\d{1,2}) ?(\d{1,2})?:?(\d{1,2})?:?(\d{1,2})?/', $value, $m);
+            if (checkdate($m[2], $m[3], $m[1])) {
+                return sprintf('%4d-%02d-%02d %02d:%02d:%02d', $m[1], $m[2], $m[3], $m[4], $m[5], $m[6]);
+            } else {
+                $time = strtotime($value);
+                if ($time >= 0) return date('Y-m-d H:i:s', $time);
+                return null;
             }
-            $conditions = implode(' AND ', $conditions);
-        } else {
-            $conditions = "{$table}.{$conditions}";
-        }
-        $this->joins[] = "{$type} JOIN {$table} ON {$conditions}";
-    }
-
-    function set_left_join($t, $c)  { $this->set_join($t, $c, 'LEFT'); }
-    function set_right_join($t, $c) { $this->set_join($t, $c, 'RIGHT'); }
-    function add_left_join($t, $c)  { $this->add_join($t, $c, 'LEFT'); }
-    function add_right_join($t, $c) { $this->add_join($t, $c, 'RIGHT'); }
-
-    private function sqlValue($value) {
-        if (is_null($value)) {
-            return "NULL";
-        } elseif (is_numeric($value)) {
-            return (string) $value;
-        } elseif (is_bool($value)) {
-            return ($value) ? 'TRUE' : 'FALSE';
         } elseif (is_array($value)) {
-            return "'" . pg_escape_string(json_encode($value)) . "'";
-        } else {
-            return "'" . pg_escape_string($value) . "'";
-        }
-    }
-
-    private function whereSql($params = null) {
-        if ($params['conditions']) $this->conditions = $params['conditions'];
-        if ($condition = $this->sqlConditions($this->conditions)) $sql = " WHERE {$condition}";
-        return $sql;
-    }
-
-    private function orderBySql($params = null) {
-        if ($params['orders']) $this->orders = $params['orders'];
-        if ($order = $this->sqlOrders($this->orders)) $sql = " ORDER BY {$order}";
-        return $sql;
-    }
-
-    private function limitSql() {
-        if (!is_int($this->limit)) return;
-        $sql = " LIMIT {$this->limit}";
-        return $sql;
-    }
-
-    private function offsetSql() {
-        if (!is_int($this->offset)) return;
-        $sql = " OFFSET {$this->offset}";
-        return $sql;
-    }
-
-    private function selectSql($params = null) {
-        $sql = "SELECT {$this->name}.* FROM {$this->name}";
-        $sql.= $this->whereSql($params);
-        $sql.= $this->orderBySql($params);
-        $sql.= $this->offsetSql($params);
-        $sql.= $this->limitSql($params);
-        $sql.= ";";
-        return $sql;
-    }
-
-    private function selectCountSql($params = null) {
-        $sql = "SELECT count({$this->name}.*) FROM {$this->name}";
-        $sql.= $this->whereSql($params);
-        // GROUP BY {$group_str}) AS t";
-        $sql.= ";";
-        return $sql;
-    }
-
-    private function insertSql() {
-        if (!$this->value) return;
-        unset($this->value[$this->id_column]);
-        unset($this->id);
-        foreach ($this->columns as $key => $type) {
-            $value = $this->sqlValue($this->value[$key]);
-            if ($key == 'created_at') $value = 'current_timestamp';
-
-            $columns[] = $key;
-            $values[] = $value;
-        }
-        $column = implode(',', $columns);
-        $value = implode(',', $values);
-
-        $sql = "INSERT INTO {$this->name} ({$column}) VALUES ({$value});";
-        $sql.= "SELECT currval('{$this->name}_id_seq');";
-        return $sql;
-    }
-
-    private function updateSql() {
-        $changes = $this->changes();
-        if (!$changes) return;
-
-        foreach ($changes as $key => $org_value) {
-            $value = $this->sqlValue($this->value[$key]);
-            $set_values[] = "{$key} = {$value}";
-        }
-        if (isset($this->columns['updated_at'])) $set_values[] = "updated_at = current_timestamp";
-        if ($set_values) $set_value = implode(',', $set_values);
-
-        if ($set_value) {
-            if (!$this->conditions) $this->conditions[] = "{$this->id_column} = {$this->id}";
-            $condition = $this->sqlConditions($this->conditions);
-            $sql = "UPDATE {$this->name} SET {$set_value} WHERE {$condition};";
-        }
-
-        return $sql;
-    }
-
-    private function deleteSql() {
-        if (!$this->id) return;
-        $where = $this->whereSql($params);
-        if ($where) $sql = "DELETE FROM {$this->name} {$where};";
-        return $sql;
-    }
-
-
-    //TODO
-    function results_sql() {
-        if (is_bool($this->group_columns) && $this->group_columns) {
-            $this->group_columns = array_keys($this->columns);
-            array_unshift($this->group_columns, "{$this->name}.{$this->id_column}");
-        }
-        if (empty($this->group_columns)) {
-            $select_str = $this->name . '.*';
-        } else {
-            foreach ($this->group_columns as $i => $group_column) {
-                if (!strpos($group_column, '.') && array_key_exists($group_column, $this->columns)) {
-                    $this->group_columns[$i] = $this->name . "." . $group_column;
-                    if (!empty($select_str)) $select_str .= ", ";
-                    $select_str .=  $this->group_columns[$i];
-                } elseif (!array_key_exists($group_column, $this->extra_columns)) {
-                    if (!empty($select_str)) $select_str .= ", ";
-                    $select_str .=  $group_column;
-                }
-            }
-            $group_str = implode(', ', $this->group_columns);
-        }
-
-        if (is_array($this->extra_columns)) {
-            foreach ($this->extra_columns as $extra_column => $def) {
-                $extra_clause = substr($def, 2);
-                if ($extra_clause) {
-                    if (!empty($select_str)) $select_str .= ", ";
-                    $select_str .= "{$extra_clause} AS {$extra_column}";
-                }
-            }
-        }
-
-        $from_str = ($this->from_sql) ? "({$this->from_sql}) AS {$this->name}" : $this->name;
-        if (is_array($this->joins)) {
-            foreach ($this->joins as $join) {
-                $from_str .= " " . $join;
-            }
-        }
-
-        $sql = "SELECT {$select_str} FROM {$from_str}";
-
-        if (!empty($this->conditions)) {
-            foreach ($this->conditions as $condition) {
-                if (isset($conditions)) $conditions .= ' AND ';
-                $conditions .= "({$condition})";
-            }
-        }
-        if (isset($conditions)) $sql .= " WHERE {$conditions}";
-
-        if (isset($group_str)) {
-            $sql .= " GROUP BY {$group_str}";
-        }
-
-        if (!empty($this->orders)) {
-            foreach ($this->orders as $order) {
-                if (isset($orders)) $orders .= ', ';
-                if (!strpos($order['column'], '.') && array_key_exists($order['column'], $this->columns)) {
-                    $orders .= $this->name . '.' . $order['column'];
+            if (is_numeric($value['year']) && is_numeric($value['month']) && is_numeric($value['day'])) {
+                $timestamp = sprintf('%4d-%02d-%02d', $value['year'], $value['month'], $value['day']);
+                if (is_numeric($value['hour']) && is_numeric($value['minute'])) {
+                    $timestamp .= sprintf(' %02d:%02d', $value['hour'], $value['minute']);
+                    if (is_numeric($value['second'])) {
+                        $timestamp .= sprintf(':%02d', $value['second']);
+                    } else {
+                        $timestamp .= ':00';
+                    }
                 } else {
-                    $orders .= $order['column'];
+                    $timestamp .= '00:00:00';
                 }
-                if ($order['desc']) {
-                    $orders .= ' DESC';
-                }
+                return $this->cast('t', $timestamp);
+            } else {
+                return null;
             }
-        }
-        if (isset($orders)) $sql .= " ORDER BY {$orders}";
-        return $sql;
-    }
-
-    public function count() {
-        //TODO
-        $from_str = ($this->from_sql) ? "({$this->from_sql}) AS {$this->name}" : $this->name;
-        if (is_array($this->joins)) {
-            foreach ($this->joins as $join) {
-                $from_str .= " " . $join;
-            }
-        }
-
-        if (is_bool($this->group_columns) && $this->group_columns) {
-            $this->group_columns = array_keys($this->columns);
-            array_unshift($this->group_columns, $this->id_column);
-        }
-        if (empty($this->group_columns)) {
-            $select_str = "COUNT({$this->name}.{$this->id_column})";
         } else {
-            $select_str = $this->group_columns[0];
-            foreach ($this->group_columns as $i => $group_column) {
-                if (!strpos($group_column, '.')) {
-                    $this->group_columns[$i] = $this->name . "." . $group_column;
-                }
-            }
-            $group_str = implode(', ', $this->group_columns);
+            return $value;
         }
-
-        $sql = $this->selectCountSql();
-        $count = $this->fetch_result($sql); 
-        if (is_null($count)) $count = 0;
-        return $count;
     }
 
-    function sqlConditions($conditions) {
-        if (is_null($conditions)) return;
-        if (is_int($conditions)) {
-            $condition = "{$this->id_column} = {$conditions}";
-        } elseif (is_string($conditions)) {
-            $condition = $conditions;
-        } elseif (is_array($conditions)) {
-            $condition = implode(' AND ', $conditions);
-        }
-        return $condition;
+    /**
+     * castInt
+     * 
+     * @param  object $value
+     * @return int
+     */
+    private function castInt($value) {
+        if (is_int($value)) return $value;
+        return (int) $value;
     }
 
-    function sqlOrders($orders) {
-        if ($this->columns['sort_order']) $orders[] = array('column' => 'sort_order', 'desc' => false);
-        if ($orders) {
-            foreach ($orders as $order) {
-                if (array_key_exists($order['column'], $this->columns)) {
-                    $asc_desc = ($order['desc']) ? 'DESC' : 'ASC';
-                    $_orders[] = "{$this->name}.{$order['column']} {$asc_desc}";
+    /**
+     * castFloat
+     * 
+     * @param  object $value
+     * @return float
+     */
+    private function castFloat($value) {
+        if (is_float($value)) return $value;
+        return (float) $value;
+    }
+
+    /**
+     * castDouble
+     * 
+     * @param  object $value
+     * @return double
+     */
+    private function castDouble($value) {
+        if (is_double($value)) return $value;
+        return (double) $value;
+    }
+
+    /**
+     * castArray
+     * 
+     * @param  object $value
+     * @return string
+     */
+    private function castArray($value) {
+        if (is_array($value)) return $value;
+        $val = json_decode($value, true);
+        return $val;
+    }
+
+    /**
+     * castJson
+     * 
+     * @param  object $value
+     * @return string
+     */
+    private function castJson($value) {
+        return json_decode($value);
+    }
+
+    /**
+     * cast
+     * 
+     * @param  string $type
+     * @param  object $value
+     * @return object
+     */
+    private function cast($type, $value) {
+        if (!$type) return $value;
+        if ($type == 's') return self::castString($value);
+        if ($type == 'b') return self::castBool($value);
+        if ($type == 't') return self::castTimestamp($value);
+        if ($type == 'i') return self::castInt($value);
+        if ($type == 'f') return self::castFloat($value);
+        if ($type == 'd') return self::castDouble($value);
+        if ($type == 'a') return self::castArray($value);
+        if ($type == 'j') return self::castJson($value);
+    }
+    
+    /**
+     * castRow
+     * 
+     * @param  array $row
+     * @return array
+     */
+    function castRow(&$row) {
+        if (is_array($row)) {
+            foreach ($row as $column_name => $value) {
+                if ($column_name === $this->id_column) {
+                    $row[$this->id_column] = $value;
+                } else {
+                    $column = $this->columns[$column_name];
+                    $type = $column['type'];
+                    $row[$column_name] = $this->cast($type, $value);
                 }
             }
-            $order = implode(', ', $_orders);
-            return $order;
         }
+        //return $this->value;
+        return $row;
+    }
+
+    /**
+     * castRows
+     * 
+     * @param  array $row
+     * @return array
+     */
+    function castRows($rows) {
+        if (is_array($rows)) {
+            foreach ($rows as $index => $row) {
+                if (isset($this->id_index) && $this->id_index == true) {
+                    $id = (int) $row[$this->id_column];
+                    $values[$id] = $this->castRow($row);
+                } else {
+                    $values[] = $this->castRow($row);
+                }
+            }
+        }
+        return $values;
+    }
+
+   /**
+    * formOptions
+    *
+    * @param array $params
+    * @return array
+    */
+    function formOptions($params) {
+        // foreach ($values as $key => $value) {
+        //     $_options['value'] = $value[$_value_key];
+        //     if (is_array($label_key)) {
+        //         $labels = null;
+        //         foreach ($label_key as $_column) {
+        //             $labels[] = $value[$_column];
+        //         }
+        //         $label = implode($label_separator, $labels);
+        //     } else {
+        //         $label = $value[$label_key];
+        //     }
+        //     $_options['label'] = $label;
+        //     $option_values[] = $_options;
+        // }
+
+        $options = null;
+        if (isset($params['id'])) $options['id'] = $params['id'];
+        if (isset($params['class'])) $options['class'] = $params['class'];
+        if (isset($params['name'])) $options['name'] = $params['name'];
+        $options['value_key'] =  (isset($params['value_key'])) ? $params['value_key'] : $this->id_column;
+        $options['label_key'] =  (isset($params['label_key'])) ? $params['label_key'] : $this->id_column;
+        $options['values'] = $this->values;
+        $options['unselect'] =  (isset($params['unselect'])) ? $params['unselect'] : true;
+        $options['label_separator'] = (isset($params['label_separator'])) ? $params['label_separator'] : ' ';
+        return $options;
     }
 
 }

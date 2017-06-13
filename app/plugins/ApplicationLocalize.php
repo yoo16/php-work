@@ -2,10 +2,9 @@
 /**
  * ApplicationLocalize 
  *
- * @author  Yohei Yoshikawa
- * 
  * Copyright (c) 2013 Yohei Yoshikawa (http://yoo-s.com/)
  */
+
 class ApplicationLocalize {
 
     /**
@@ -23,23 +22,14 @@ class ApplicationLocalize {
      * @param 
      * @return Array
      **/
-    function load() {
-        if (defined('IS_LOCALE_LOCALIZE') && IS_LOCALE_LOCALIZE) {
-            $locale = self::loadLocale();
-            if (!$locale) {
-                $locale = self::defaultLocale();
-            }
-            AppSession::setSession(0, 'locale', $locale);
-            define('LOCALE', $locale);
-
-            self::loadLocalizeFile($locale);
-         } else {
-            require_once 'helpers/localize/jp.php';
-         }
+    static function load() {
+        $lang = self::loadLocale();
+        if (!$lang) $lang = self::defaultLocale();
+        self::loadLocalizeFile($lang);
     }
 
-    function loadLocalizeFile($locale) {
-        $localize_path = BASE_DIR."app/localize/{$locale}/localize.php";
+    static function loadLocalizeFile($lang) {
+        $localize_path = BASE_DIR."app/localize/{$lang}/localize.php";
         if (file_exists($localize_path)) {
            require_once $localize_path;
         }
@@ -51,13 +41,14 @@ class ApplicationLocalize {
      * @param
      * @return string 
      */
-    function defaultLocale($locale) {
-        if (defined('DEFAULT_LOCALE')) {
-             $locale = DEFAULT_LOCALE;
-         } else {
-             $locale = 'ja';
-         }
-        return $locale;
+    static function defaultLocale($lang) {
+        if (defined('DEFAULT_LOCALE') && DEFAULT_LOCALE) {
+            $lang = DEFAULT_LOCALE;
+        } else {
+            $lang = 'ja';
+            define('DEFAULT_LOCALE', $lang);
+        }
+        return $lang;
     }
 
     /**
@@ -66,23 +57,21 @@ class ApplicationLocalize {
      * @param
      * @return string 
      */
-    function loadLocale() {
-        if ($_GET['lang']) {
-            if ($_GET['lang'] == 'default') {
-                AppSession::clearSession(0, 'locale');
-                unset($_GET['lang']);
+    static function loadLocale() {
+        if ($_REQUEST['lang']) {
+            if ($_REQUEST['lang'] == 'default') {
+                AppSession::clearSession('lang');
+                unset($_REQUEST['lang']);
             }
-            AppSession::setSession(0, 'locale', $_GET['lang']);
+            AppSession::setSession('lang', $_REQUEST['lang']);
             self::claerLocaleValues();
         }
-        $locale = AppSession::getSession(0, 'locale');
-        return $locale;
+        $lang = AppSession::getSession('lang');
+        return $lang;
     }
 
-    function claerLocaleValues() {
-        AppSession::clearSession(0, 'option');
+    static function claerLocaleValues() {
+        AppSession::clearSession('option');
     }
 
 }
-
-?>

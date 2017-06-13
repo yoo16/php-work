@@ -22,8 +22,9 @@ class FormHelper {
 
         $params = self::checkParams($params, $selected, $value_key, $label_key, $values);
 
-        if (!$params['class']) $params['class'] = 'form-control';
+        if (!isset($params['class'])) $params['class'] = 'form-control';
 
+        $tag = '';
         $tag.= self::unselectOption($params);
         $tag.= self::selectOptions($params, $params['selected']);
 
@@ -303,11 +304,12 @@ class FormHelper {
             $values = $params['values'];
         }
 
-        $value_key = $params['value_key'] ? $params['value_key'] : 'value';
-        $label_key = $params['label_key'] ? $params['label_key'] : 'label';
-        $class_key = $params['class_key'] ? $params['class_key'] : '';
+        $value_key = isset($params['value_key']) ? $params['value_key'] : 'value';
+        $label_key = isset($params['label_key']) ? $params['label_key'] : 'label';
+        $class_key = isset($params['class_key']) ? $params['class_key'] : '';
 
-
+        $tag = '';
+        $class = null;
         if (is_array($values)) {
             foreach ($values as $key => $option) {
                 $value = $option[$value_key];
@@ -315,7 +317,7 @@ class FormHelper {
 
                 if ($class_key) $class = $option[$class_key];
                 $selected_tag = self::selectedTag($value, $selected);
-                $tag .= "<option value=\"{$value}\" class=\"{$class}\"{$selected_tag}>{$label}</option>\n";
+                $tag.= "<option value=\"{$value}\" class=\"{$class}\"{$selected_tag}>{$label}</option>\n";
             }
         }
         return $tag;
@@ -349,6 +351,7 @@ class FormHelper {
      * @return string
      */
     static function unselectOption($params) {
+        $tag = '';
         if (isset($params['unselect'])) {
             $tag.= "<option value=\"{$params['unselect']['value']}\">{$params['unselect']['label']}</option>\n";
         }
@@ -387,11 +390,12 @@ class FormHelper {
      * @return string
      */
     static function selectAttribute($params) {
-        if ($params['id']) $tag.= " id=\"{$params['id']}\"";
-        if ($params['class']) $tag.= " class=\"{$params['class']}\"";
+        $tag = '';
+        if (isset($params['id'])) $tag.= " id=\"{$params['id']}\"";
+        if (isset($params['class'])) $tag.= " class=\"{$params['class']}\"";
         $tag.= " name=\"{$params['name']}\"";
 
-        $attributes = $params['attributes'];
+        $attributes = isset($params['attributes'])? $params['attributes'] : null;
         if (is_array($attributes)) {
             foreach ($attributes as $key => $attribute) {
                 if ($key && $attribute) $tag.= " {$key}=\"{$attribute}\"";
@@ -409,11 +413,10 @@ class FormHelper {
      * @return String
      */
     static function checkParams($params, $selected=null, $value_key=null, $label_key=null, $values=null) {
-        if ($values) $params['values'] = $values;
-        if ($selected) $params['selected'] = $selected;
-        if ($value_key) $params['value_key'] = $value_key;
-        if ($label_key) $params['label_key'] = $label_key;
-        if ($params['id']) $params['jquery_id'] = "#{$params['id']}";
+        if (isset($values)) $params['values'] = $values;
+        $params['selected'] = isset($selected)? $selected : null;
+        if (isset($value_key)) $params['value_key'] = $value_key;
+        if (isset($label_key)) $params['label_key'] = $label_key;
         return $params;
     }
         
@@ -425,7 +428,7 @@ class FormHelper {
      * @return String
      */
     static function convertLabel($values, $params) {
-        $label_keys = $params['label_key'] ? $params['label_key'] : 'label';
+        $label_keys = isset($params['label_key']) ? $params['label_key'] : 'label';
         if (is_array($label_keys)) {
             foreach ($label_keys as $label_key) {
                 $labels[] = $values[$label_key];

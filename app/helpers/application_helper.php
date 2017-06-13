@@ -7,13 +7,11 @@
  */
 
 require_once 'lib/_application_helper.php';
-require_once 'localize/jp.php';
-
 require_once 'message_helper.php';
 
 function undefineLabel($key, $value) {
       if (!defined($key)) {
-          $tag = undefineLabelTag();
+          $tag = undefineLabelTag($key, $value);
       }
       if (defined($key)) {
           $tag.= $value;

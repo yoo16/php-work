@@ -1,5 +1,5 @@
 <?php
-require_once '_jp.php';
+require('_localize.php');
 
 define('LABEL_NAME', '氏名');
 define('LABEL_LAST_NAME', '姓');
@@ -43,7 +43,6 @@ define('LABEL_JSON', 'JSON');
 define('LABEL_CSV', 'CSV');
 define('LABEL_CLOSE', '閉じる');
 define('LABEL_CLEAR', 'クリア');
-define('LABEL_SEARCH', '検索');
 define('LABEL_DUPLICATE', '複製');
 define('LABEL_LIST', '一覧');
 define('LABEL_LOGIN', 'ログイン');
@@ -55,25 +54,14 @@ define('LABEL_FAVORITE', 'よく使う');
 define('LABEL_SELECT', '選択');
 define('LABEL_PRINT', '印刷');
 define('LABEL_RELOAD', '再読み込み');
+define('LABEL_SETTING', '設定');
+
 define('LABEL_IMPORT', 'インポート');
 
-define('LABEL_BUSINESS_YEAR', '年度');
-define('LABEL_CURRENT_BUSINESS_YEAR', '今年度');
-define('LABEL_PREV_BUSINESS_YEAR', '前年度');
-define('LABEL_NEXT_BUSINESS_YEAR', '翌年度');
-define('LABEL_CURRENT_MONTH', '今月');
-define('LABEL_PREV_MONTH', '先月');
-define('LABEL_NEXT_MONTH', '翌月');
-
-define('LETTER_COMPANY_LAST_WORD', '御中');
-define('LETTER_PERSONAL_LAST_WORD', '様');
 define('LABEL_USER', 'ユーザ');
 define('LABEL_STAFF', 'スタッフ');
 define('LABEL_ADMIN', '管理者');
 
-
 define('MESSAGE_DELETE', '削除しますか？');
 define('MESSAGE_CONFIRM', 'この内容でよろしいですか？');
 define('MESSAGE_REQUIRED', 'を入力してください。');
-
-?>

@@ -1,6 +1,6 @@
 <?php
 /**
- *  FTP接続
+ *  FTP Connection
  * 
  * Copyright (c) 2013 Yohei Yoshikawa (http://yoo-s.com/)
  */
@@ -24,7 +24,7 @@ class FtpLite {
     var $last_exec_logfile = null;
     var $scp_port = 22;
 
-    function FtpLite() {
+    function __construct() {
     }
 
     function connectTest() {

@@ -6,7 +6,7 @@
  */
 class ImageManager {
 
-    static function img_tag($values, $is_image_dir=true) {
+    static function tag($values, $is_image_dir=true) {
         if (is_array($values)) {
             foreach ($values as $key => $value) {
                 if ($value) {
@@ -22,7 +22,7 @@ class ImageManager {
     }
 
     static function tag($values) {
-        return img_tag($values, false);
+        return tag($values, false);
     }
 
     /**
