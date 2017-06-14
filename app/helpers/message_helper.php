@@ -9,4 +9,3 @@ function _error_jp_messages() {
 
     return $errors;
 }
-

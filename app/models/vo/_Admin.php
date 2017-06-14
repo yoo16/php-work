@@ -44,5 +44,3 @@ class _Admin extends PgsqlEntity {
 
 
 }
-
-?>

@@ -147,5 +147,3 @@ class SampleController extends AppController {
     }
 
 }
-
-?>

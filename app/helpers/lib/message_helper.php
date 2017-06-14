@@ -67,5 +67,3 @@ function _get_message($values, $messages, $params, $model) {
     }
     return $result;
 }
-
-?>

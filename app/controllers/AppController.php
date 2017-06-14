@@ -5,7 +5,6 @@
  * @author  Yohei Yoshikawa
  * @create  2012/10/03 
  */
-
 require_once '_AppController.php';
 
 class AppController extends _AppController {
@@ -32,4 +31,3 @@ class AppController extends _AppController {
     }
 
 }
-?>

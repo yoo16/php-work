@@ -121,5 +121,3 @@ class DateHelper {
         return $date;
     }
 }
-
-?>

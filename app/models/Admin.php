@@ -26,5 +26,3 @@ class Admin extends _Admin {
     }
 
 }
-
-?>

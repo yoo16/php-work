@@ -10,6 +10,7 @@ require_once 'lib/_application_helper.php';
 require_once 'message_helper.php';
 
 function undefineLabel($key, $value) {
+      $tag = '';
       if (!defined($key)) {
           $tag = undefineLabelTag($key, $value);
       }

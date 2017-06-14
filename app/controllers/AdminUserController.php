@@ -121,5 +121,3 @@ class AdminUserController extends AdminController {
     }
 
 }
-
-?>

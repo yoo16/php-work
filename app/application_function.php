@@ -47,5 +47,3 @@ function urlLinkConvert($values){
     $values = mb_ereg_replace('(https?://[-_.!~*\'()a-zA-Z0-9;/?:@&=+$,%#]+)', '<a href="\1" target="_blank">\1</a>', $values);
     return $values;
 }
-
-?>

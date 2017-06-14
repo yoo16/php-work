@@ -48,5 +48,3 @@ class _User extends PgsqlEntity {
 
 
 }
-
-?>

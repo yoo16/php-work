@@ -21,10 +21,6 @@ class ImageManager {
         return $tag;
     }
 
-    static function tag($values) {
-        return tag($values, false);
-    }
-
     /**
      * resize
      *
@@ -67,5 +63,3 @@ class ImageManager {
         imagedestroy($new_image);
     }
 }
-
-?>
