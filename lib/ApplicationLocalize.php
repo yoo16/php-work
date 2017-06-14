@@ -8,9 +8,9 @@
 class ApplicationLocalize {
 
     /**
-     * [autoload_model description]
+     * __construct
      * 
-     * @return [type] [description]
+     * @return void
      */
     function __construct() {
 
@@ -20,7 +20,7 @@ class ApplicationLocalize {
      * load
      *
      * @param 
-     * @return Array
+     * @return void
      **/
     static function load() {
         $lang = self::loadLocale();

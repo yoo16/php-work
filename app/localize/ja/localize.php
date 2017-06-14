@@ -57,6 +57,7 @@ define('LABEL_RELOAD', '再読み込み');
 define('LABEL_SETTING', '設定');
 
 define('LABEL_IMPORT', 'インポート');
+define('LABEL_EXPORT', 'エクスポート');
 
 define('LABEL_USER', 'ユーザ');
 define('LABEL_STAFF', 'スタッフ');

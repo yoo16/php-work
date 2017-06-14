@@ -35,6 +35,13 @@ class Controller {
         if ($this->session_name === true) $this->session_name = $this->name;
     }
 
+    static function loadLib($libs) {
+        foreach ($libs as $lib) {
+            $path = BASE_DIR."lib/{$lib}.php";
+            if (file_exists($path)) @include_once $path;
+        }
+    }
+
     static function load($name) {
         $controller = str_replace(" ","",ucwords(str_replace("_"," ",$name))) . "Controller";
 

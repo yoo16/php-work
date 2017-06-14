@@ -56,6 +56,7 @@ define('LABEL_RELOAD', 'Reload');
 define('LABEL_SETTING', 'Setting');
 
 define('LABEL_IMPORT', 'Import');
+define('LABEL_EXPORT', 'Export');
 
 define('LABEL_USER', 'User');
 define('LABEL_STAFF', 'Staff');

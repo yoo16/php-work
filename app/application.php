@@ -1,4 +1,19 @@
 <?php
-    require_once '_application.php';
+require_once '_application.php';
 
-    ApplicationLocalize::load();
+$libs = array(
+    'DB',
+    'SendMail',
+    'CsvLite',
+    'FileManager',
+    'FtpLite',
+    'FormHelper',
+    'DateHelper',
+    'AppSession',
+    'ApplicationLocalize',
+    'ApplicationLoader',
+    'ApplicationLogger',
+    );
+
+Controller::loadLib($libs);
+ApplicationLocalize::load();

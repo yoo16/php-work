@@ -9,7 +9,8 @@ class Entity {
     var $conditions = array();
     var $columns = array();
     var $errors = array();
-    var $value;
+    var $values = null;
+    var $value = null;
     var $id = null;
     var $id_column = 'id';
 
@@ -54,7 +55,7 @@ class Entity {
             foreach ($this->columns as $column_name => $column) {
                 if ($column_name === $this->id_column) continue;
                 if (isset($column['default'])) {
-                    $this->value[$column_name] = $this->cast($column['type'], $columns['default']);
+                    $this->value[$column_name] = $this->cast($column['type'], $column['default']);
                 }
             }
         }
@@ -108,12 +109,12 @@ class Entity {
      * validate
      * 
      * @param
-     * @return void
+     * @return Class
      */
     public function validate() {
         if (empty($this->columns)) trigger_error('illegal columns definition', E_USER_ERROR);
 
-        $this->value[$this->id_column] = $this->id; 
+        if ($this->id) $this->value[$this->id_column] = $this->id;
         $this->errors = array();
         foreach ($this->columns as $column_name => $column) {
             if ($column === $this->id_column) continue;
@@ -123,6 +124,22 @@ class Entity {
                 $this->value[$column_name] = $this->cast($type, $this->value[$column_name]);
             }
         }
+        return $this;
+    }
+
+    /**
+     * takeValues
+     * 
+     * @param  array $values
+     * @return Class
+     */
+    public function takeValues($values) {
+        if (!$values) return $this;
+        foreach ($values as $key => $value) {
+            $this->value[$key] = $value;
+        }
+        $this->castRow($this->value);
+        return $this;
     }
 
     /**
@@ -190,13 +207,6 @@ class Entity {
     }
 
     public function applyCast() {
-        $this->castRow($this->value);
-    }
-
-    public function takeValues($values) {
-        foreach ($values as $key => $value) {
-            $this->value[$key] = $value;
-        }
         $this->castRow($this->value);
     }
 
@@ -349,7 +359,7 @@ class Entity {
     function castRows($rows) {
         if (is_array($rows)) {
             foreach ($rows as $index => $row) {
-                if ($this->id_index) {
+                if (isset($this->id_index) && $this->id_index == true) {
                     $id = (int) $row[$this->id_column];
                     $values[$id] = $this->castRow($row);
                 } else {
@@ -358,6 +368,25 @@ class Entity {
             }
         }
         return $values;
+    }
+
+   /**
+    * formOptions
+    *
+    * @param array $params
+    * @return array
+    */
+    function formOptions($params) {
+        $options = null;
+        if (isset($params['id'])) $options['id'] = $params['id'];
+        if (isset($params['class'])) $options['class'] = $params['class'];
+        if (isset($params['name'])) $options['name'] = $params['name'];
+        $options['value_key'] =  (isset($params['value_key'])) ? $params['value_key'] : $this->id_column;
+        $options['label_key'] =  (isset($params['label_key'])) ? $params['label_key'] : $this->id_column;
+        $options['values'] = $this->values;
+        $options['unselect'] =  (isset($params['unselect'])) ? $params['unselect'] : true;
+        $options['label_separator'] = (isset($params['label_separator'])) ? $params['label_separator'] : ' ';
+        return $options;
     }
 
 }

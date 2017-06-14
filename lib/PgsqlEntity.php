@@ -16,6 +16,28 @@ class PgsqlEntity extends Entity {
     var $values = null;
     var $value = null;
 
+    /**
+     * initDb
+     * 
+     * @return array
+     */
+    static function initDb() {
+        $path = BASE_DIR."script/init_db";
+        $cmd = "php {$path} 2>&1";
+        exec($cmd, $output, $return);
+
+        $results['cmd'] = $cmd;
+        $results['output'] = $output;
+        $results['return'] = $return;
+        return $results;
+    }
+
+    /**
+     * createDatabase
+     * 
+     * @param  array $values
+     * @return array
+     */
     static function createDatabase($values) {
         if (!$values) return;
         
@@ -36,6 +58,11 @@ class PgsqlEntity extends Entity {
         return $results;
     }
 
+    /**
+     * pgInfo
+     * 
+     * @return array
+     */
     static function pgInfo() {
         if (!defined('PG_INFO')) return;
         $values = explode(' ', PG_INFO);
@@ -57,21 +84,20 @@ class PgsqlEntity extends Entity {
         return $results;
     }
 
-    static function initDb() {
-        $path = BASE_DIR."script/init_db";
-        $cmd = "php {$path} 2>&1";
-        exec($cmd, $output, $return);
-
-        $results['cmd'] = $cmd;
-        $results['output'] = $output;
-        $results['return'] = $return;
-        return $results;
-    }
-
+    /**
+     * connection
+     * 
+     * @return resource
+     */
     function connection() {
         return pg_connect($this->pg_info);
     }
 
+    /**
+     * connection
+     * 
+     * @return resource
+     */
     function query($sql) {
         $this->sql = $sql;
         $pg = $this->connection();
@@ -79,6 +105,11 @@ class PgsqlEntity extends Entity {
         return pg_query($pg, $sql);
     }
     
+    /**
+     * fetch_rows
+     * 
+     * @return array
+     */
     function fetch_rows($sql) {
         $rs = $this->query($sql);
         if ($rs) {
@@ -89,6 +120,11 @@ class PgsqlEntity extends Entity {
         }
     }
 
+    /**
+     * fetch_row
+     * 
+     * @return array
+     */
     function fetch_row($sql) {
         $rs = $this->query($sql);
         if ($rs) {
@@ -99,24 +135,42 @@ class PgsqlEntity extends Entity {
         }
     }
 
+    /**
+     * fetch_result
+     * 
+     * @return string
+     */
     function fetch_result($sql) {
         $rs = $this->query($sql);
         if ($rs) {
             $result = pg_fetch_result($rs, 0, 0);
             return (isset($result)) ? $result : null;
         } else {
-            return false;
+            return null;
         }
     }
 
+    /**
+     * select
+     * 
+     * @param  int $id
+     * @param  array $params
+     * @return array
+     */
     public function fetch($id, $params=null) {
         $this->values = null;
         if (!$id) return;
-        $this->conditions[] = "{$this->id_column} = {$id}";
-        $this->selectOne($params);
+        $this->where("{$this->id_column} = {$id}")
+             ->selectOne($params);
         return $this->value;
     }
 
+    /**
+     * select
+     * 
+     * @param  array $params
+     * @return array
+     */
     public function select($params = null) {
         $sql = $this->selectSql($params);
         $values = $this->fetch_rows($sql);
@@ -125,6 +179,12 @@ class PgsqlEntity extends Entity {
         return $this->values;
     }
 
+    /**
+     * selectOne
+     * 
+     * @param  array $params
+     * @return array
+     */
     public function selectOne($params = null) {
         $this->values = null;
         $sql = $this->selectSql($params);
@@ -138,15 +198,25 @@ class PgsqlEntity extends Entity {
         return $this->value;
     }
 
+    /**
+     * insert
+     * 
+     * @param  array $posts
+     * @return Class
+     */
     public function insert($posts=null) {
+        $this->id = null;
         $this->values = null;
+        if ($posts) $this->takeValues($posts);
 
-        if ($posts) {
-            $this->takeValues($posts);
-            $this->validate();
-            if ($this->errors) return false;
-        }
+        $this->validate();
+        if ($this->errors) return $this;
+
         $sql = $this->insertSql();
+        if (!$sql) {
+            $this->addError('sql', 'error');
+            return $this;
+        }
 
         if ($this->is_none_id_column) {
             $result = $this->query($sql);
@@ -156,25 +226,39 @@ class PgsqlEntity extends Entity {
             if ($result) {
                 $this->id = (int) $result;
                 $this->value[$this->id_column] = $this->id;
-                return $this;
             } else {
-                return $this;
+                $this->addError('sql', 'error');
             }
         }
+        return $this;
     }
 
-    public function update() {
+    /**
+     * insert
+     * 
+     * @param  array $posts
+     * @return Class
+     */
+    public function update($posts=null) {
         $this->values = null;
+        if ($posts) $this->takeValues($posts);
+
+        $this->validate();
+        if ($this->errors) return $this;
+
         $sql = $this->updateSql();
-        if (!$sql) return false;
+        if (!$sql) {
+            $this->addError('sql', 'error');
+            return $this;
+        }
 
         $result = $this->query($sql);
         if ($result !== false) {
             $this->_value = $this->value;
-            return true;
         } else {
-            return false;
+            $this->addError('sql', 'error');
         }
+        return $this;
     }
 
     public function delete($id = null) {
@@ -249,6 +333,12 @@ class PgsqlEntity extends Entity {
     function add_left_join($t, $c)  { $this->add_join($t, $c, 'LEFT'); }
     function add_right_join($t, $c) { $this->add_join($t, $c, 'RIGHT'); }
 
+    /**
+     * sqlValue
+     * 
+     * @param  Object $value
+     * @return string
+     */
     private function sqlValue($value) {
         if (is_null($value)) {
             return "NULL";
@@ -263,6 +353,12 @@ class PgsqlEntity extends Entity {
         }
     }
 
+    /**
+     * whereSql
+     * 
+     * @param  array $params
+     * @return string
+     */
     private function whereSql($params = null) {
         $sql = '';
         if ($params['conditions']) $this->conditions = $params['conditions'];
@@ -270,6 +366,12 @@ class PgsqlEntity extends Entity {
         return $sql;
     }
 
+    /**
+     * orderBySql
+     * 
+     * @param  array $params
+     * @return string
+     */
     private function orderBySql($params = null) {
         $sql = '';
         if ($params['orders']) $this->orders = $params['orders'];
@@ -278,6 +380,11 @@ class PgsqlEntity extends Entity {
         return $sql;
     }
 
+    /**
+     * limitSql
+     * 
+     * @return string
+     */
     private function limitSql() {
         $sql = '';
         if (!isset($this->limit)) return;
@@ -286,6 +393,11 @@ class PgsqlEntity extends Entity {
         return $sql;
     }
 
+    /**
+     * offsetSql
+     * 
+     * @return string
+     */
     private function offsetSql() {
         $sql = '';
         if (!isset($this->offset)) return;
@@ -294,6 +406,12 @@ class PgsqlEntity extends Entity {
         return $sql;
     }
 
+    /**
+     * selectSql
+     * 
+     * @param  array $params
+     * @return string
+     */
     private function selectSql($params = null) {
         $sql = "SELECT {$this->name}.* FROM {$this->name}";
         $sql.= $this->whereSql($params);
@@ -304,6 +422,12 @@ class PgsqlEntity extends Entity {
         return $sql;
     }
 
+    /**
+     * selectCountSql
+     * 
+     * @param  array $params
+     * @return string
+     */
     private function selectCountSql($params = null) {
         $sql = "SELECT count({$this->name}.*) FROM {$this->name}";
         $sql.= $this->whereSql($params);
@@ -312,6 +436,11 @@ class PgsqlEntity extends Entity {
         return $sql;
     }
 
+    /**
+     * insertSql
+     * 
+     * @return string
+     */
     private function insertSql() {
         if (!$this->value) return;
         unset($this->value[$this->id_column]);
@@ -331,7 +460,13 @@ class PgsqlEntity extends Entity {
         return $sql;
     }
 
+    /**
+     * updateSql
+     * 
+     * @return string
+     */
     private function updateSql() {
+        $sql = '';
         $changes = $this->changes();
         if (!$changes) return;
 
@@ -351,7 +486,13 @@ class PgsqlEntity extends Entity {
         return $sql;
     }
 
+    /**
+     * deleteSql
+     * 
+     * @return string
+     */
     private function deleteSql() {
+        $sql = '';
         if (!$this->id) return;
         $where = $this->whereSql($params);
         if ($where) $sql = "DELETE FROM {$this->name} {$where};";
