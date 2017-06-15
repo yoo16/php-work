@@ -117,11 +117,13 @@ class Entity {
         if ($this->id) $this->value[$this->id_column] = $this->id;
         $this->errors = array();
         foreach ($this->columns as $column_name => $column) {
+            $value = isset($this->value[$column_name]) ? $this->value[$column_name] : null;
             if ($column === $this->id_column) continue;
-            if ($column['required'] && (is_null($this->value[$column_name]) || $this->value[$column_name] === '')) {
+            if (isset($column['required']) && $column['required'] && (is_null($value) || $value === '')) {
                 $this->addError($column_name, 'required');
             } else {
-                $this->value[$column_name] = $this->cast($type, $this->value[$column_name]);
+                $type = $column['type'];
+                $this->value[$column_name] = $this->cast($type, $value);
             }
         }
         return $this;

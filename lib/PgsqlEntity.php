@@ -151,7 +151,22 @@ class PgsqlEntity extends Entity {
     }
 
     /**
-     * select
+     * get
+     * 
+     * @param  int $id
+     * @param  array $params
+     * @return array
+     */
+    public function get($id, $params=null) {
+        $this->values = null;
+        if (!$id) return;
+        $this->where("{$this->id_column} = {$id}")
+             ->selectOne($params);
+        return $this;
+    }
+
+    /**
+     * fetch
      * 
      * @param  int $id
      * @param  array $params
@@ -237,10 +252,12 @@ class PgsqlEntity extends Entity {
      * insert
      * 
      * @param  array $posts
+     * @param  int $id
      * @return Class
      */
-    public function update($posts=null) {
+    public function update($posts = null, $id = null) {
         $this->values = null;
+        if ($id) $this->get($this->params['id']);
         if ($posts) $this->takeValues($posts);
 
         $this->validate();
