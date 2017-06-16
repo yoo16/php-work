@@ -348,7 +348,6 @@ class Entity {
                 }
             }
         }
-        //return $this->value;
         return $row;
     }
 
@@ -389,6 +388,23 @@ class Entity {
         $options['unselect'] =  (isset($params['unselect'])) ? $params['unselect'] : true;
         $options['label_separator'] = (isset($params['label_separator'])) ? $params['label_separator'] : ' ';
         return $options;
+    }
+
+   /**
+    * valuesWithKey
+    *
+    * @param string $key
+    * @return array
+    */
+    function valuesWithKey($key) {
+        $values = null;
+        if ($this->values) {
+            foreach ($this->values as $value) {
+                $id = $value[$key];
+                $values[$id] = $value;
+            }
+        }
+        return $values;
     }
 
 }

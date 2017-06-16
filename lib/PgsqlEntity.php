@@ -15,6 +15,9 @@ class PgsqlEntity extends Entity {
     var $pg_info = PG_INFO;
     var $values = null;
     var $value = null;
+    var $conditions = null;
+    var $orders = null;
+    var $limits = null;
 
     /**
      * initDb
@@ -82,6 +85,16 @@ class PgsqlEntity extends Entity {
         }
         $results['pg_info'] = PG_INFO;
         return $results;
+    }
+
+    /**
+     * addColumn
+     * 
+     * @return resource
+     */
+    public function addColumn($column, $type) {
+        $sql = "ALTER TABLE {$this->name} ADD COLUMN {$column} {$type};";
+        return $this->query($sql);
     }
 
     /**
@@ -170,14 +183,41 @@ class PgsqlEntity extends Entity {
      * 
      * @param  int $id
      * @param  array $params
-     * @return array
+     * @return Object
      */
     public function fetch($id, $params=null) {
         $this->values = null;
-        if (!$id) return;
+        if (!$id) return $this;
         $this->where("{$this->id_column} = {$id}")
              ->selectOne($params);
         return $this->value;
+    }
+
+
+    /**
+     * fetch
+     * 
+     * @param  int $id
+     * @param  array $params
+     * @return array
+     */
+    public function fetchValue($id, $params=null) {
+        return $this->fetch($id, $params)->value;
+    }
+
+    /**
+     * select
+     * 
+     * @param  array $params
+     * @return Class
+     */
+    public function select($params = null) {
+        if (isset($params['id_index'])) $this->id_index = $params['id_index'];
+        $sql = $this->selectSql($params);
+        $values = $this->fetch_rows($sql);
+        $this->values = $this->castRows($values, $params);
+        unset($this->id);
+        return $this;
     }
 
     /**
@@ -186,12 +226,8 @@ class PgsqlEntity extends Entity {
      * @param  array $params
      * @return array
      */
-    public function select($params = null) {
-        $sql = $this->selectSql($params);
-        $values = $this->fetch_rows($sql);
-        $this->values = $this->castRows($values, $params);
-        unset($this->id);
-        return $this->values;
+    public function selectValues($params = null) {
+        return $this->select($params)->values;
     }
 
     /**
@@ -210,7 +246,17 @@ class PgsqlEntity extends Entity {
             $this->id = (int) $this->value[$this->id_column];
         }
         $this->_value = $this->value;
-        return $this->value;
+        return $this;
+    }
+
+    /**
+     * selectOne
+     * 
+     * @param  array $params
+     * @return array
+     */
+    public function selectOneValue($params = null) {
+        return $this->selectOne($params)->value;
     }
 
     /**
@@ -279,21 +325,18 @@ class PgsqlEntity extends Entity {
     }
 
     public function delete($id = null) {
-        $this->values = null;
         if (is_numeric($id)) $this->id = (int) $id;
-        if (is_numeric($this->id)) {
-            $this->conditions = null;
-            $this->conditions[] = "{$this->id_column} = {$this->id}";
-        }
+        if (is_numeric($this->id)) $this->initWhere("{$this->id_column} = {$this->id}");
 
         $sql = $this->deleteSql();
         $result = $this->query($sql);
 
-        if ($result !== false) {
+        if ($result === false) {
+            $this->addError($this->name, 'delete');
+        } else {
             unset($this->id);
-            return true;
         }
-        return false;
+        return $this;
     }
 
     public function where($condition) {
@@ -309,13 +352,13 @@ class PgsqlEntity extends Entity {
     }
 
     public function initWhere($condition) {
-        $this->condition = null;
+        $this->conditions = null;
         return $this->where($condition);
     }
 
     public function initOrder($order) {
-        $this->order = null;
-        return $this->orders($order);
+        $this->orders = null;
+        return $this->order($order);
     }
 
     public function limit($limit) {
@@ -328,9 +371,10 @@ class PgsqlEntity extends Entity {
         return $this;
     }
 
-    function set_join($table, $conditions, $type = 'INNER') {
+    public function join($table, $type = 'INNER') {
         $this->joins = array();
         $this->add_join($table, $conditions, $type);
+        return;
     }
 
     function add_join($table, $conditions, $type = 'INNER') {
@@ -378,7 +422,7 @@ class PgsqlEntity extends Entity {
      */
     private function whereSql($params = null) {
         $sql = '';
-        if ($params['conditions']) $this->conditions = $params['conditions'];
+        if (isset($params['conditions'])) $this->conditions = $params['conditions'];
         if ($condition = $this->sqlConditions($this->conditions)) $sql = " WHERE {$condition}";
         return $sql;
     }
@@ -391,8 +435,8 @@ class PgsqlEntity extends Entity {
      */
     private function orderBySql($params = null) {
         $sql = '';
-        if ($params['orders']) $this->orders = $params['orders'];
-        if (!isset($this->orders)) return;
+        if (isset($params['orders'])) $this->orders = $params['orders'];
+        if (!$this->orders) return;
         if ($order = $this->sqlOrders($this->orders)) $sql = " ORDER BY {$order}";
         return $sql;
     }
@@ -621,7 +665,7 @@ class PgsqlEntity extends Entity {
     function sqlConditions($conditions) {
         if (is_null($conditions)) return;
         if (is_int($conditions)) {
-            $condition = "{$this->id_column} = {$conditions}";
+            $condition = "{$this->name}.{$this->id_column} = {$conditions}";
         } elseif (is_string($conditions)) {
             $condition = $conditions;
         } elseif (is_array($conditions)) {
