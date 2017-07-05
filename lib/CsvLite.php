@@ -27,12 +27,24 @@ class CsvLite {
      *
      **/
     function __construct($file_path=null) {
-        if (!file_exists($file_path)) {
-            $file_path = BASE_DIR."db/records/{$file_path}.csv";
-        }
-        if ($file_path) {
+        $file_path = CsvLite::csvPath($file_path);
+        if (file_exists($file_path)) {
             $this->file_path = $file_path;
         }
+    }
+
+    /**
+     * csvPath
+     *
+     * @param string $csv_name
+     * @return string
+     **/
+    static function csvPath($csv_name) {
+        if (!$csv_name) return;
+        $file_path = BASE_DIR."db/records/{$csv_name}.csv";
+        if (!file_exists($file_path)) $file_path = BASE_DIR."db/records/{$csv_name}";
+        if (!file_exists($file_path)) $file_path = BASE_DIR."{$csv_name}";
+        if (file_exists($file_path)) return $file_path;
     }
 
     /**
@@ -42,9 +54,7 @@ class CsvLite {
      * @return Array
      **/
     static function options($file_path) {
-        if (!file_exists($file_path)) {
-            $file_path = BASE_DIR."db/records/{$file_path}.csv";
-        }
+        $file_path = CsvLite::csvPath($file_path);
         if (file_exists($file_path)) {
             $fp = fopen($file_path, "r");
             $columns = fgetcsv($fp, 1024, ",");
@@ -68,10 +78,8 @@ class CsvLite {
      * @return Array
      **/
      static function optionValues($file_path, $id_column='value', $label_column='label') {
-        if (!file_exists($file_path)) {
-            $file_path = BASE_DIR."db/records/{$file_path}.csv";
-        }
-        if (!file_exists($file_path)) return;
+        $file_path = CsvLite::csvPath($file_path);
+        if (!$file_path || !file_exists($file_path)) return;
         $values = self::options($file_path);
         if (is_array($values)) {
             foreach($values as $value) {
@@ -82,45 +90,17 @@ class CsvLite {
     }
 
    /**
-    * formOptions
+    * form
     *
-    * @param Array $params
-    * @return Array
+    * @param string $csv_path
+    * @param string $name
+    * @param array $params
+    * @return array
     */ 
-    static function formOptions($params) {
-        $csv_name = $params['csv_name'];
-        $name = $params['name'];
-        $value_column = ($params['value_column'])? $params['value_column'] : 'value';
-        $label_column = ($params['label_column'])? $params['label_column'] : 'label';
-        $selected = $params['selected'];
-        $conditions = $params['conditions'];
-        $orders = $params['orders'];
-        $id_column = $params['id_column'];
-        $class_name = $params['class'];
-        $js = $params['js'];
-
-        $file_path = BASE_DIR."db/records/{$csv_name}.csv";
-        $instance = new self($file_path);
-        $values = $instance->results();
-        if (is_array($values)) {
-            foreach ($values as $key => $value) {
-                $_options['value'] = $value[$value_column];
-                $_options['label'] = $value[$label_column];
-                $_options['class'] = $value['class'];
-                $_options['id'] = $value['id'];
-                $option_values[] = $_options;
-            }
-            $options['id'] = $params['id'];
-            $options['unselect'] = $params['unselect'];
-            $options['name'] = $name;
-            $options['values'] = $option_values;
-            $options['value_key'] = 'value';
-            $options['label_key'] = 'label';
-            $options['selected'] = $selected;
-            $options['class'] = $class_name;
-            $options['js'] = $js;
-            return $options;
-        }
+    static function form($csv_path, $name, $params = null) {
+        $params['values'] = CsvLite::options($csv_path);
+        $params['name'] = $name;
+        return $params;
     }
     
     /**
@@ -185,24 +165,24 @@ class CsvLite {
         }
     }
 
-    /**
-     * values_for_csv_name
-     *
-     * @param Array $csv_name
-     * @return Array
-     **/
-     function values_for_csv_name($csv_name) {
-        $file_path = BASE_DIR."db/records/{$csv_name}.csv";
-        if (file_exists($file_path)) {
-            $values = $this->_readCsv($file_path);
 
-            if (is_array($values)) {
-                foreach ($values as $key => $value) {
-                    $results[$value['value']] = $value['label'];
-                }
+    /**
+     * valuesForCsvName
+     *
+     * @param string $csv_name
+     * @return array
+     **/
+     function valuesForCsvName($csv_name) {
+        $file_path = CsvLite::csvPath($file_path);
+        if (!$file_path || !file_exists($file_path)) return;
+
+        $values = $this->_readCsv($file_path);
+        if (is_array($values)) {
+            foreach ($values as $key => $value) {
+                $results[$value['value']] = $value['label'];
             }
-            return $results;
         }
+        return $results;
     }
 
     /**
@@ -516,5 +496,3 @@ class CsvLite {
     }
 
 }
-
-?>

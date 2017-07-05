@@ -44,6 +44,19 @@ class PgsqlEntity extends Entity {
     }
 
     /**
+    * checkInfo
+    * 
+    * @param  array $values
+    * @return array
+    */
+    static function checkInfo($values) {
+        if (!$values['user']) $values['user'] = 'postgres';
+        if (!$values['host']) $values['host'] = 'localhost';
+        if (!$values['port']) $values['port'] = '5432';
+        return $values;
+    }
+
+    /**
     * createDatabase
     * 
     * @param  array $values
@@ -55,11 +68,9 @@ class PgsqlEntity extends Entity {
         $database_name = $values['dbname'];
         if (!$database_name) return;
 
-        $user = $values['user']? $values['user'] : 'postgres';
-        $host = $values['host']? $values['host'] : 'localhost';
-        $port = $values['port']? $values['port'] : '5432';
+        $values = self::checkInfo($values);
 
-        $cmd = "createdb -U {$user} -E UTF8 --host {$host} --port {$port} {$database_name} 2>&1";
+        $cmd = "createdb -U {$values['user']} -E UTF8 --host {$values['host']} --port {$values['port']} {$database_name} 2>&1";
 
         exec($cmd, $output, $return);
 
@@ -81,11 +92,9 @@ class PgsqlEntity extends Entity {
         $database_name = $values['dbname'];
         if (!$database_name) return;
 
-        $user = $values['user']? $values['user'] : 'postgres';
-        $host = $values['host']? $values['host'] : 'localhost';
-        $port = $values['port']? $values['port'] : '5432';
+        $values = self::checkInfo($values);
 
-        $cmd = "dropdb -U {$database_user} --host {$host} --port {$port} {$database_name} 2>&1";
+        $cmd = "dropdb -U {$values['user']} --host {$values['host']} --port {$values['port']} {$database_name} 2>&1";
 
         exec($cmd, $output, $return);
 
@@ -122,12 +131,13 @@ class PgsqlEntity extends Entity {
     }
 
     /**
-    * addTable
+    * createTable
     * 
+    * @param string $table
     * @return resource
     */
-    public function createTable($table_name, $type) {
-        $sql = "CREATE TABLE {$table_name} (
+    public function createTable($table) {
+        $sql = "CREATE TABLE {$table} (
                 id SERIAL PRIMARY KEY NOT NULL
                 , created_at TIMESTAMP NULL DEFAULT NULL 
                 , updated_at TIMESTAMP NULL
@@ -138,31 +148,64 @@ class PgsqlEntity extends Entity {
     /**
     * renameTable
     * 
+    * @param string $table
+    * @param string $new_name
     * @return resource
     */
-    public function renameTable($table_name, $new_name) {
-        $sql = "ALTER TABLE {$table_name} RENAME TO {$new_name};";
+    public function renameTable($table, $new_name) {
+        $sql = "ALTER TABLE {$table} RENAME TO {$new_name};";
+        return $this->query($sql);
+    }
+
+
+    /**
+    * renameColumn
+    * 
+    * @param string $table
+    * @param string $column
+    * @param string $new_column
+    * @return resource
+    */
+    public function renameColumn($table, $column, $new_column) {
+        $sql = "ALTER TABLE {$table} RENAME COLUMN {$column} TO {$new_column};";
         return $this->query($sql);
     }
 
     /**
     * dropTable
     * 
+    * @param string $table
     * @return resource
     */
-    public function dropTable($table_name, $type) {
-        $sql = "DROP TABLE {$table_name};";
+    public function dropTable($table) {
+        $sql = "DROP TABLE {$table};";
         return $this->query($sql);
     }
 
+    /**
+    * dropColumn
+    * 
+    * @param string $table
+    * @param string $column
+    * @param string $column
+    * @return resource
+    */
+    public function dropColumn($table, $column) {
+        $sql = "ALTER TABLE {$table} DROP COLUMN {$column};";
+        var_dump($sql);
+        return $this->query($sql);
+    }
 
     /**
     * addColumn
     * 
+    * @param string $table
+    * @param string $column
+    * @param string $type
     * @return resource
     */
-    public function addColumn($column, $type) {
-        $sql = "ALTER TABLE {$this->name} ADD COLUMN {$column} {$type};";
+    public function addColumn($table, $column, $type) {
+        $sql = "ALTER TABLE {$table} ADD COLUMN {$column} {$type};";
         return $this->query($sql);
     }
 
@@ -342,8 +385,6 @@ class PgsqlEntity extends Entity {
         $this->validate();
         if ($this->errors) return $this;
 
-        exit;
-
         $sql = $this->insertSql();
         if (!$sql) {
             $this->addError('sql', 'error');
@@ -394,6 +435,12 @@ class PgsqlEntity extends Entity {
         return $this;
     }
 
+    /**
+    * delete
+    * 
+    * @param  int $id
+    * @return Class
+    */
     public function delete($id = null) {
         if (is_numeric($id)) $this->id = (int) $id;
         if (is_numeric($this->id)) $this->initWhere("{$this->id_column} = {$this->id}");
@@ -409,11 +456,35 @@ class PgsqlEntity extends Entity {
         return $this;
     }
 
+    /**
+    * where
+    * 
+    * @param  string $condition
+    * @return Class
+    */
     public function where($condition) {
         $this->conditions[] = $condition; 
         return $this;
     }
 
+    /**
+    * initWhere
+    * 
+    * @param  string $condition
+    * @return Class
+    */
+    public function initWhere($condition) {
+        $this->conditions = null;
+        return $this->where($condition);
+    }
+
+    /**
+    * order
+    * 
+    * @param  string $column
+    * @param  bool $desc
+    * @return Class
+    */
     public function order($column, $desc=false) {
         $value['column'] = $column;
         $value['desc'] = $desc;
@@ -421,26 +492,46 @@ class PgsqlEntity extends Entity {
         return $this;
     }
 
-    public function initWhere($condition) {
-        $this->conditions = null;
-        return $this->where($condition);
-    }
-
-    public function initOrder($order) {
+    /**
+    * initOrder
+    * 
+    * @param  string $column
+    * @param  bool $desc
+    * @return Class
+    */
+    public function initOrder($column, $desc=false) {
         $this->orders = null;
-        return $this->order($order);
+        return $this->order($column, $desc);
     }
 
+    /**
+    * limit
+    * 
+    * @param  int $limit
+    * @return Class
+    */
     public function limit($limit) {
         $this->limit = $limit; 
         return $this;
     }
 
+    /**
+    * initWhere
+    * 
+    * @param  string $condition
+    * @return Class
+    */
     public function offset($offset) {
         $this->offset = $offset; 
         return $this;
     }
 
+    /**
+    * initWhere
+    * 
+    * @param  string $condition
+    * @return Class
+    */
     public function join($table, $type = 'INNER') {
         $this->joins = array();
         $this->add_join($table, $conditions, $type);
@@ -562,7 +653,7 @@ class PgsqlEntity extends Entity {
     private function selectCountSql($params = null) {
         $sql = "SELECT count({$this->name}.*) FROM {$this->name}";
         $sql.= $this->whereSql($params);
-    // GROUP BY {$group_str}) AS t";
+        // TODO GROUP BY
         $sql.= ";";
         return $sql;
     }
@@ -631,75 +722,7 @@ class PgsqlEntity extends Entity {
     }
 
 
-    //TODO
-    function results_sql() {
-        if (is_bool($this->group_columns) && $this->group_columns) {
-            $this->group_columns = array_keys($this->columns);
-            array_unshift($this->group_columns, "{$this->name}.{$this->id_column}");
-        }
-        if (empty($this->group_columns)) {
-            $select_str = $this->name . '.*';
-        } else {
-            foreach ($this->group_columns as $i => $group_column) {
-                if (!strpos($group_column, '.') && array_key_exists($group_column, $this->columns)) {
-                    $this->group_columns[$i] = $this->name . "." . $group_column;
-                    if (!empty($select_str)) $select_str .= ", ";
-                    $select_str .=  $this->group_columns[$i];
-                } elseif (!array_key_exists($group_column, $this->extra_columns)) {
-                    if (!empty($select_str)) $select_str .= ", ";
-                    $select_str .=  $group_column;
-                }
-            }
-            $group_str = implode(', ', $this->group_columns);
-        }
-
-        if (is_array($this->extra_columns)) {
-            foreach ($this->extra_columns as $extra_column => $def) {
-                $extra_clause = substr($def, 2);
-                if ($extra_clause) {
-                    if (!empty($select_str)) $select_str .= ", ";
-                    $select_str .= "{$extra_clause} AS {$extra_column}";
-                }
-            }
-        }
-
-        $from_str = ($this->from_sql) ? "({$this->from_sql}) AS {$this->name}" : $this->name;
-        if (is_array($this->joins)) {
-            foreach ($this->joins as $join) {
-                $from_str .= " " . $join;
-            }
-        }
-
-        $sql = "SELECT {$select_str} FROM {$from_str}";
-
-        if (!empty($this->conditions)) {
-            foreach ($this->conditions as $condition) {
-                if (isset($conditions)) $conditions .= ' AND ';
-                $conditions .= "({$condition})";
-            }
-        }
-        if (isset($conditions)) $sql .= " WHERE {$conditions}";
-
-        if (isset($group_str)) {
-            $sql .= " GROUP BY {$group_str}";
-        }
-
-        if (!empty($this->orders)) {
-            foreach ($this->orders as $order) {
-                if (isset($orders)) $orders .= ', ';
-                if (!strpos($order['column'], '.') && array_key_exists($order['column'], $this->columns)) {
-                    $orders .= $this->name . '.' . $order['column'];
-                } else {
-                    $orders .= $order['column'];
-                }
-                if ($order['desc']) {
-                    $orders .= ' DESC';
-                }
-            }
-        }
-        if (isset($orders)) $sql .= " ORDER BY {$orders}";
-        return $sql;
-    }
+    //TODO GROUP BY
 
     /**
     * count
@@ -708,14 +731,7 @@ class PgsqlEntity extends Entity {
     * @return int
     **/
     public function count() {
-    //TODO
-        $from_str = ($this->from_sql) ? "({$this->from_sql}) AS {$this->name}" : $this->name;
-        if (is_array($this->joins)) {
-            foreach ($this->joins as $join) {
-                $from_str .= " " . $join;
-            }
-        }
-
+        //TODO GROUP BY
         if (is_bool($this->group_columns) && $this->group_columns) {
             $this->group_columns = array_keys($this->columns);
             array_unshift($this->group_columns, $this->id_column);
@@ -778,34 +794,22 @@ class PgsqlEntity extends Entity {
     /**
     * attribute informations
     * 
-    * @param string $name
+    * @param string $table
     * @return array
     **/
-    public function attributeValues($table_name) {
-        $comments = $this->columnComment($table_name);
-        if ($comments) {
-            foreach ($comments as $comment) {
-                $column_name = $comment['attname'];
-                $column_comments[$column_name] = $comment['description'];
-            }
-        }
+    public function attributeValues($table) {
+        $column_comments = $this->columnCommentArray($table);
 
-        $_attributes = $this->attribute($table_name);
-        if ($_attributes) {
-            foreach ($_attributes as $attribute) {
-                $column_name = $attribute['attname'];
-                $attributes[$column_name] = $attribute;
-            }
-        }
+        $attributes = $this->attributeArray($table);
 
-        $pg_primary_keys = $this->peimaryKeys($this->database->value['name'], $table_name);
+        $pg_primary_keys = $this->peimaryKeys($this->database->value['name'], $table);
         if ($pg_primary_keys) {
             foreach ($pg_primary_keys as $primary_key) {
                 $primary_keys = $primary_key['column_name'];
             }
         }
 
-        $pg_attributes = $this->pgAttributes($table_name);
+        $pg_attributes = $this->pgAttributes($table);
         if ($pg_attributes) {
             foreach ($pg_attributes as $pg_attribute) {
                 $column_name = $pg_attribute['column_name'];
@@ -822,6 +826,42 @@ class PgsqlEntity extends Entity {
         }
         return $values;
     }
+
+    /**
+    * columnCommentArray
+    * 
+    * @param string $table
+    * @return array
+    **/
+    public function columnCommentArray($table) {
+        $comments = $this->columnComment($table);
+        if ($comments) {
+            foreach ($comments as $comment) {
+                $column_name = $comment['attname'];
+                $column_comments[$column_name] = $comment['description'];
+            }
+        }
+        return $column_comments;
+    }
+
+    /**
+    * attributeArray
+    * 
+    * @param string $table
+    * @return array
+    **/
+    public function attributeArray($table) {
+        $_attributes = $this->attribute($table);
+
+        if ($_attributes) {
+            foreach ($_attributes as $attribute) {
+                $column_name = $attribute['attname'];
+                $attributes[$column_name] = $attribute;
+            }
+        }
+        return $attributes;
+    }
+
 
     /**
     * pg_database
@@ -872,54 +912,71 @@ class PgsqlEntity extends Entity {
     /**
     * pg_tables (table_name)
     *
-    * @param string $table_name
+    * @param string $table
     * @return array
     **/
-    function pgTableByTableName($table_name) {
-        if (!$table_name) return;
-        $sql.= "SELECT * FROM pg_tables WHERE schemaname = 'public' AND tablename = '{$table_name}';";
+    function pgTableByTableName($table) {
+        if (!$table) return;
+        $sql.= "SELECT * FROM pg_tables WHERE schemaname = 'public' AND tablename = '{$table}';";
         return $this->fetch_row($sql);
     }
 
     /**
     * columns
     *
-    * @param string $table_name
+    * @param string $table
     * @return array
     **/
-    function pgAttributes($table_name = null) {
+    function pgAttributes($table = null) {
         $sql = "SELECT * FROM information_schema.columns";
-        if ($table_name) $sql.= " WHERE table_name = '{$table_name}'";
-        $sql.= " ORDER BY ordinal_position;";
+        if ($table) $sql.= " WHERE table_name = '{$table}'
+                             AND is_updatable = 'YES'
+                             ORDER BY ordinal_position;";
         return $this->fetch_rows($sql);
     }
 
     /**
-    * pg_attribute
+    * column
     *
-    * @param string $table_name
-    * @param string $attribute_name
+    * @param string $table
     * @return array
     **/
-    function pgAttributeByTablenameAttributename($table_name, $attribute_name) {
-        $sql.= "SELECT * FROM pg_attribute WHERE";
-        $sql.= " attnum > 0";
-        $sql.= " AND attrelid = (SELECT oid FROM pg_class WHERE relname = '{$table_name}' AND relnamespace = 2200)";
-        $sql.= " AND attname = '{$attribute_name}';";
-        return $this->query($sql);
+    function pgAttribute($table, $column) {
+        $sql = "SELECT * FROM information_schema.columns
+                         WHERE table_name = '{$table}'
+                         AND column_name = '{$column}'
+                         AND is_updatable = 'YES'
+                         ORDER BY ordinal_position;";
+        return $this->fetch_row($sql);
     }
 
     /**
     * pg_attribute
     *
-    * @param string $table_name
+    * @param string $table
+    * @param string $column
+    * @return array
+    **/
+    function pgAttributeByColumn($table, $column) {
+        $sql.= "SELECT * FROM pg_attribute WHERE
+                attnum > 0
+                AND attname = '{$column}';";
+        var_dump($sql);
+        //AND attrelid = (SELECT oid FROM pg_class WHERE relname = '{$table}')
+        return $this->fetch_row($sql);
+    }
+
+    /**
+    * pg_attribute
+    *
+    * @param string $table
     * @param int $attnum
     * @return array
     **/
-    function pgAttributeByTablenameAttnum($table_name, $attnum) {
+    function pgAttributeByTablenameAttnum($table, $attnum) {
         $sql.= "SELECT * FROM pg_attribute WHERE";
         $sql.= " attnum = {$attnum}";
-        $sql.= " AND attrelid = (SELECT oid FROM pg_class WHERE relname = '{$table_name}' AND relnamespace = 2200);";
+        $sql.= " AND attrelid = (SELECT oid FROM pg_class WHERE relname = '{$table}' AND relnamespace = 2200);";
         return $this->fetch_row($sql);
     }
 
@@ -958,16 +1015,21 @@ class PgsqlEntity extends Entity {
         AND att.attnum > 0
         AND substr(type.typname,1,1) = '_'
         AND stat.relname = '{$relname}'";
+
+        // $sql = "SELECT * FROM pg_attribute 
+        //         WHERE attrelid = '{$relname}'::regclass
+        //         AND pg_attribute.attnum > 0
+        //         ";
         return $this->fetch_rows($sql);
     }
 
-    function updateTableComment($table_name, $comment) {
-        $sql = "COMMENT ON TABLE {$table_name} IS '{$comment}';";
+    function updateTableComment($table, $comment) {
+        $sql = "COMMENT ON TABLE {$table} IS '{$comment}';";
         return $this->fetch_row($sql);
     }
 
-    function updateColumnComment($table_name, $column_name, $comment) {
-        $sql = "COMMENT ON COLUMN {$table_name}.{$column_name} IS '{$comment}';";
+    function updateColumnComment($table, $column_name, $comment) {
+        $sql = "COMMENT ON COLUMN {$table}.{$column_name} IS '{$comment}';";
         return $this->fetch_row($sql);
     }
 
@@ -983,7 +1045,7 @@ class PgsqlEntity extends Entity {
      * comments
      *
      * @param  string $database_name
-     * @param  string $table_name
+     * @param  string $table
      * @return array
      */
     function comments() {
@@ -1003,14 +1065,14 @@ class PgsqlEntity extends Entity {
     /**
      * table comment
      *
-     * @param  string $table_name
+     * @param  string $table
      * @return array
      */
-    function tableComment($table_name) {
-        if (!$table_name) return;
+    function tableComment($table) {
+        if (!$table) return;
         $sql = "SELECT pg_stat_all_tables.relname, pg_description.description
         FROM pg_stat_all_tables, pg_description
-        WHERE pg_stat_all_tables.relname='{$table_name}'";
+        WHERE pg_stat_all_tables.relname='{$table}'";
         return $this->fetch_row($sql);
     }
 
@@ -1018,15 +1080,15 @@ class PgsqlEntity extends Entity {
      * column comment
      *
      * @param  string $database_name
-     * @param  string $table_name
+     * @param  string $table
      * @return array
      */
-    function columnComment($table_name) {
+    function columnComment($table) {
         $sql = "SELECT psat.relname, pa.attname, pd.description
         FROM pg_stat_all_tables psat ,pg_description pd ,pg_attribute pa
         WHERE
-        psat.schemaname=(SELECT schemaname FROM pg_stat_user_tables WHERE relname = '{$table_name}')
-        AND psat.relname='{$table_name}'
+        psat.schemaname=(SELECT schemaname FROM pg_stat_user_tables WHERE relname = '{$table}')
+        AND psat.relname='{$table}'
         AND psat.relid=pd.objoid
         AND pd.objsubid <> 0
         AND pd.objoid = pa.attrelid
@@ -1040,10 +1102,10 @@ class PgsqlEntity extends Entity {
      * primary keys
      *
      * @param  string $database_name
-     * @param  string $table_name
+     * @param  string $table
      * @return array
      */
-    function peimaryKeys($database_name, $table_name = null) {
+    function peimaryKeys($database_name, $table = null) {
         $sql = "SELECT ccu.column_name, tc.table_name
         FROM
         information_schema.table_constraints tc
@@ -1056,9 +1118,21 @@ class PgsqlEntity extends Entity {
         AND tc.table_name=ccu.table_name
         AND tc.constraint_name=ccu.constraint_name";
 
-        if ($table_name) $sql.= " AND tc.table_name = '{$table_name}'";
+        if ($table) $sql.= " AND tc.table_name = '{$table}'";
 
         return $this->fetch_rows($sql);
+    }
+
+    /**
+     * not null
+     *
+     * @param  string $table
+     * @param  string $column
+     * @return array
+     */
+    public function setNotNull($table, $column) {
+        $sql = "ALTER TABLE {$table} ALTER COLUMN {$column} SET NOT NULL;";
+        return $this->query($sql);
     }
 
 }
