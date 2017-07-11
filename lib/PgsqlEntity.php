@@ -13,6 +13,10 @@ class PgsqlEntity extends Entity {
     var $group_columns = false;
     var $joins = array();
     var $pg_info = PG_INFO;
+    var $dbname = null;
+    var $host = 'localhost';
+    var $user = 'postgres';
+    var $port = 5432;
     var $values = null;
     var $value = null;
     var $conditions = null;
@@ -137,7 +141,9 @@ class PgsqlEntity extends Entity {
     * @return resource
     */
     public function createTable($table) {
-        $sql = "CREATE TABLE {$table} (
+        if (!$table) return;
+
+        $sql = "CREATE TABLE \"{$table}\" (
                 id SERIAL PRIMARY KEY NOT NULL
                 , created_at TIMESTAMP NULL DEFAULT NULL 
                 , updated_at TIMESTAMP NULL
@@ -149,14 +155,16 @@ class PgsqlEntity extends Entity {
     * renameTable
     * 
     * @param string $table
-    * @param string $new_name
+    * @param string $new_table
     * @return resource
     */
-    public function renameTable($table, $new_name) {
-        $sql = "ALTER TABLE {$table} RENAME TO {$new_name};";
+    public function renameTable($table, $new_table) {
+        if (!$table) return;
+        if ($table == $new_table) return;
+
+        $sql = "ALTER TABLE \"{$table}\" RENAME TO \"{$new_table}\";";
         return $this->query($sql);
     }
-
 
     /**
     * renameColumn
@@ -167,7 +175,28 @@ class PgsqlEntity extends Entity {
     * @return resource
     */
     public function renameColumn($table, $column, $new_column) {
-        $sql = "ALTER TABLE {$table} RENAME COLUMN {$column} TO {$new_column};";
+        if (!$table) return;
+        if (!$column) return;
+        if ($column == $new_column) return;
+
+        $sql = "ALTER TABLE \"{$table}\" RENAME COLUMN \"{$column}\" TO \"{$new_column}\";";
+        return $this->query($sql);
+    }
+
+    /**
+    * renameColumn
+    * 
+    * @param string $table
+    * @param string $column
+    * @param string $type
+    * @return resource
+    */
+    public function changeColumnType($table, $column, $type) {
+        if (!$table) return;
+        if (!$column) return;
+        if (!$type) return;
+
+        $sql = "ALTER TABLE \"{$table}\" ALTER COLUMN \"{$column}\" TYPE \"{$type}\";";
         return $this->query($sql);
     }
 
@@ -178,7 +207,9 @@ class PgsqlEntity extends Entity {
     * @return resource
     */
     public function dropTable($table) {
-        $sql = "DROP TABLE {$table};";
+        if (!$table) return;
+
+        $sql = "DROP TABLE \"{$table}\";";
         return $this->query($sql);
     }
 
@@ -191,8 +222,9 @@ class PgsqlEntity extends Entity {
     * @return resource
     */
     public function dropColumn($table, $column) {
-        $sql = "ALTER TABLE {$table} DROP COLUMN {$column};";
-        var_dump($sql);
+        if (!$table) return;
+        if (!$column) return;
+        $sql = "ALTER TABLE \"{$table}\" DROP COLUMN \"{$column}\";";
         return $this->query($sql);
     }
 
@@ -205,7 +237,10 @@ class PgsqlEntity extends Entity {
     * @return resource
     */
     public function addColumn($table, $column, $type) {
-        $sql = "ALTER TABLE {$table} ADD COLUMN {$column} {$type};";
+        if (!$table) return;
+        if (!$column) return;
+        if (!$type) return;
+        $sql = "ALTER TABLE \"{$table}\" ADD COLUMN \"{$column}\" {$type};";
         return $this->query($sql);
     }
 
@@ -482,12 +517,12 @@ class PgsqlEntity extends Entity {
     * order
     * 
     * @param  string $column
-    * @param  bool $desc
+    * @param  string $option
     * @return Class
     */
-    public function order($column, $desc=false) {
+    public function order($column, $option = null) {
         $value['column'] = $column;
-        $value['desc'] = $desc;
+        $value['option'] = $option;
         $this->orders[] = $value; 
         return $this;
     }
@@ -496,12 +531,12 @@ class PgsqlEntity extends Entity {
     * initOrder
     * 
     * @param  string $column
-    * @param  bool $desc
+    * @param  string $option
     * @return Class
     */
-    public function initOrder($column, $desc=false) {
+    public function initOrder($column, $option = null) {
         $this->orders = null;
-        return $this->order($column, $desc);
+        return $this->order($column, $option);
     }
 
     /**
@@ -541,13 +576,13 @@ class PgsqlEntity extends Entity {
     function add_join($table, $conditions, $type = 'INNER') {
         if (is_array($conditions)) {
             foreach ($conditions as $i => $condition) {
-                $conditions[$i] = "({$table}.{$condition})";
+                $conditions[$i] = "(\"{$table}\".{$condition})";
             }
             $conditions = implode(' AND ', $conditions);
         } else {
-            $conditions = "{$table}.{$conditions}";
+            $conditions = "\"{$table}\".{$conditions}";
         }
-        $this->joins[] = "{$type} JOIN {$table} ON {$conditions}";
+        $this->joins[] = "{$type} JOIN \"{$table}\" ON {$conditions}";
     }
 
     function set_left_join($t, $c)  { $this->set_join($t, $c, 'LEFT'); }
@@ -779,12 +814,11 @@ class PgsqlEntity extends Entity {
     * @return string
     **/
     function sqlOrders($orders) {
-        if ($this->columns['sort_order']) $orders[] = array('column' => 'sort_order', 'desc' => false);
+        if ($this->columns['sort_order']) $orders[] = array('column' => 'sort_order', 'option' => null);
         if (!$orders) return;
         foreach ($orders as $order) {
             if (array_key_exists($order['column'], $this->columns)) {
-                $asc_desc = ($order['desc']) ? 'DESC' : 'ASC';
-                $_orders[] = "{$this->name}.{$order['column']} {$asc_desc}";
+                $_orders[] = "{$this->name}.{$order['column']} {$order['option']}";
             }
         }
         $order = implode(', ', $_orders);
@@ -798,6 +832,7 @@ class PgsqlEntity extends Entity {
     * @return array
     **/
     public function attributeValues($table) {
+        if (!$table) return;
         $column_comments = $this->columnCommentArray($table);
 
         $attributes = $this->attributeArray($table);
@@ -864,6 +899,17 @@ class PgsqlEntity extends Entity {
 
 
     /**
+    * databases
+    * 
+    * @param string $name
+    * @return array
+    **/
+    function pgDatabases($name) {
+        $sql = "SELECT * FROM pg_database;";
+        return $this->fetch_rows($sql);
+    }
+
+    /**
     * pg_database
     * 
     * @param string $name
@@ -874,17 +920,6 @@ class PgsqlEntity extends Entity {
         return $this->fetch_row($sql);
     }
 
-    /**
-    * pg_class (relfilenode)
-    * relnamespace = 2200 は public
-    *
-    * @param int $relfilenode
-    * @return array
-    **/
-    function pgClassByRelfilenode($relfilenode) {
-        $sql = "SELECT * FROM pg_class WHERE relnamespace = 2200 AND relfilenode = '{$relfilenode}';";
-        return $this->fetch_row($sql);
-    }
 
     /**
     * pg_class
@@ -910,6 +945,30 @@ class PgsqlEntity extends Entity {
     }
 
     /**
+    * pg_class
+    * relnamespace = 2200 は public
+    *
+    * @param int $relfilenode
+    * @return array
+    **/
+    function pgClasses($relfilenode) {
+        $sql = "SELECT * FROM pg_class WHERE relnamespace = '2200' AND relkind = 'r';";
+        return $this->fetch_rows($sql);
+    }
+
+    /**
+    * pg_class (relfilenode)
+    * relnamespace = 2200 は public
+    *
+    * @param int $relfilenode
+    * @return array
+    **/
+    function pgClassByRelfilenode($relfilenode) {
+        $sql = "SELECT * FROM pg_class WHERE relnamespace = 2200 AND relfilenode = '{$relfilenode}';";
+        return $this->fetch_row($sql);
+    }
+
+    /**
     * pg_tables (table_name)
     *
     * @param string $table
@@ -917,7 +976,7 @@ class PgsqlEntity extends Entity {
     **/
     function pgTableByTableName($table) {
         if (!$table) return;
-        $sql.= "SELECT * FROM pg_tables WHERE schemaname = 'public' AND tablename = '{$table}';";
+        $sql = "SELECT * FROM pg_tables WHERE schemaname = 'public' AND tablename = '{$table}';";
         return $this->fetch_row($sql);
     }
 
@@ -958,11 +1017,9 @@ class PgsqlEntity extends Entity {
     * @return array
     **/
     function pgAttributeByColumn($table, $column) {
-        $sql.= "SELECT * FROM pg_attribute WHERE
-                attnum > 0
+        $sql = "SELECT * FROM pg_attribute WHERE attnum > 0
                 AND attname = '{$column}';";
-        var_dump($sql);
-        //AND attrelid = (SELECT oid FROM pg_class WHERE relname = '{$table}')
+        //AND attrelid = (SELECT oid FROM pg_class WHERE relname = '\"{$table}\"')
         return $this->fetch_row($sql);
     }
 
@@ -974,9 +1031,9 @@ class PgsqlEntity extends Entity {
     * @return array
     **/
     function pgAttributeByTablenameAttnum($table, $attnum) {
-        $sql.= "SELECT * FROM pg_attribute WHERE";
-        $sql.= " attnum = {$attnum}";
-        $sql.= " AND attrelid = (SELECT oid FROM pg_class WHERE relname = '{$table}' AND relnamespace = 2200);";
+        $sql = "SELECT * FROM pg_attribute WHERE
+                attnum = {$attnum}
+                AND attrelid = (SELECT oid FROM pg_class WHERE relname = '{$table}' AND relnamespace = 2200);";
         return $this->fetch_row($sql);
     }
 
@@ -984,12 +1041,23 @@ class PgsqlEntity extends Entity {
     * pg_attribute
     *
     * @param int $attrelid
-    * @param int $attnum
+    * @return array
+    **/
+    function pgAttributeByAttrelid($attrelid) {
+        $sql = "SELECT * FROM pg_attribute WHERE attrelid = {$attrelid};";
+        return $this->fetch_rows($sql);
+    }
+
+    /**
+    * pg_attribute
+    *
+    * @param int $attrelid
+    * @param string $attnum
     * @return array
     **/
     function pgAttributeByIdName($attrelid, $attname) {
-        $sql.= "SELECT * FROM pg_attribute WHERE attrelid = {$attrelid} AND attname = '{$attname}';";
-        return $this->query($sql);
+        $sql = "SELECT * FROM pg_attribute WHERE attrelid = {$attrelid} AND attname = '{$attname}';";
+        return $this->fetch_row($sql);
     }
 
     /**
@@ -1000,47 +1068,66 @@ class PgsqlEntity extends Entity {
     **/
     function attribute($relname) {
         $sql = "SELECT attrelid, attname , attnum , atttypid , atttypmod , typname , attnotnull
-        ,CASE con_u.contype WHEN 'u' THEN true ELSE false END AS is_unique
-        ,CASE con_p.contype WHEN 'p' THEN true ELSE false END AS is_primary_key
-        FROM pg_stat_user_tables stat
-        INNER JOIN pg_attribute att ON att.attrelid = stat.relid
-        INNER JOIN pg_type type ON att.atttypid = type.typelem
-        INNER JOIN pg_class class ON class.relname = stat.relname
-        LEFT JOIN pg_constraint con_u ON con_u.conkey[1] = att.attnum
-        AND con_u.contype = 'u' AND con_u.conrelid = class.oid
-        LEFT JOIN pg_constraint con_p ON att.attnum = ANY (con_p.conkey)
-        AND con_p.contype = 'p' AND con_p.conrelid = class.oid
-        WHERE 1 = 1
-        AND stat.schemaname = 'public'
-        AND att.attnum > 0
-        AND substr(type.typname,1,1) = '_'
-        AND stat.relname = '{$relname}'";
-
-        // $sql = "SELECT * FROM pg_attribute 
-        //         WHERE attrelid = '{$relname}'::regclass
-        //         AND pg_attribute.attnum > 0
-        //         ";
+                ,CASE con_u.contype WHEN 'u' THEN true ELSE false END AS is_unique
+                ,CASE con_p.contype WHEN 'p' THEN true ELSE false END AS is_primary_key
+                FROM pg_stat_user_tables stat
+                INNER JOIN pg_attribute att ON att.attrelid = stat.relid
+                INNER JOIN pg_type type ON att.atttypid = type.typelem
+                INNER JOIN pg_class class ON class.relname = stat.relname
+                LEFT JOIN pg_constraint con_u ON con_u.conkey[1] = att.attnum
+                AND con_u.contype = 'u' AND con_u.conrelid = class.oid
+                LEFT JOIN pg_constraint con_p ON att.attnum = ANY (con_p.conkey)
+                AND con_p.contype = 'p' AND con_p.conrelid = class.oid
+                WHERE 1 = 1
+                AND stat.schemaname = 'public'
+                AND att.attnum > 0
+                AND substr(type.typname,1,1) = '_'
+                AND stat.relname = '{$relname}'";
         return $this->fetch_rows($sql);
     }
 
+
+    /**
+     * update table comment
+     *
+     * @param  string $table
+     * @param  string $comment
+     * @return array
+     */
     function updateTableComment($table, $comment) {
-        $sql = "COMMENT ON TABLE {$table} IS '{$comment}';";
-        return $this->fetch_row($sql);
+        $sql = "COMMENT ON TABLE \"{$table}\" IS '{$comment}';";
+        return $this->query($sql);
     }
 
+    /**
+     * update column comment
+     *
+     * @param  string $table
+     * @param  string $column_name
+     * @param  string $comment
+     * @return array
+     */
     function updateColumnComment($table, $column_name, $comment) {
-        $sql = "COMMENT ON COLUMN {$table}.{$column_name} IS '{$comment}';";
-        return $this->fetch_row($sql);
+        $sql = "COMMENT ON COLUMN \"{$table}\".{$column_name} IS '{$comment}';";
+        return $this->query($sql);
     }
 
+    /**
+     * table comments
+     *
+     * @param  string $database_name
+     * @param  string $table
+     * @return array
+     */
     function tableComments() {
         $sql = "SELECT psut.relname ,pd.description
-            FROM pg_stat_user_tables psut ,pg_description pd
-            WHERE
-                psut.relid = pd.objoid
-                AND pd.objsubid = 0";
+                FROM pg_stat_user_tables psut ,pg_description pd
+                WHERE
+                    psut.relid = pd.objoid
+                    AND pd.objsubid = 0";
         return $this->fetch_rows($sql);
     }
+
     /**
      * comments
      *
@@ -1050,15 +1137,15 @@ class PgsqlEntity extends Entity {
      */
     function comments() {
         $sql = "SELECT psat.relname, pa.attname, pd.description
-        FROM pg_stat_all_tables psat ,pg_description pd ,pg_attribute pa
-        WHERE
-        psat.relid = pd.objoid
-        AND pd.objsubid <> 0
-        AND pd.objoid = pa.attrelid
-        AND pd.objsubid = pa.attnum
-        ORDER BY
-        pd.objsubid";
-        
+                FROM pg_stat_all_tables psat ,pg_description pd ,pg_attribute pa
+                WHERE
+                psat.relid = pd.objoid
+                AND pd.objsubid <> 0
+                AND pd.objoid = pa.attrelid
+                AND pd.objsubid = pa.attnum
+                ORDER BY
+                pd.objsubid";
+                
         return $this->fetch_rows($sql);
     }
 
@@ -1071,8 +1158,8 @@ class PgsqlEntity extends Entity {
     function tableComment($table) {
         if (!$table) return;
         $sql = "SELECT pg_stat_all_tables.relname, pg_description.description
-        FROM pg_stat_all_tables, pg_description
-        WHERE pg_stat_all_tables.relname='{$table}'";
+                FROM pg_stat_all_tables, pg_description
+                WHERE pg_stat_all_tables.relname='\"{$table}\"'";
         return $this->fetch_row($sql);
     }
 
@@ -1085,16 +1172,16 @@ class PgsqlEntity extends Entity {
      */
     function columnComment($table) {
         $sql = "SELECT psat.relname, pa.attname, pd.description
-        FROM pg_stat_all_tables psat ,pg_description pd ,pg_attribute pa
-        WHERE
-        psat.schemaname=(SELECT schemaname FROM pg_stat_user_tables WHERE relname = '{$table}')
-        AND psat.relname='{$table}'
-        AND psat.relid=pd.objoid
-        AND pd.objsubid <> 0
-        AND pd.objoid = pa.attrelid
-        AND pd.objsubid = pa.attnum
-        ORDER BY
-        pd.objsubid";
+                FROM pg_stat_all_tables psat ,pg_description pd ,pg_attribute pa
+                WHERE
+                psat.schemaname=(SELECT schemaname FROM pg_stat_user_tables WHERE relname = '\"{$table}\"')
+                AND psat.relname='\"{$table}\"'
+                AND psat.relid=pd.objoid
+                AND pd.objsubid <> 0
+                AND pd.objoid = pa.attrelid
+                AND pd.objsubid = pa.attnum
+                ORDER BY
+                pd.objsubid";
         return $this->fetch_rows($sql);
     }
 
@@ -1107,18 +1194,18 @@ class PgsqlEntity extends Entity {
      */
     function peimaryKeys($database_name, $table = null) {
         $sql = "SELECT ccu.column_name, tc.table_name
-        FROM
-        information_schema.table_constraints tc
-        ,information_schema.constraint_column_usage ccu
-        WHERE
-        tc.table_catalog='{$database_name}'
-        AND tc.constraint_type='PRIMARY KEY'
-        AND tc.table_catalog=ccu.table_catalog
-        AND tc.table_schema=ccu.table_schema
-        AND tc.table_name=ccu.table_name
-        AND tc.constraint_name=ccu.constraint_name";
+                FROM
+                information_schema.table_constraints tc
+                ,information_schema.constraint_column_usage ccu
+                WHERE
+                tc.table_catalog='{$database_name}'
+                AND tc.constraint_type='PRIMARY KEY'
+                AND tc.table_catalog=ccu.table_catalog
+                AND tc.table_schema=ccu.table_schema
+                AND tc.table_name=ccu.table_name
+                AND tc.constraint_name=ccu.constraint_name";
 
-        if ($table) $sql.= " AND tc.table_name = '{$table}'";
+        if ($table) $sql.= " AND tc.table_name = '\"{$table}\"'";
 
         return $this->fetch_rows($sql);
     }
@@ -1131,7 +1218,7 @@ class PgsqlEntity extends Entity {
      * @return array
      */
     public function setNotNull($table, $column) {
-        $sql = "ALTER TABLE {$table} ALTER COLUMN {$column} SET NOT NULL;";
+        $sql = "ALTER TABLE \"{$table}\" ALTER COLUMN {$column} SET NOT NULL;";
         return $this->query($sql);
     }
 
