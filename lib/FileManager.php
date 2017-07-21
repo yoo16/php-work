@@ -652,4 +652,26 @@ class FileManager {
         return $singular;
     }
 
+    static function phpClassName($name) {
+        $names = explode('_', $name);
+        if (is_array($names)) {
+            foreach ($names as $key => $value) {
+                $class_name .= ucwords($value);
+            }
+        } else {
+            $class_name = ucwords($name);
+        }
+        return $class_name;
+    }
+
+    static function bufferFileContetns($path, $values) {
+        if (file_exists($path)) {
+            ob_start();
+            include $path;
+            $contents = ob_get_contents();
+            ob_end_clean();
+        }
+        return $contents;
+    }
+
 }
