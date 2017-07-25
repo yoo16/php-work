@@ -19,11 +19,11 @@ class Entity {
     }
 
     function results() { trigger_error('results is not implemented', E_USER_ERROR); }
-    function count()   { trigger_error(  'count is not implemented', E_USER_ERROR); } 
-    function select()   { trigger_error(  'select is not implemented', E_USER_ERROR); }
-    function insert()  { trigger_error( 'insert is not implemented', E_USER_ERROR); }
-    function update()  { trigger_error( 'update is not implemented', E_USER_ERROR); }
-    function delete()  { trigger_error( 'delete is not implemented', E_USER_ERROR); }
+    function count()   { trigger_error('count is not implemented', E_USER_ERROR); } 
+    function select()   { trigger_error('select is not implemented', E_USER_ERROR); }
+    function insert()  { trigger_error('insert is not implemented', E_USER_ERROR); }
+    function update()  { trigger_error('update is not implemented', E_USER_ERROR); }
+    function delete()  { trigger_error('delete is not implemented', E_USER_ERROR); }
 
     function before_save() {}
     function before_insert() {}
@@ -320,6 +320,7 @@ class Entity {
      */
     private function cast($type, $value) {
         if (!$type) return $value;
+        if (is_null($value)) return null;
         if ($type == 's') return self::castString($value);
         if ($type == 'b') return self::castBool($value);
         if ($type == 't') return self::castTimestamp($value);
@@ -342,9 +343,11 @@ class Entity {
                 if ($column_name === $this->id_column) {
                     $row[$this->id_column] = $value;
                 } else {
-                    $column = $this->columns[$column_name];
-                    $type = $column['type'];
-                    $row[$column_name] = $this->cast($type, $value);
+                    if (isset($this->columns[$column_name])) {
+                        $column = $this->columns[$column_name];
+                        $type = $column['type'];
+                        $row[$column_name] = $this->cast($type, $value);
+                    }
                 }
             }
         }
@@ -396,7 +399,7 @@ class Entity {
     * @param string $key
     * @return array
     */
-    function valuesWithKey($key) {
+    function valuesWithKey($key = 'id') {
         $values = null;
         if ($this->values) {
             foreach ($this->values as $value) {
@@ -405,6 +408,110 @@ class Entity {
             }
         }
         return $values;
+    }
+
+   /**
+    * searchForKey
+    *
+    * @param array $values
+    * @param string $id_key
+    * @param string $label_key
+    * @return object
+    */
+    static function searchForKey($values, $id_key, $label_key) {
+        if (!$values) return;
+        if (isset($values[$id_key])) {
+            if ($label_key) {
+                return $values[$id_key][$label_key];
+            } else {
+                return $values[$id_key];
+            }
+        }
+    }
+
+   /**
+    * formInput
+    *
+    * @param string $column
+    * @param array $params
+    * @return string
+    */
+    function formInput($column, $params = null) {
+        if (!$column) return;
+        $name = "{$this->entity_name}[{$column}]";
+        $tag = FormHelper::text($name, $this->value[$column], $params);
+        return $tag;
+    }
+
+   /**
+    * formHidden
+    *
+    * @param string $column
+    * @param array $params
+    * @return string
+    */
+    function formHidden($column, $params = null) {
+        if (!$column) return;
+        $name = "{$this->entity_name}[{$column}]";
+        $tag = FormHelper::hidden($name, $this->value[$column], $params);
+        return $tag;
+    }
+
+   /**
+    * formSelect
+    *
+    * @param string $column
+    * @param array $values
+    * @param array $params
+    * @return string
+    */
+    function formSelect($column, $params = null) {
+        if (!$column) return;
+        $params['name'] = "{$this->entity_name}[{$column}]";
+
+        if ($params['model']) {
+            if (!$params['value_key']) $params['value_key'] = $this->id_column;
+            $params['values'] = DB::table($params['model'])
+                                            ->select()
+                                            ->values;
+        }
+        $tag = FormHelper::select($params, $this->value[$column]);
+        return $tag;
+    }
+
+   /**
+    * formCheckbox
+    *
+    * @param string $column
+    * @param array $params
+    * @return string
+    */
+    function formCheckbox($column, $params = null) {
+        if (!$column) return;
+        $params['name'] = "{$this->entity_name}[{$column}]";
+        $tag = FormHelper::checkbox($params, $this->value[$column]);
+        return $tag;
+    }
+
+
+   /**
+    * formDelete
+    *
+    * @param string $column
+    * @param array $params
+    * @return string
+    */
+    function formDelete($action, $label, $params = null) {
+        if (!$action) return;
+        if (!$this->value[$this->id_column]) return;
+
+        $href = url_for($action, $this->value[$this->id_column]);
+
+        //TODO FormHelper
+        $tag = "<form action=\"{$href}\" method=\"post\">\n";
+        $tag.= FormHelper::delete($label);
+        $tag.= "</form>\n";
+        return $tag;
     }
 
 }
