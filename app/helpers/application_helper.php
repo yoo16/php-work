@@ -1,26 +1,26 @@
 <?php
 /**
- * helpersファイル読み込み
- *
- * @author  Yohei Yoshikawa 
- * @create  2010/02/06 
+ * application helper 
+ * 
+ * Copyright (c) 2013 Yohei Yoshikawa (http://yoo-s.com/)
  */
 
-require_once 'lib/_application_helper.php';
-require_once 'message_helper.php';
-
 function undefineLabel($key, $value) {
-      $tag = '';
-      if (!defined($key)) {
-          $tag = undefineLabelTag($key, $value);
-      }
-      if (defined($key)) {
-          $tag.= $value;
-      }
-      return $tag;
+    $tag = '';
+    if (!defined($key)) {
+        $tag = undefineLabelTag();
+    }
+    if (defined($key)) {
+        $tag.= $value;
+    }
+    return $tag;
 }
 
 function undefineLabelTag($key, $value) {
-      $tag = '<label class="badge badge-danger">Undefined</label>';
-      return $tag;
+    $tag = '<label class="badge badge-danger">Undefined</label>';
+    return $tag;
+}
+
+function cssClass($key, $selected, $class_name) {
+    if ($key == $selected) return $class_name;
 }

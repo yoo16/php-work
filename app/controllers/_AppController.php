@@ -6,7 +6,7 @@
  * @create  2012/10/03 
  */
 
-ApplicationLoader::autoload_model();
+ApplicationLoader::autoloadModel();
 
 class _AppController extends Controller {
 

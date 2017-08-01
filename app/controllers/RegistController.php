@@ -38,7 +38,7 @@ class RegistController extends AppController {
     }
 
     function action_new() {
-        $this->user = $this->session['posts'];
+        $this->user = DB::table('User')->takeValues($this->session['posts']);
         $this->errors = $this->flash['errors'];
     }
 
@@ -50,30 +50,25 @@ class RegistController extends AppController {
     * @return void
     */ 
     function add() {
-        $this->isRequestPost();
+        if (!isPost()) exit;
 
-        $this->session['posts'] = $_POST;
-        $_POST['password'] = hash('sha256', $_POST['password'], false);
+        $posts = $this->session['posts'] = $_POST;
+        $posts['password'] = hash('sha256', $posts['password'], false);
 
-        $user = new User();
-        $user->where("email = '{$_POST['email']}'")->selectOne();
-        if ($user->value) {
+        $user = DB::table('User')->where("email = '{$posts['email']}'")->selectOne();
+        if ($user->value['id']) {
             $user->addError('email', 'exists');
             $this->flash['errors'] = $user->errors;
             $this->redirect_to('index');
             exit;
         }
-
-        $user = new User();
-        $user->takeValues($_POST['user']);
-        $user->validate();
-        $user->save();
+        $user = DB::table('User')->insert($posts);
 
         if ($user->errors) {
             $this->flash['errors'] = $user->errors;
             $this->redirect_to('new');
         } else {
-            $this->redirect_to('login');
+            $this->redirect_to('user/login');
         }
     }
 

@@ -11,24 +11,24 @@ require_once 'PgsqlEntity.php';
 class _User extends PgsqlEntity {
     
     var $name = 'users';
-    static $entity_name = 'user';
+    var $entity_name = 'user';
 
     var $columns = array(
-        'created_at' => array('type' => 't'),
-        'updated_at' => array('type' => 't'),
-        'sort_order' => array('type' => 'i'),
-        'last_name_kana' => array('type' => 's'),
-        'first_name_kana' => array('type' => 's'),
-        'last_name' => array('type' => 's', 'required' => true),
-        'first_name' => array('type' => 's', 'required' => true),
-        'password' => array('type' => 's'),
-        'tmp_password' => array('type' => 's'),
-        'email' => array('type' => 's', 'required' => true),
-        'tel' => array('type' => 's'),
-        'tmp_password' => array('type' => 's'),
-        'birthday_at' => array('type' => 't'),
-        'gender' => array('type' => 's'),
-        'memo' => array('type' => 's'),
+        'created_at' => array('type' => 'timestamp'),
+        'updated_at' => array('type' => 'timestamp'),
+        'sort_order' => array('type' => 'int4'),
+        'last_name_kana' => array('type' => 'varchar', 'length' => 256),
+        'first_name_kana' => array('type' => 'varchar', 'length' => 256),
+        'last_name' => array('type' => 'varchar', 'length' => 256, 'required' => true),
+        'first_name' => array('type' => 'varchar', 'length' => 256, 'required' => true),
+        'password' => array('type' => 'varchar', 'length' => 256),
+        'tmp_password' => array('type' => 'varchar', 'length' => 256),
+        'email' => array('type' => 'varchar', 'length' => 256, 'required' => true),
+        'tel' => array('type' => 'varchar', 'length' => 256),
+        'tmp_password' => array('type' => 'varchar', 'length' => 256),
+        'birthday_at' => array('type' => 'timestamp'),
+        'gender' => array('type' => 'varchar', 'length' => 256),
+        'memo' => array('type' => 'varchar', 'length' => 256),
     );
 
     function __construct($params=null) {

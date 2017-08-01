@@ -11,20 +11,19 @@ require_once 'PgsqlEntity.php';
 class _Admin extends PgsqlEntity {
     
     var $name = 'admins';
-    static $entity_name = 'admin';
+    var $entity_name = 'admin';
 
     var $columns = array(
-        'created_at' => array('type' => 't'),
-        'updated_at' => array('type' => 't'),
-        'sort_order' => array('type' => 'i'),
-        'login_name' => array('type' => 's', 'required' => true),
-        'email' => array('type' => 's'),
-        'last_name' => array('type' => 's'),
-        'first_name' => array('type' => 's'),
-        'password' => array('type' => 's'),
-        'tmp_password' => array('type' => 's'),
-        'tmp_password' => array('type' => 's'),
-        'memo' => array('type' => 's'),
+        'created_at' => array('type' => 'timestamp'),
+        'updated_at' => array('type' => 'timestamp'),
+        'sort_order' => array('type' => 'int4'),
+        'login_name' => array('type' => 'varchar', 'length' => 256, 'required' => true),
+        'email' => array('type' => 'varchar', 'length' => 256),
+        'last_name' => array('type' => 'varchar', 'length' => 256),
+        'first_name' => array('type' => 'varchar', 'length' => 256),
+        'password' => array('type' => 'varchar', 'length' => 256),
+        'tmp_password' => array('type' => 'varchar', 'length' => 256),
+        'memo' => array('type' => 'text'),
     );
 
     function __construct($params=null) {

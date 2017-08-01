@@ -15,10 +15,9 @@ class UserController extends AppController {
     var $current_main_menu = 'user';
 
    /**
-    * 事前処理
+    * before_action
     *
-    * @access public
-    * @param String $action
+    * @param string $action
     * @return void
     */ 
     function before_action($action) {
@@ -27,15 +26,14 @@ class UserController extends AppController {
     }
 
    /**
-    * ログインチェック
+    * checkLogin
     *
-    * @access private
-    * @param String $action
+    * @param string $action
     * @return void
     */ 
     private function checkLogin($action) {
         if (!in_array($action, $this->escape_auth_actions)) {
-            $this->user = AppSession::getUserSession('user');
+            $this->user = AppSession::get('user');
             if (!$this->user['id']) {
                 $this->redirect_to('user/login');
                 return;
@@ -44,12 +42,8 @@ class UserController extends AppController {
     }
 
    /**
-    * action_cancel
+    * cancel
     *
-    * キャンセル
-    * セッションクリア＆トップページ
-    *
-    * @access public
     * @param
     * @return void
     */ 
@@ -61,9 +55,6 @@ class UserController extends AppController {
    /**
     * action_clear_search
     *
-    * 検索クリア
-    *
-    * @access public
     * @param
     * @return void
     */ 
@@ -85,26 +76,9 @@ class UserController extends AppController {
     }
 
    /**
-    * 自動ログイン
-    *
-    * @access public
-    * @param
-    * @return void
-    **/
-    function action_auto_login() {
-        // $user = new User();
-        // $user->find($_REQUEST['user_id']);
-        // if ($user->value['id'] > 0) {
-        //     AppSession::setUserSession($this->sid, 'user', $user);
-        // }
-        // $this->redirect_to('user/');
-    }
-
-   /**
     * トップページ
     * セッションクリア＆一覧画面リダイレクト
     *
-    * @access public
     * @param
     * @return void
     */ 
@@ -115,37 +89,57 @@ class UserController extends AppController {
    /**
     * 認証
     *
-    * @access public
     * @param
     * @return void
     */ 
-    function auth() {
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $posts = $_POST['user'];
-            $posts['password'] = hash('sha256', $posts['password'], false);
+    function action_auth() {
+        if (!isPost()) exit;
 
-            $conditions = null;
-            $user = new User();
-            $user->where("email = '{$posts['email']}'")
-                ->where("password = '{$posts['password']}'")
-                ->selectOne();
+        $posts = $_POST['user'];
+        $posts['password'] = hash('sha256', $posts['password'], false);
 
-            if ($user->value['id'] > 0) {
-                AppSession::setUserSession('user', $user->value);
-                $this->default_page();
-                exit;
-            } else {
-                $this->redirect_to('login');
-                exit;
-            }
+        $user = DB::table('User')
+                            ->where("email = '{$posts['email']}'")
+                            ->where("password = '{$posts['password']}'")
+                            ->selectOne();
+
+        if ($user->value['id'] > 0) {
+            AppSession::set('user', $user->value);
+            $this->redirect_to('index');
+            exit;
+        } else {
+            $this->redirect_to('login');
+            exit;
         }
         $this->redirect_to('login');
     }
 
    /**
+    * edit
+    *
+    * @param
+    * @return void
+    */ 
+    function action_edit() {
+        $this->user = DB::table('User')->fetch($this->user['id']);
+    }
+
+   /**
+    * edit
+    *
+    * @param
+    * @return void
+    */ 
+    function action_update() {
+        if (!isPost()) exit;
+        $this->session['posts'] = $_POST['user'];
+        $user = DB::table('User')->update($this->session['posts'], $this->user['id']);
+        $this->redirect_to('edit');
+    }
+
+   /**
     * ログイン
     *
-    * @access public
     * @param
     * @return void
     */ 
@@ -157,62 +151,23 @@ class UserController extends AppController {
    /**
     * action_logout
     *
-    * @access public
     * @param
     * @return void
     */ 
     function action_logout() {
-        AppSession::clearUserSession($this->sid, 'user');
+        AppSession::clear('user');
         $this->redirect_to('user/login');
     }
 
    /**
-    * default_page
-    *
-    * @access public
-    * @param
-    * @return void
-    */ 
-    function default_page() {
-        $this->redirect_to('user/index');
-    }
-
-
-   /**
     * regist
     *
-    * @access public
     * @param
     * @return void
     */ 
     function regist() {
-        $this->user = AppSession::getSession('posts');
+        $this->user = AppSession::get('posts');
         $this->errors = $this->flash['errors'];
-    }
-
-   /**
-    * add
-    *
-    * @access public
-    * @param
-    * @return void
-    */ 
-    function add() {
-        $_POST['user']['password'] = hash('sha256', $_POST['user']['password'], false);
-
-        AppSession::setSession('posts', $_POST['user']);
-
-        $user = new User();
-        $user->takeValues($_POST['user']);
-        $user->validate();
-        $user->save();
-
-        if ($user->errors) {
-            $this->flash['errors'] = $user->errors;
-            $this->redirect_to('regist');
-        } else {
-            $this->redirect_to('login');
-        }
     }
 
 }
