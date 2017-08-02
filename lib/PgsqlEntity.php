@@ -222,8 +222,17 @@ class PgsqlEntity extends Entity {
         if (!$column) return;
         if (!$type) return;
 
-        $sql = "ALTER TABLE \"{$table}\" ALTER COLUMN \"{$column}\" TYPE {$type};";
-        return $this->query($sql);
+        $using = '';
+        //TODO float double
+        if (strstr($type, 'int')) {
+            $sql = "ALTER TABLE \"{$table}\" ALTER COLUMN \"{$column}\" TYPE {$type}";
+            $using = " USING {$column}::int";
+        }
+        $sql = "ALTER TABLE \"{$table}\" ALTER COLUMN \"{$column}\" TYPE {$type}{$using};";
+        $results = $this->query($sql);
+        if ($this->sql_error) {
+            return false;
+        }
     }
 
     /**
@@ -285,11 +294,13 @@ class PgsqlEntity extends Entity {
     * @return resource
     */
     function query($sql) {
+        $this->sql_error = null;
         $this->sql = $sql;
-        $pg = $this->connection();
-
         if (defined('SQL_LOG') && SQL_LOG) error_log("<SQL> {$sql}");
-        $results = pg_query($pg, $sql);
+        if ($pg = $this->connection()) {
+            $results = pg_query($pg, $sql);
+            $this->sql_error = pg_last_error($pg);
+        }
         return $results;
     }
 
@@ -362,6 +373,32 @@ class PgsqlEntity extends Entity {
     */
     public function fetch($id, $params=null) {
        return $this->get($id, $params);
+    }
+
+    /**
+    * relation by model
+    * 
+    * @param  string $relation_name
+    * @return Class
+    */
+    public function relationsBindId($relation_name, $conditions = null, $relation_column = null) {
+        if (!$this->id) return $this;
+        if (!is_string($relation_name)) return $this;
+        //if (!class_exists($relation_name)) return $this;
+
+        $relation = DB::table($relation_name);
+
+        if ($relation_column) {
+            $conditions[] = "{$relation_column} = {$this->id}";
+        } else {
+            $conditions[] = "{$this->entity_name}_id = {$this->id}";
+        }
+        foreach ($conditions as $condition) {
+            $relation->where($condition);
+        }
+        $column_name = $relation->entity_name;
+        $this->$column_name = $relation->select();
+        return $this;
     }
 
     /**
@@ -649,6 +686,18 @@ class PgsqlEntity extends Entity {
         } else {
             unset($this->id);
         }
+        return $this;
+    }
+
+    /**
+    * wheres
+    * 
+    * @param  array $conditions
+    * @return Class
+    */
+    public function wheres($conditions) {
+        $this->conditions[] = $conditions; 
+        $this->conditions = array_unique($this->conditions);
         return $this;
     }
 

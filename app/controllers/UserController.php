@@ -144,8 +144,7 @@ class UserController extends AppController {
     * @return void
     */ 
     function action_login() {
-        $user = new User();
-        $this->user = $user->value;
+        $this->user = new User();
     }
 
    /**

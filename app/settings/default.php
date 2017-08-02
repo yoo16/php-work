@@ -18,4 +18,3 @@ define('DEBUG', true);
 define('PG_INFO', 'host=localhost user=postgres dbname=test');
 
 define('MAIL_SETTING_FILE', DB_DIR.'mail/default.csv');
-require_once 'functions.php';
