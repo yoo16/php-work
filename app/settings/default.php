@@ -15,6 +15,9 @@ define('DB_DIR', BASE_DIR.'db/');
 
 define('DEBUG', true);
 
-define('PG_INFO', 'host=localhost user=postgres dbname=test');
+define('DB_NAME', 'test');
+define('DB_HOST', 'localhost');
+define('DB_USER', 'postgres');
+define('DB_PORT', '5432');
 
 define('MAIL_SETTING_FILE', DB_DIR.'mail/default.csv');

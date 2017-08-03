@@ -732,8 +732,11 @@ class FormHelper {
      * @return string
      */
     static function formLabel($tag, $attributes = null) {
-        $label_class = " col-form-label";
-        $attributes['class'].= $label_class;
+        if ($attributes['class']) {
+            $attributes['class'].= " col-form-label";
+        } else {
+            $attributes['class'] = "col-2 col-form-label";
+        }
         $tag = self::labelTag($tag, $attributes);
         return $tag;
     }
@@ -771,23 +774,6 @@ class FormHelper {
         $tag = self::input($params, $name, $value);
         return $tag;
     }
-
-    /**
-     * password
-     *
-     * @param string $name
-     * @param object $value
-     * @param array $params
-     * @return string
-     */
-    static function password($name, $params = null) {
-        $params['type'] = "password";
-        if (!$params['class']) $params['class'] = 'col-4';
-        $params['class'].= " form-control";
-        $tag = self::input($params, $name);
-        return $tag;
-    }
-
 
     /**
      * submit
@@ -844,6 +830,20 @@ class FormHelper {
         
         $attributes['class'] = 'input-group-btn';
         $label = self::tag('span', $attribues);
+        return $tag;
+    }
+
+    /**
+     * input(password)
+     *
+     * @param string $name
+     * @param object $value
+     * @param array $params
+     * @return string
+     */
+    static function password($name, $value = null, $params = null) {
+        $params['type'] = "password";
+        $tag = self::input($params, $name, $value);
         return $tag;
     }
 
