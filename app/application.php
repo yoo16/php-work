@@ -1,4 +1,5 @@
 <?php
+require_once DB_SETTING_FILE;
 require_once 'application_setting.php';
 require_once 'application_function.php';
 

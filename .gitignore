@@ -2,3 +2,4 @@
 app/settings/debian.php
 app/settings/debian8.php
 HOSTNAME
+.phpintel

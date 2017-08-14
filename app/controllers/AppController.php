@@ -5,9 +5,11 @@
  * @author  Yohei Yoshikawa
  * @create  2012/10/03 
  */
-require_once '_AppController.php';
+ApplicationLoader::autoloadModel();
 
-class AppController extends _AppController {
+require_once 'Controller.php';
+
+class AppController extends Controller {
     var $title = HTML_TITLE;
     var $csv_options = array('gender', 'prefecture');
     var $layout = 'root';

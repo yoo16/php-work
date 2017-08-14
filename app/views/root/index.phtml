@@ -36,8 +36,8 @@
       <td><?= undefineLabel('DEBUG', DEBUG) ?></td>
     </tr>
     <tr>
-      <th>PG_INFO</th>
-      <td><?= undefineLabel('PG_INFO', PG_INFO) ?></td>
+      <th>DB_SETTING_FILE</th>
+      <td><?= undefineLabel('DB_SETTING_FILE', DB_SETTING_FILE) ?></td>
     </tr>
     <tr>
       <th>MAIL_SETTING_FILE</th>
@@ -72,23 +72,24 @@
   <h2>PostgreSQL</h2>
   <table class="table">
     <tr>
-      <th>PG_INFO</th>
-      <td><?= undefineLabel('PG_INFO', PG_INFO) ?></td>
-    </tr>
-    <tr>
-      <th>pg_connection()</th>
+      <th>DB_NAME</th>
       <td>
-      <? if ($this->pg_connection): ?>
-      <?= $this->pg_connection ?>
-      <? else: ?>
-      <?= undefineLabelTag() ?>
-      <? endif ?>
+        <?= undefineLabel('DB_NAME', DB_NAME) ?>
       </td>
     </tr>
+    <tr>
+      <th>DB_HOST</th>
+      <td><?= undefineLabel('DB_HOST', DB_HOST) ?></td>
+    </tr>
+    <tr>
+      <th>DB_NAME</th>
+      <td><?= undefineLabel('DB_PORT', DB_PORT) ?></td>
+    </tr>
+    <tr>
+      <th>DB_USER</th>
+      <td><?= undefineLabel('DB_USER', DB_USER) ?></td>
+    </tr>
   </table>
-  <form>
-  <input class="btn btn-primary" type="submit" name="" value="<?= LABEL_CREATE ?>">
-  </form>
 
   <h2><a href="<?= url_for('defined') ?>">Defined</a></h2>
 

@@ -1,5 +1,5 @@
 <?php
-define('PROJECT_NAME', 'phpwork');
+define('PROJECT_NAME', 'php-work');
 define('DEFAULT_LOCALE', 'ja');
 define('LOG_DIR', BASE_DIR.'log/');
 
@@ -15,9 +15,6 @@ define('DB_DIR', BASE_DIR.'db/');
 
 define('DEBUG', true);
 
-define('DB_NAME', 'test');
-define('DB_HOST', 'localhost');
-define('DB_USER', 'postgres');
-define('DB_PORT', '5432');
-
 define('MAIL_SETTING_FILE', DB_DIR.'mail/default.csv');
+
+define('DB_SETTING_FILE', BASE_DIR.'app/settings/db.php');
