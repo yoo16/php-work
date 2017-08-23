@@ -4,8 +4,6 @@
 *
 * @copyright  Copyright (c) 2017 Yohei Yoshikawa (http://yoo-s.com/)
 */
-
-
 require_once 'Entity.php';
 
 class PgsqlEntity extends Entity {
@@ -67,6 +65,7 @@ class PgsqlEntity extends Entity {
         $results['return'] = $return;
         return $results;
     }
+
 
     /**
     * createDatabase
@@ -207,6 +206,19 @@ class PgsqlEntity extends Entity {
         if ($values['is_required']) $option.= "NOT NULL";
         return $option;
     }
+    /**
+    * create table SQL
+    * 
+    * @param array $models
+    * @return string
+    */
+    function createTablesSQLFromModels($models) {
+        foreach ($models as $model) {
+            $sql.= $this->createTableSql($model);
+            $sql.= PHP_EOL;
+        }
+        return $sql;
+    }
 
     /**
     * create table SQL
@@ -217,7 +229,6 @@ class PgsqlEntity extends Entity {
     public function createTableSql($model) {
         if (!$model) return;
 
-        //$column_sqls[] = "{$model->id_column} BIGSERIAL PRIMARY KEY NOT NULL";
         $column_sqls[] = "{$model->id_column} SERIAL PRIMARY KEY NOT NULL";
         foreach ($model->columns as $column_name => $column) {
             if ($column['type']) {
@@ -259,20 +270,27 @@ class PgsqlEntity extends Entity {
     /**
     * create table SQL
     * 
-    * @return void
+    * @param string $vo_path
+    * @param string $ext
+    * @return string
     */
-    function createTablesSql() {
-        $vo_path = BASE_DIR."app/models/vo/*.php";
-        foreach (glob($vo_path) as $file_path) {
+    function createTablesSQLForPath($vo_path, $ext = 'php') {
+        if (!file_exists($vo_path)) {
+            $message = "Not exists : {$vo_path}";
+            echo($message);
+            exit;
+        }
+        $vo_files_path = "{$vo_path}*.{$ext}";
+        foreach (glob($vo_files_path) as $file_path) {
             if (is_file($file_path)) {
                 $file = pathinfo($file_path);
                 $class_name = $file['filename'];
+                require_once $file_path;
                 $vo = new $class_name();
-
-                $this->sql.= $this->createTableSql($vo);
+                $sql.= $this->createTableSql($vo);
             }
         }
-        return $this->sql;
+        return $sql;
     }
 
     /**
@@ -286,13 +304,14 @@ class PgsqlEntity extends Entity {
     }
 
     /**
-    * create tables
+    * create tables for project-manager
     * 
     * @return resource
     */
-    function createTables() {
-        $this->createTablesSql();
-        return $this->query($this->sql);
+    function createTablesForProjectManager() {
+        $vo_path = BASE_DIR."app/models/vo/";
+        $sql = $this->createTablesSQLForPath($vo_path, 'php');
+        return $this->query($sql);
     }
 
     /**
@@ -1346,45 +1365,87 @@ class PgsqlEntity extends Entity {
     **/
     public function pgClassArrayByConstraints($pg_class, $pg_constraints) {
         $relids[$pg_class['pg_class_id']] = $pg_class['pg_class_id'];
-        foreach ($pg_constraints as $pg_constraint) {
-            if ($pg_constraint['confrelid'] > 0) $relids[$pg_constraint['confrelid']] = $pg_constraint['confrelid'];
+        foreach ($pg_constraints as $contype => $_pg_constraints) {
+            foreach ($_pg_constraints as $pg_constraint) {
+                if ($pg_constraint['confrelid'] > 0) $relids[$pg_constraint['confrelid']] = $pg_constraint['confrelid'];
+            }
         }
-        return $this->pgClassArray($relids);
+        return $this->pgClassesArray($relids);
     }
 
     /**
-    * pg_class array with attribute
+    * pg_classes array with attribute, constraint
     * 
+    * @param int[] pg_class_id
     * @return array
     **/
-    public function pgClassArray($pg_class_ids = null) {
+    public function pgClassesArray($pg_class_ids = null) {
         $pg_classes = $this->pgClasses($pg_class_ids);
+        if (!$pg_classes) return;
         $table_comments = $this->tableCommentsArray();
 
-        if ($pg_classes) {
-            foreach ($pg_classes as $pg_class) {
-                $table_name = $pg_class['relname'];
-                $is_numbering = self::isNumberingName($table_name);
-                if ($table_name && $pg_class['pg_class_id'] && !$is_numbering) {
-                    $pg_class['comment'] = $table_comments[$table_name];
-                    $pg_attributes = $this->pgAttributes($table_name);
-                    if ($pg_attributes) {
-                        $attributes = null;
-                        $column_comments = $this->columnCommentArray($table_name);
-                        foreach ($pg_attributes as $pg_attribute) { 
-                            if ($pg_attribute['attnum'] > 0) {
-                                $pg_attribute['comment'] = $column_comments[$pg_attribute['attname']];
-                                $attributes[$pg_attribute['attnum']] = $pg_attribute;
-                            }
+        foreach ($pg_classes as $pg_class) {
+            $table_name = $pg_class['relname'];
+            $is_numbering = self::isNumberingName($table_name);
+            if ($table_name && $pg_class['pg_class_id'] && !$is_numbering) {
+                $pg_class['comment'] = $table_comments[$table_name];
+                $pg_attributes = $this->pgAttributes($table_name);
+                if ($pg_attributes) {
+                    $attributes = null;
+                    $column_comments = $this->columnCommentArray($table_name);
+
+                    $names = null;
+                    foreach ($pg_attributes as $pg_attribute) { 
+                        if ($pg_attribute['attnum'] > 0) {
+                            $pg_attribute['comment'] = $column_comments[$pg_attribute['attname']];
+                            $attributes[] = $pg_attribute;
                         }
                     }
-                    $pg_class['pg_attribute'] = $attributes;
-                    $pg_class['pg_constraint'] = $this->pgConstraintsByPgClassID($pg_class['pg_class_id']);
-                    $values[$pg_class['pg_class_id']] = $pg_class;
                 }
+                //array_multisort($names, SORT_ASC, $attributes);
+                $pg_class['pg_attribute'] = $attributes;
+                $pg_class['pg_constraint']['primary'] = $this->pgConstraints($pg_class['pg_class_id'], 'p');
+                $pg_class['pg_constraint']['unique'] = $this->pgConstraints($pg_class['pg_class_id'], 'u');
+                $pg_class['pg_constraint']['foreign'] = $this->pgForeignConstraints($pg_class['pg_class_id']);
+
+                $values[] = $pg_class;
             }
         }
         return $values;
+    }
+
+
+    /**
+    * pg_class array with attribute, constraint
+    * 
+    * @param int pg_class_id
+    * @return array
+    **/
+    public function pgClassArray($pg_class_id) {
+        $pg_class = $this->pgClass($pg_class_id);
+        if (!$pg_class) return;
+
+        $table_comment = $this->tableComment($pg_class['relname']);
+        $pg_class['comment'] = $table_comment['description'];
+        $pg_attributes = $this->pgAttributes($table_name);
+        if ($pg_attributes) {
+            $attributes = null;
+            $column_comments = $this->columnCommentArray($pg_class['relname']);
+
+            $names = null;
+            foreach ($pg_attributes as $pg_attribute) { 
+                if ($pg_attribute['attnum'] > 0) {
+                    $pg_attribute['comment'] = $column_comments[$pg_attribute['attname']];
+                    $attributes[] = $pg_attribute;
+                }
+            }
+        }
+        $pg_class['pg_attribute'] = $attributes;
+        $pg_class['pg_constraint']['primary'] = $this->pgConstraints($pg_class['pg_class_id'], 'p');
+        $pg_class['pg_constraint']['unique'] = $this->pgConstraints($pg_class['pg_class_id'], 'u');
+        $pg_class['pg_constraint']['foreign'] = $this->pgForeignConstraints($pg_class['pg_class_id']);
+
+        return $pg_class;
     }
 
     /**
@@ -1483,6 +1544,28 @@ class PgsqlEntity extends Entity {
     }
 
     /**
+    * pg_class
+    *
+    * @param int $pg_class_id
+    * @param string $relkind
+    * @param string $schema_name
+    * @return array
+    **/
+    function pgClass($pg_class_id = null, $conditinos = null, $relkind = 'r', $schema_name = 'public') {
+        $sql = "SELECT pg_class.oid AS pg_class_id, * FROM pg_class 
+                LEFT JOIN pg_tables ON pg_tables.tablename = pg_class.relname
+                LEFT JOIN pg_namespace ON pg_namespace.oid = pg_class.relnamespace";
+
+        $conditions[] = "relkind = '{$relkind}'";
+        $conditions[] = "relfilenode > 0";
+        $conditions[] = "nspname = '{$schema_name}'";
+        $conditions[] = "pg_class.oid = {$pg_class_id}";
+        $condition = implode(' AND ', $conditions);
+        $sql.= " WHERE {$condition};";
+        return $this->fetch_row($sql);
+    }
+
+    /**
     * pg_classes
     *
     * @param array $pg_class_ids
@@ -1503,7 +1586,8 @@ class PgsqlEntity extends Entity {
             $conditions[] = "pg_class.oid in ({$pg_class_id})";
         }
         $condition = implode(' AND ', $conditions);
-        $sql.= " WHERE {$condition};";
+        $sql.= " WHERE {$condition}";
+        $sql.= " ORDER BY relname";
         return $this->fetch_rows($sql);
     }
 
@@ -1553,7 +1637,7 @@ class PgsqlEntity extends Entity {
                 AND relacl IS NULL";
 
         if ($table_name) $sql.= " AND relname = '{$table_name}'";
-        $sql.= ';';
+        $sql.= 'ORDER BY pg_attribute.attname;';
         return $this->fetch_rows($sql);
     }
 
@@ -1782,8 +1866,13 @@ class PgsqlEntity extends Entity {
         if (!$pg_class_id) return;
 
         $sql = "SELECT * FROM pg_constraint";
-        if ($pg_class_id) $conditions[] = "conrelid = '{$pg_class_id}'";
-        if ($type) $conditions[] = "contype = '{$type}'";
+        $sql.= " LEFT JOIN pg_attribute ON";
+        $sql.= " pg_constraint.conrelid = pg_attribute.attrelid";
+        $sql.= " AND pg_attribute.attnum = ANY(pg_constraint.conkey)";
+
+        if ($pg_class_id) $conditions[] = "pg_constraint.conrelid = '{$pg_class_id}'";
+        if ($type) $conditions[] = "pg_constraint.contype = '{$type}'";
+
         if ($conditions) $condition = implode(' AND ', $conditions);
         if ($condition) $sql.= " WHERE {$condition}";
 
@@ -1791,16 +1880,44 @@ class PgsqlEntity extends Entity {
         return $this->fetch_rows($sql);
     }
 
+
+    /**
+     * pg constraints
+     *
+     * c = check
+     * f = foreign key
+     * p = primary key
+     * u = unique
+     * 
+     * @param  int $pg_class_id
+     * @param  string $type
+     * @return array
+     */
+    function pgForeignConstraints($pg_class_id, $type = null) {
+        if (!$pg_class_id) return;
+
+        $sql = "SELECT * FROM pg_constraint
+                    LEFT JOIN pg_attribute ON pg_constraint.confrelid = pg_attribute.attrelid
+                    AND pg_attribute.attnum = ANY(pg_constraint.confkey)
+                    LEFT JOIN pg_class ON pg_constraint.confrelid = pg_class.oid";
+
+        $conditions[] = "pg_constraint.contype = 'f'";
+        if ($pg_class_id) $conditions[] = "pg_constraint.conrelid = '{$pg_class_id}'";
+
+        if ($conditions) $condition = implode(' AND ', $conditions);
+        $sql.= " WHERE {$condition};";
+
+        return $this->fetch_rows($sql);
+    }
+
     /**
      * pg constraints by constraint name
      *
      * @param  string $name
-     * @param  int $pg_class_id
      * @return array
      */
-    function pgConstraintsByConstrainName($name, $pg_class_id = null) {
+    function pgConstraintsByConstrainName($name) {
         $sql = "SELECT * FROM pg_constraint WHERE conname LIKE '%{$name}%'";
-        if ($table_name) $sql.= " AND conrelid = '{$pg_class_id}'"; 
         $sql.= ';';
         return $this->fetch_rows($sql);
     }
@@ -1815,7 +1932,10 @@ class PgsqlEntity extends Entity {
         $constraints = $this->pgConstraintsByPgClassID($pg_class['pg_class_id']);
         if (!$constraints) return;
 
-        return $constraints;
+        foreach ($constraints as $constraint) {
+            $values[$constraint['contype']][$constraint['conname']] = $constraint;
+        }
+        return $values;
     }
 
     /**
@@ -1829,9 +1949,14 @@ class PgsqlEntity extends Entity {
         if (!$constraints) return;
 
         foreach ($constraints as $index => $constraint) {
+            //TODO
             $is_numbering = self::isNumberingName($constraint['conname']);
-            $constraints[$index]['conkey'] = self::parseConstraintKeys($constraint['conkey']);
-            $constraints[$index]['confkey'] = self::parseConstraintKeys($constraint['confkey']);
+
+            $conkeys = self::parseConstraintKeys($constraint['conkey']);
+            $confkeys = self::parseConstraintKeys($constraint['confkey']);
+
+            $constraints[$index]['conkey'] = $conkeys;
+            $constraints[$index]['confkey'] = $confkeys;
         }
         return $constraints;
     }
@@ -1884,7 +2009,7 @@ class PgsqlEntity extends Entity {
      * @return void
      */
     function addPgForeignKey($table_name, $foreign_column, $reference_table_name, $reference_column,
-                             $is_not_deferrable = true, $update = 'NO ACTION', $delete = 'CASCADE') {
+                             $is_not_deferrable = true, $update = 'NO ACTION', $delete = 'NO ACTION') {
         $reference_column = "{$reference_table_name}({$reference_column})";
         $sql = "ALTER TABLE {$table_name} ADD FOREIGN KEY ({$foreign_column}) REFERENCES {$reference_column}";
 
@@ -2035,4 +2160,6 @@ class PgsqlEntity extends Entity {
         $values = explode(',', $values);
         return $values;
     }
+
+
 }
