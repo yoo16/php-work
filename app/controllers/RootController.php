@@ -12,7 +12,7 @@ class RootController extends AppController {
     function index() {
         //$pgsql_entity = new PgsqlEntity();
         //$this->pg_connection = $pgsql_entity->connection();
-        $this->hostname = hostname();
+        $this->hostname = PwSetting::hostname();
         $this->debug_traces = debug_backtrace(true);
     }
 
