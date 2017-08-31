@@ -11,23 +11,23 @@ require_once 'Entity.php';
 //TODO pg_field_num, pg_field_name
 
 class PgsqlEntity extends Entity {
-    var $extra_columns = false;
-    var $group_columns = false;
-    var $joins = array();
     var $pg_info = null;
     var $dbname = null;
     var $host = 'localhost';
     var $user = 'postgres';
     var $port = 5432;
     var $password = null;
+    var $is_pconnect = false;
+    var $is_connect_forece_new = false;
+    var $table_name = null;
     var $values = null;
     var $value = null;
     var $conditions = null;
     var $orders = null;
     var $limits = null;
-    var $is_pconnect = false;
-    var $is_connect_forece_new = false;
-    var $table_name = null;
+    var $extra_columns = false;
+    var $group_columns = false;
+    var $joins = array();
 
     static $pg_info_columns = ['dbname', 'user', 'host', 'port', 'password'];
     static $constraint_keys = ['p' => 'Primary Key',
@@ -84,7 +84,6 @@ class PgsqlEntity extends Entity {
         return $results;
     }
 
-
     /**
     * createDatabase
     * 
@@ -99,6 +98,46 @@ class PgsqlEntity extends Entity {
         $results['output'] = $output;
         $results['return'] = $return;
         return $results;
+    }
+
+    /**
+    * sequenceName
+    * 
+    * @param string $table_name
+    * @param string $id_column
+    * @return string
+    */
+    function sequenceName($table_name, $id_column = 'id') {
+        if (!$table_name) return;
+        $sequence_name = "{$table_name}_{$id_column}_seq";
+        return $sequence_name;
+    }
+
+    /**
+    * sequenceName
+    * 
+    * @param string $table_name
+    * @param string $id_column
+    * @return string
+    */
+    function createSequence($table_name, $id_column = 'id') {
+        $sequence_name = self::sequenceName($table_name, $id_column);
+        $sql = "CREATE SEQUENCE {$sequence_name};";
+        //$sql = "CREATE SEQUENCE IF NOT EXISTS {$sequence_name};";
+        return $this->query($sql);
+    }
+
+    /**
+    * reset sequence
+    * 
+    * @param string $table_name
+    * @param string $id_column
+    * @return string
+    */
+    function resetSequence($table_name, $id_column = 'id') {
+        $sequence_name = self::sequenceName($table_name, $id_column);
+        $sql = "SELECT SETVAL ('{$sequence_name}', '1', false);";
+        return $this->query($sql);
     }
 
     /**
@@ -305,7 +344,7 @@ class PgsqlEntity extends Entity {
 
 
     /**
-    * create sequence SQL
+    * create constraint SQL
     * 
     * @param PgsqlEntity $model
     * @return string
@@ -1541,7 +1580,6 @@ class PgsqlEntity extends Entity {
         foreach ($this->columns as $key => $type) {
             $value = $this->sqlValue($this->value[$key]);
             if ($key == 'created_at') $value = 'current_timestamp';
-
             $columns[] = $key;
             $values[] = $value;
         }
@@ -1549,7 +1587,10 @@ class PgsqlEntity extends Entity {
         $value = implode(',', $values);
 
         $sql = "INSERT INTO {$this->table_name} ({$column}) VALUES ({$value});";
-        $sql.= "SELECT currval('{$this->table_name}_id_seq');";
+
+        $sequence_name = $this->sequenceName($this->table_name);
+        $sql.= "SELECT lastval();";
+        //$sql.= "SELECT currval('{$sequence_name}'::regclass);";
         return $sql;
     }
 
@@ -1778,7 +1819,7 @@ class PgsqlEntity extends Entity {
 
         $table_comment = $this->tableComment($pg_class['relname']);
         $pg_class['comment'] = $table_comment['description'];
-        $pg_attributes = $this->pgAttributes($table_name);
+        $pg_attributes = $this->pgAttributes($pg_class['relname']);
         
         if ($pg_attributes) {
             $attributes = null;
@@ -1846,6 +1887,22 @@ class PgsqlEntity extends Entity {
         return $values;
     }
 
+
+    /**
+    * pgFields
+    * 
+    * TODO: pg_field_table ?
+    * TODO: pg_field_type_oid ?
+    * TODO: pg_field_type ?
+    * 
+    * @param string $table_name
+    * @return array
+    **/
+    public function pgFields($table_name) {
+        if (!$table_name) return;
+
+        return $values;
+    }
     /**
     * databases
     * 
@@ -1993,7 +2050,7 @@ class PgsqlEntity extends Entity {
                 AND relacl IS NULL";
 
         if ($table_name) $sql.= " AND relname = '{$table_name}'";
-        $sql.= 'ORDER BY pg_attribute.attname;';
+        $sql.= ' ORDER BY pg_attribute.attname;';
         return $this->fetchRows($sql);
     }
 
@@ -2536,6 +2593,38 @@ class PgsqlEntity extends Entity {
             if (is_numeric($column)) return true;
         }
         return false;
+    }
+
+    /**
+     * set Model(table name, columns ...) By pg_attributes
+     *
+     * @param  string $model_name
+     * @return PgsqlEntity
+     */
+    function table($table_name) {
+        $this->id_column = 'id';
+        $this->entity_name = FileManager::pluralToSingular($table_name);
+        $this->name = $table_name;
+        $this->from($this->name);
+
+        $pg_attributes = $this->pgAttributes($this->name);
+        if (!$pg_attributes) return;
+
+        foreach ($pg_attributes as $pg_attribute) {
+            if ($pg_attribute['attname'] != $this->id_column) {
+                $value = null;
+                $value['type'] = $pg_attribute['udt_name'];
+                if ($pg_attribute['attnotnull'] == 't') {
+                    $value['is_required'] = true;
+                }
+                if ($pg_attribute['attname']) {
+                    $columns[$pg_attribute['attname']] = $value;
+                }
+            }
+        }
+        $this->columns = $columns;
+        $this->sql = null;
+        return $this;
     }
 
     /**
