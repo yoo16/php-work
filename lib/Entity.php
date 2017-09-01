@@ -178,18 +178,19 @@ class Entity {
      * @return Class
      */
     public function validate() {
-        if (empty($this->columns)) trigger_error('illegal columns definition', E_USER_ERROR);
-
-        if ($this->id) $this->value[$this->id_column] = $this->id;
-        $this->errors = array();
-        foreach ($this->columns as $column_name => $column) {
-            $value = isset($this->value[$column_name]) ? $this->value[$column_name] : null;
-            if ($column === $this->id_column) continue;
-            if (isset($column['is_required']) && $column['is_required'] && (is_null($value) || $value === '')) {
-                $this->addError($column_name, 'required');
-            } else {
-                $type = $column['type'];
-                $this->value[$column_name] = $this->cast($type, $value);
+        if (empty($this->columns)) exit('Not found $columns in Model File');
+        if ($this->columns) {
+            if ($this->id) $this->value[$this->id_column] = $this->id;
+            foreach ($this->columns as $column_name => $column) {
+                $value = isset($this->value[$column_name]) ? $this->value[$column_name] : null;
+                if ($column_name === $this->id_column) continue;
+                if ($column_name === 'created_at') continue;
+                if (isset($column['is_required']) && $column['is_required'] && (is_null($value) || $value === '')) {
+                    $this->addError($column_name, 'required');
+                } else {
+                    $type = $column['type'];
+                    $this->value[$column_name] = $this->cast($type, $value);
+                }
             }
         }
         return $this;
@@ -325,8 +326,10 @@ class Entity {
      * @return int
      */
     private function castInt($value) {
-        if (is_int($value)) return $value;
-        return (int) $value;
+        if (is_numeric($value)) {
+            if (is_int($value)) return $value;
+            return (int) $value;
+        }
     }
 
     /**
@@ -336,8 +339,10 @@ class Entity {
      * @return float
      */
     private function castFloat($value) {
-        if (is_float($value)) return $value;
-        return (float) $value;
+        if (is_numeric($value)) {
+            if (is_float($value)) return $value;
+            return (float) $value;
+        }
     }
 
     /**
@@ -347,8 +352,10 @@ class Entity {
      * @return double
      */
     private function castDouble($value) {
-        if (is_double($value)) return $value;
-        return (double) $value;
+        if (is_numeric($value)) {
+            if (is_double($value)) return $value;
+            return (double) $value;
+        }
     }
 
     /**
@@ -389,9 +396,7 @@ class Entity {
         if ($type == 'text') return self::castString($value);
         if ($type == 'bool') return self::castBool($value);
         if ($type == 'timestamp') return self::castTimestamp($value);
-        if (strstr($type, 'int')) {
-            return self::castInt($value);
-        }
+        if (strstr($type, 'int')) return self::castInt($value);
         if (strstr($type, 'float')) return self::castFloat($value);
         if (strstr($type, 'double')) return self::castDouble($value);
         if ($type == 'array') return self::castArray($value);
@@ -408,7 +413,7 @@ class Entity {
         if (is_array($row)) {
             foreach ($row as $column_name => $value) {
                 if ($column_name === $this->id_column) {
-                    $row[$this->id_column] = $value;
+                    $row[$this->id_column] = (int) $value;
                 } else {
                     if (isset($this->columns[$column_name])) {
                         $column = $this->columns[$column_name];
@@ -574,7 +579,6 @@ class Entity {
     function formRadio($column, $params = null) {
         if (!$column) return;
         $params['name'] = "{$this->entity_name}[{$column}]";
-
         if ($params['model'] && !$params['value']) $params['value'] = $this->id_column;
         $tag = FormHelper::radio($params, $this->value[$column]);
         return $tag;
@@ -626,13 +630,13 @@ class Entity {
     function bindById($model_name, $value_key = null) {
         if (!$this->values) return $this;
 
-        $model = DB::table($model_name)->idIndex()->select();
+        //TODO join SQL?
+        $model = DB::table($model_name)->idIndex()->all();
         if (!$model->values) return $this;
         if (!$value_key) $value_key = "{$model->entity_name}_id";
 
-        $bind_name = $model->entity_name;
         foreach ($this->values as $index => $value) {
-            if ($id = $value[$value_key]) $this->values[$index][$bind_name] = $model->values[$id];
+            if ($id = $value[$value_key]) $this->values[$index][$model->entity_name] = $model->values[$id];
         }
         return $this;
     }
