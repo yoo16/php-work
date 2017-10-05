@@ -1084,6 +1084,9 @@ class PgsqlEntity extends Entity {
         if ($this->is_bulk_select) {
             return $this->bulkAll($this->limit);
         } else {
+            if (!$this->orders && $this->columns['sort_order']) {
+                $this->order('sort_order');
+            }
             $sql = $this->selectSql();
             $this->values = $this->fetchRows($sql);
             return $this;
@@ -1204,29 +1207,6 @@ class PgsqlEntity extends Entity {
     }
 
     /**
-    * inserts
-    * 
-    * @param  array $rows
-    * @return PgsqlEntity
-    */
-    public function copyFrom($rows) {
-        $model_columns = array_keys($this->columns);
-        pg_copy_from($this->connection(), $this->table_name, $rows);
-    }
-
-    /**
-    * inserts
-    * 
-    * @param  array $posts
-    * @return PgsqlEntity
-    */
-    public function inserts($posts) {
-        $model_columns = array_keys($this->columns);
-
-        pg_insert($this->connection(), $this->table_name, $posts);
-    }
-
-    /**
     * update
     * 
     * TODO update
@@ -1285,6 +1265,29 @@ class PgsqlEntity extends Entity {
             exit;
         }
         return $this;
+    }
+
+    /**
+    * inserts
+    * 
+    * @param  array $rows
+    * @return PgsqlEntity
+    */
+    public function copyFrom($rows) {
+        $model_columns = array_keys($this->columns);
+        pg_copy_from($this->connection(), $this->table_name, $rows);
+    }
+
+    /**
+    * inserts
+    * 
+    * @param  array $posts
+    * @return PgsqlEntity
+    */
+    public function inserts($posts) {
+        $model_columns = array_keys($this->columns);
+
+        pg_insert($this->connection(), $this->table_name, $posts);
     }
 
 
@@ -1595,7 +1598,7 @@ class PgsqlEntity extends Entity {
     * @param  Object $value
     * @return string
     */
-    private function sqlValue($value, $type) {
+    private function sqlValue($value, $type = null) {
         if (is_null($value)) {
             return "NULL";
         } elseif (is_bool($value)) {
@@ -1641,7 +1644,7 @@ class PgsqlEntity extends Entity {
     */
     private function orderBySql() {
         $sql = '';
-        if ($this->columns['sort_order']) $this->order(['column' => 'sort_order']); 
+        if ($this->columns['sort_order']) $this->order('column', 'sort_order'); 
         if (!$this->orders) return;
         if ($order = $this->sqlOrders($this->orders)) $sql = " ORDER BY {$order}";
         return $sql;
@@ -1985,15 +1988,14 @@ class PgsqlEntity extends Entity {
     * @return string
     **/
     function sqlOrders($orders) {
-        if ($this->columns['sort_order']) $orders[] = array('column' => 'sort_order', 'option' => null);
         if (!$orders) return;
         foreach ($orders as $order) {
-            if (array_key_exists($order['column'], $this->columns)) {
+            if ($order['column'] && array_key_exists($order['column'], $this->columns)) {
                 $_orders[] = "{$this->table_name}.{$order['column']} {$order['option']}";
             }
         }
-        $order = implode(', ', $_orders);
-        return $order;
+        if ($_orders) $results = implode(', ', $_orders);
+        return $results;
     }
 
     /**
@@ -2105,7 +2107,8 @@ class PgsqlEntity extends Entity {
         }
         $pg_class['pg_attribute'] = $attributes;
         $pg_class['pg_constraint']['primary'] = $this->pgConstraints($pg_class['pg_class_id'], 'p');
-        $pg_class['pg_constraint']['unique'] = $this->pgConstraints($pg_class['pg_class_id'], 'u');
+        //$pg_class['pg_constraint']['unique'] = $this->pgConstraints($pg_class['pg_class_id'], 'u');
+        $pg_class['pg_constraint']['unique'] = $this->pgUniqueConstraints($pg_class['pg_class_id']);
         $pg_class['pg_constraint']['foreign'] = $this->pgForeignConstraints($pg_class['pg_class_id']);
 
         return $pg_class;
@@ -2244,7 +2247,6 @@ class PgsqlEntity extends Entity {
 
         $conditions[] = "relkind = '{$relkind}'";
         $conditions[] = "relfilenode > 0";
-        $conditions[] = "relallvisible = 0";
         $conditions[] = "nspname = '{$schema_name}'";
         $conditions[] = "pg_class.oid = {$pg_class_id}";
         $condition = implode(' AND ', $conditions);
@@ -2278,8 +2280,6 @@ class PgsqlEntity extends Entity {
 
         $conditions[] = "relkind = '{$relkind}'";
         $conditions[] = "relfilenode > 0";
-        //TODO research relallvisible
-        $conditions[] = "relallvisible = 0";
         $conditions[] = "relhasindex = TRUE";
         $conditions[] = "nspname = '{$schema_name}'";
         if ($pg_class_ids) {
@@ -2648,6 +2648,21 @@ class PgsqlEntity extends Entity {
         $condition = implode(' AND ', $conditions);
         $sql.= " WHERE {$condition};";
         return $this->fetchRows($sql);
+    }
+
+    /**
+     * pg constraints (unique)
+     *
+     * @param  int $pg_class_id
+     * @return array
+     */
+    function pgUniqueConstraints($pg_class_id) {
+        $constraints = $this->pgConstraints($pg_class_id, 'u');
+        if (!$constraints) return;
+        foreach ($constraints as $constraint) {
+            $results[$constraint['conname']][] = $constraint;
+        }
+        return $results;
     }
 
     /**

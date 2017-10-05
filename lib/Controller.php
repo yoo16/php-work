@@ -529,24 +529,23 @@ class Controller extends RuntimeException {
             error_log("<USER_AGENT> {$_SERVER['HTTP_USER_AGENT']}");
         }
 
-        if (!isset($this->base)) {
-            $r = $_SERVER['REQUEST_URI'];
-            if (defined('BASE_URL') && is_string(BASE_URL)) {
-                $this->base = BASE_URL;
+        //TODO
+        if (defined('BASE_URL') && is_string(BASE_URL)) {
+            $this->base = BASE_URL;
+        } else {
+            if (isset($_SERVER['HTTPS'])) {
+                $this->base = 'https://' . preg_replace('/:443$/', '', $_SERVER['HTTP_HOST']);
             } else {
-                if (isset($_SERVER['HTTPS'])) {
-                    $this->base = 'https://' . preg_replace('/:443$/', '', $_SERVER['HTTP_HOST']);
-                } else {
-                    $this->base = 'http://' . preg_replace('/:80$/', '', $_SERVER['HTTP_HOST']);
-                }
-                $this->base .= substr($r, 0, strlen($r) - strlen($_SERVER['QUERY_STRING']));
+                $this->base = 'http://' . preg_replace('/:80$/', '', $_SERVER['HTTP_HOST']);
             }
+            $request = $_SERVER['REQUEST_URI'];
+            $query = $_SERVER['QUERY_STRING'];
+            $this->base .= substr($request, 0, strlen($request) - strlen($query));
 
-            if (!(defined('BASE_URL') && BASE_URL)) {
-                $count = substr_count($_SERVER['QUERY_STRING'], '/');
-                for ($i = 0; $i < $count; $i++) {
-                    $this->relative_base .= '../';
-                }
+            //TODO
+            $count = substr_count($query, '/');
+            for ($i = 0; $i < $count; $i++) {
+                $this->relative_base .= '../';
             }
         }
 
@@ -602,9 +601,9 @@ class Controller extends RuntimeException {
 
     function loadPosts() {
         if ($_POST) {
-            $this->setSessions('posts', $_POST);
+            AppSession::set('posts', $_POST);
         }
-        $this->posts = $this->getSessions('posts');
+        $this->posts = AppSession::get('posts');
     }
 
     function clearPosts() {
@@ -624,26 +623,6 @@ class Controller extends RuntimeException {
     function clearSessions($key) {
         if (!$this->session_name) return;
         AppSession::clearWithKey($this->session_name, $key); 
-    }
-
-    function loadErrors() {
-        if (!$this->session_name) return;
-        $this->errors = $this->getSessions('errors');
-    }
-
-    function getErrors() {
-        if (!$this->session_name) return;
-        return AppSession::getWithKey('errors', $this->session_name); 
-    }
-
-    function setErrors($errors) {
-        if (!$this->session_name) return;
-        AppSession::setWithKey('errors', $this->session_name, $errors); 
-    }
-
-    function flushErrors() {
-        if (!$this->session_name) return;
-        AppSession::clearWithKey('errors', $this->session_name); 
     }
 
     /**

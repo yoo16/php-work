@@ -17,15 +17,35 @@ class AppController extends Controller {
     function before_action($action) {
         parent::before_action($action);
 
-        $this->loadDefaultOptions();
+        $this->loadDefaultCsvOptions();
     }
 
-    function loadDefaultOptions() {
-        if (is_array($this->csv_options)) {
-            foreach ($this->csv_options as $key => $value) {
-                $this->options[$value] = CsvLite::optionValues($value);
-            }
+    /**
+     * reloadDefaultCsvOptions
+     * 
+     * @return void
+     */
+    function reloadDefaultCsvOptions() {
+        AppSession::clearWithKey('app', 'csv_options');
+        $this->loadDefaultCsvOptions();
+    }
+
+    /**
+     * loadDefaultCsvOptions
+     * 
+     * @return void
+     */
+    function loadDefaultCsvOptions() {
+        $this->csv_options = AppSession::getWithKey('app', 'csv_options');
+
+        if ($this->csv_options) return;
+
+        $path = DB_DIR."records/*.csv";
+        foreach (glob($path) as $file_path) {
+            $path_info = pathinfo($file_path);
+            $this->csv_options[$path_info['filename']] = CsvLite::optionValues($file_path);
         }
+        AppSession::setWithKey('app', 'csv_options', $this->csv_options);
     }
 
     function isRequestPost() {

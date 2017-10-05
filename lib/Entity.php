@@ -16,6 +16,9 @@ class Entity {
     var $posts = null;
     var $session = null;
 
+    static $except_columns = ['id', 'created_at', 'updated_at'];
+    static $app_columns = ['id', 'created_at', 'updated_at', 'sort_order', 'old_db', 'old_host', 'old_id'];
+
 
     function __construct($params = null) {
         $this->defaultValue();
@@ -225,6 +228,7 @@ class Entity {
         if (isset($column) && isset($message)) {
             $this->errors[] = array('column' => $column, 'message' => $message);
         }
+        AppSession::setErrors($this->errors);
     }
 
     /**
@@ -268,8 +272,10 @@ class Entity {
         if (isset($this->_value)) {
             $changes = array();
             foreach ($this->columns as $key => $type) {
-                if ($this->value[$key] !== $this->_value[$key]) {
-                    $changes[$key] = ($changed) ? $this->value[$key] : $this->_value[$key];
+                if (!in_array($key, self::$except_columns)) {
+                    if ($this->value[$key] !== $this->_value[$key]) {
+                        $changes[$key] = ($changed) ? $this->value[$key] : $this->_value[$key];
+                    }
                 }
             }
             return $changes;
