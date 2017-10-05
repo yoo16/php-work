@@ -43,7 +43,7 @@ class AppController extends Controller {
         $path = DB_DIR."records/*.csv";
         foreach (glob($path) as $file_path) {
             $path_info = pathinfo($file_path);
-            $this->csv_options[$path_info['filename']] = CsvLite::optionValues($file_path);
+            $this->csv_options[$path_info['filename']] = CsvLite::keyValues($file_path);
         }
         AppSession::setWithKey('app', 'csv_options', $this->csv_options);
     }

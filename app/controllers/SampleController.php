@@ -15,7 +15,7 @@ class SampleController extends AppController {
 
     }
 
-    function action_page1() {
+    function action_form_helper() {
         $values = null;
         $values[] = array('id' => 1, 'name' => 'Tokyo', 'country' => 'Japan');
         $values[] = array('id' => 2, 'name' => 'Osaka', 'country' => 'Japan');
@@ -27,7 +27,7 @@ class SampleController extends AppController {
         $this->forms['area']['class'] = 'form-control';
         $this->forms['area']['name'] = 'select[area]';
         $this->forms['area']['value_key'] = 'id';
-        $this->forms['area']['label_key'] = array('country', 'name');
+        $this->forms['area']['label'] = ['country', 'name'];
         $this->forms['area']['label_separate'] = ' : ';
         $this->forms['area']['values'] = $values;
         $this->forms['area']['unselect']['label'] = "-------";
@@ -120,21 +120,6 @@ class SampleController extends AppController {
     	$this->forms['questions'] = $params;
     }
 
-    function action_page2() {
-
-    }
-
-    function action_page3() {
-
-    }
-
-    function action_page4() {
-
-    }
-
-    function action_page5() {
-
-    }
 
     function action_upload_file() {
         $this->contents = FileManager::loadContents();

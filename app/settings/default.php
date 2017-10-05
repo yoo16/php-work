@@ -17,4 +17,4 @@ define('DEBUG', true);
 
 define('MAIL_SETTING_FILE', DB_DIR.'mail/default.csv');
 
-define('DB_SETTING_FILE', BASE_DIR.'app/settings/db.php');
+define('DB_SETTING_FILE', BASE_DIR.'app/settings/pgsql/default.php');
