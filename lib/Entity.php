@@ -413,14 +413,14 @@ class Entity {
         if (is_array($row)) {
             foreach ($row as $column_name => $value) {
                 if ($column_name === $this->id_column) {
-                    if ($value > 0) {
-                        $this->id = $row[$this->id_column] = (int) $value;
-                    }
+                    if ($value > 0) $this->id = $row[$this->id_column] = (int) $value;
                 } else {
                     if (isset($this->columns[$column_name])) {
                         $column = $this->columns[$column_name];
                         $type = $column['type'];
                         $row[$column_name] = $this->cast($type, $value);
+                    } else {
+                        unset($row[$column_name]);
                     }
                 }
             }
