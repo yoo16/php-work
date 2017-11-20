@@ -208,7 +208,11 @@ class Entity {
      */
     public function takeValues($values) {
         if (!$values) return $this;
-        $this->value = $this->castRow($values);
+        foreach ($values as $column => $value) {
+            if ($column == $this->id_column) $rows[$this->id_column] = (int) $value;
+            if (isset($this->columns[$column])) $rows[$column] = $value;
+        }
+        $this->value = $this->castRow($rows);
         return $this;
     }
 
@@ -413,14 +417,15 @@ class Entity {
         if (is_array($row)) {
             foreach ($row as $column_name => $value) {
                 if ($column_name === $this->id_column) {
-                    if ($value > 0) $this->id = $row[$this->id_column] = (int) $value;
+                    if ($value > 0) {
+                        $this->id = $row[$this->id_column] = (int) $value;
+                        $this->value[$this->id_column] = (int) $this->id;
+                    }
                 } else {
                     if (isset($this->columns[$column_name])) {
                         $column = $this->columns[$column_name];
                         $type = $column['type'];
                         $row[$column_name] = $this->cast($type, $value);
-                    } else {
-                        unset($row[$column_name]);
                     }
                 }
             }

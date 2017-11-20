@@ -678,20 +678,19 @@ class PgsqlEntity extends Entity {
     function query($sql) {
         $this->sql_error = null;
         $this->sql = $sql;
-        $this->conditions = null;
-        $this->joins = null;
         if (defined('SQL_LOG') && SQL_LOG) error_log("<SQL> {$sql}");
         if ($pg = $this->connection()) {
             if ($is_busy = pg_connection_busy($pg)) {
                 exit('DB connection is busy.');
             }
             $results = pg_query($pg, $sql);
-            //var_dump(pg_connection_status($pg) == PGSQL_CONNECTION_OK);
-            //var_dump(pg_ping($pg));
             $this->pg_result_status = pg_result_status($results);
             $this->sql_error = pg_last_error($pg);
         }
         if ($pg) pg_close($pg);
+
+        $this->conditions = null;
+        $this->joins = null;
         return $results;
     }
 
@@ -948,8 +947,11 @@ class PgsqlEntity extends Entity {
         if (!$foreign_key) $foreign_key = "{$this->entity_name}_id";
         if (!$value_key) $value_key = $this->id_column;
 
+
         $value = $this->value[$value_key];
-        if (is_null($value)) return $this;
+        if (is_null($value)) {
+            exit('hasMany: not found value');
+        }
 
         $condition = "{$foreign_key} = '{$value}'";
         $relation->where($condition);
@@ -2433,8 +2435,6 @@ class PgsqlEntity extends Entity {
     **/
     function diffPgAttributes($orign_pgsql, $orign_table_name) {
         $orign_pg_attributes = $orign_pgsql->pgAttributes($orign_table_name);
-        var_dump(array_keys($orign_pg_attributes));
-        exit;
         foreach ($orign_pg_attributes as $orign_pg_attribute) {
 
         }
