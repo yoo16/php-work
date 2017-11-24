@@ -793,6 +793,7 @@ class PgsqlEntity extends Entity {
         if (!$id) return $this;
 
         $this->where("{$this->id_column} = {$id}")->one($params);
+
         $this->before_value = $this->value;
         return $this;
     }
@@ -1061,6 +1062,7 @@ class PgsqlEntity extends Entity {
         $value = $this->fetchRow($sql);
 
         $this->value = $this->castRow($value);
+        $this->id = $this->value[$this->id_column];
         return $this;
     }
 
@@ -1217,7 +1219,7 @@ class PgsqlEntity extends Entity {
     * @return PgsqlEntity
     */
     public function update($posts = null, $id = null) {
-        if ($id) $this->fetch($id);
+        if ($id > 0) $this->fetch($id);
         if (!$this->id) return $this;
 
         if ($posts) $this->takeValues($posts);
@@ -1234,10 +1236,7 @@ class PgsqlEntity extends Entity {
         }
 
         $result = $this->query($sql);
-        if ($result !== false) {
-            $this->_value = $this->value;
-        } else {
-            //TODO session
+        if ($result === false) {
             $this->addError('sql', 'error');
         }
         return $this;
@@ -1348,6 +1347,7 @@ class PgsqlEntity extends Entity {
 
     /**
     * insertsFromOldTable
+    * TODO inserts()
     * 
     * @param  PgsqlEntity $old_pgsql
     * @return PgsqlEntity
@@ -1357,11 +1357,9 @@ class PgsqlEntity extends Entity {
 
         $values = $this->valuesFromOldTable($old_pgsql);
 
-        //TODO inserts
         if ($result !== false) {
             $this->_value = $this->value;
         } else {
-            //TODO session
             $this->addError('sql', 'error');
         }
         return $this;
@@ -1424,9 +1422,7 @@ class PgsqlEntity extends Entity {
         $sql = $this->truncateSql($option);
         $result = $this->query($sql);
 
-        if ($result === false) {
-            $this->addError($this->name, 'truncate');
-        }
+        if ($result === false) $this->addError($this->name, 'truncate');
         return $this;
     }
 
@@ -1437,8 +1433,8 @@ class PgsqlEntity extends Entity {
     * @return PgsqlEntity
     */
     public function wheres($conditions) {
-        $this->conditions[] = $conditions; 
-        $this->conditions = array_unique($this->conditions);
+        if (!$conditions) return $this;
+        foreach ($conditions as $condition) $this->where($condition);
         return $this;
     }
 
@@ -1459,11 +1455,14 @@ class PgsqlEntity extends Entity {
     * where
     * 
     * @param  string $condition
+    * @param  string $value
+    * @param  string $eq
     * @return PgsqlEntity
     */
     public function where($condition, $value = null, $eq = null) {
+        if (!$condition) return $this;
         if (isset($value) && isset($eq)) {
-            $this->conditions = "{$condition} {$eq} {$value}";
+            $this->conditions[] = "{$condition} {$eq} {$value}";
         } else {
             $this->conditions[] = $condition; 
         }

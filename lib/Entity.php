@@ -208,11 +208,13 @@ class Entity {
      */
     public function takeValues($values) {
         if (!$values) return $this;
-        foreach ($values as $column => $value) {
-            if ($column == $this->id_column) $rows[$this->id_column] = (int) $value;
-            if (isset($this->columns[$column])) $rows[$column] = $value;
+        foreach ($this->columns as $column_name => $value) {
+            if (isset($values[$column_name])) {
+                $column = $this->columns[$column_name];
+                $type = $column['type'];
+                $this->value[$column_name] = $this->cast($type, $values[$column_name]);
+            }
         }
-        $this->value = $this->castRow($rows);
         return $this;
     }
 
@@ -410,27 +412,24 @@ class Entity {
     /**
      * castRow
      * 
-     * @param  array $row
+     * @param  array $rows
      * @return array
      */
-    function castRow($row) {
-        if (is_array($row)) {
-            foreach ($row as $column_name => $value) {
+    function castRow($rows) {
+        if (is_array($rows)) {
+            foreach ($rows as $column_name => $value) {
                 if ($column_name === $this->id_column) {
-                    if ($value > 0) {
-                        $this->id = $row[$this->id_column] = (int) $value;
-                        $this->value[$this->id_column] = (int) $this->id;
-                    }
+                    if ($value > 0) $rows[$column_name] = (int) $value;
                 } else {
                     if (isset($this->columns[$column_name])) {
                         $column = $this->columns[$column_name];
                         $type = $column['type'];
-                        $row[$column_name] = $this->cast($type, $value);
+                        $rows[$column_name] = $this->cast($type, $value);
                     }
                 }
             }
         }
-        return $row;
+        return $rows;
     }
 
     /**
@@ -590,6 +589,7 @@ class Entity {
         $tag = FormHelper::select($params, $this->value[$column]);
         return $tag;
     }
+
     /**
      * selectタグ
      *
