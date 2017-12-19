@@ -200,6 +200,7 @@ class PgsqlEntity extends Entity {
         return $this;
     }
 
+
     /**
     * database name
     * 
@@ -207,8 +208,10 @@ class PgsqlEntity extends Entity {
     * @return PgsqlEntity
     */
     function setDBName($name) {
-        $this->dbname = $name;
-        $this->loadDBInfo();
+        if ($name) {
+            $this->dbname = $name;
+            $this->loadDBInfo();
+        }
         return $this;
     }
 
@@ -219,8 +222,10 @@ class PgsqlEntity extends Entity {
     * @return PgsqlEntity
     */
     function setDBHost($host) {
-        $this->host = $host;
-        $this->loadDBInfo();
+        if ($host) {
+            $this->host = $host;
+            $this->loadDBInfo();
+        }
         return $this;
     }
 
@@ -231,8 +236,10 @@ class PgsqlEntity extends Entity {
     * @return PgsqlEntity
     */
     function setDBUser($user) {
-        $this->user = $user;
-        $this->loadDBInfo();
+        if ($user) {
+            $this->user = $user;
+            $this->loadDBInfo();
+        }
         return $this;
     }
 
@@ -243,8 +250,10 @@ class PgsqlEntity extends Entity {
     * @return PgsqlEntity
     */
     function setDBPort($port) {
-        $this->port = $port;
-        $this->loadDBInfo();
+        if ($port) {
+            $this->port = $port;
+            $this->loadDBInfo();
+        }
         return $this;
     }
 
@@ -932,6 +941,34 @@ class PgsqlEntity extends Entity {
     }
 
     /**
+    * relation one to one by model
+    * 
+    * @param  string $class_name
+    * @param  string $foreign_key
+    * @param  string $value_key
+    * @return PgsqlEntity
+    */
+    public function relationOne($class_name, $foreign_key = null, $value_key = null) {
+        if (is_null($this->value)) return $this;
+
+        if (!is_string($class_name)) exit('hasMany: $class_name is not string');
+        $relation = DB::table($class_name);
+
+        if (!$foreign_key) $foreign_key = "{$this->entity_name}_id";
+        if (!$value_key) $value_key = $this->id_column;
+
+
+        $value = $this->value[$value_key];
+        if (is_null($value)) {
+            exit('hasMany: not found value');
+        }
+
+        $condition = "{$foreign_key} = '{$value}'";
+        $relation->where($condition);
+        return $relation;
+    }
+
+    /**
     * relations by model
     * 
     * @param  string $class_name
@@ -1185,12 +1222,11 @@ class PgsqlEntity extends Entity {
     public function insert($posts = null) {
         $this->id = null;
         $this->values = null;
+        if ($this->value['id']) unset($this->value['id']);
         if ($posts) $this->takeValues($posts);
 
         $this->validate();
-        if ($this->errors) {
-            return $this;
-        }
+        if ($this->errors) return $this;
 
         $sql = $this->insertSql();
         if (!$sql) {
@@ -1222,23 +1258,20 @@ class PgsqlEntity extends Entity {
         if ($id > 0) $this->fetch($id);
         if (!$this->id) return $this;
 
+        $this->before_value = $this->value;
+
         if ($posts) $this->takeValues($posts);
 
         $this->after_value = $this->value;
 
         $this->validate();
-        if ($this->errors) {
-            return $this;
-        }
+        if ($this->errors) return $this;
+
         $sql = $this->updateSql();
-        if (!$sql) {
-            return $this;
-        }
+        if (!$sql) return $this;
 
         $result = $this->query($sql);
-        if ($result === false) {
-            $this->addError('sql', 'error');
-        }
+        if ($result === false) $this->addError('sql', 'error');
         return $this;
     }
 
@@ -1384,6 +1417,7 @@ class PgsqlEntity extends Entity {
             $this->addError($this->name, 'delete');
         } else {
             unset($this->id);
+            $this->value = null;
         }
         return $this;
     }
@@ -1665,7 +1699,7 @@ class PgsqlEntity extends Entity {
     */
     private function orderBySql() {
         $sql = '';
-        if ($this->columns['sort_order']) $this->order('column', 'sort_order'); 
+        if ($this->columns['sort_order']) $this->order('sort_order'); 
         if (!$this->orders) return;
         if ($order = $this->sqlOrders($this->orders)) $sql = " ORDER BY {$order}";
         return $sql;
@@ -1745,23 +1779,31 @@ class PgsqlEntity extends Entity {
         $sql = "SELECT {$column} FROM {$this->old_name}";
 
         $sql.= $this->whereSql();
-        $sql.= $this->orderBySql();
+        $sql.= $this->whereSql();
+        if ($this->old_id_column) " ORDER BY {$this->old_id_column}";
+
+        //$sql.= $this->orderBySql();
         $sql.= $this->limitSql();
         $sql.= $this->offsetSql();
         $sql.= ";";
         return $sql;
     }
 
+    /**
+    * old column for SQL select
+    * 
+    * @param  string $column
+    * @return string
+    */
     public function oldColumnForSelect() {
         if ($this->columns) {
             foreach ($this->columns as $column_name => $column) {
                 if ($column['old_name']) {
                     if ($column['old_name'] == $column_name) {
-                        $select_column = $column_name;
+                        $select_columns[] = $column_name;
                     } else {
-                        $select_column = "{$column['old_name']} AS {$column_name}";
+                        $select_columns[] = "{$column['old_name']} AS {$column_name}";
                     }
-                    $select_columns[] = $select_column;
                 }
             }
             $column = implode(", ", $select_columns).PHP_EOL;
@@ -2011,7 +2053,7 @@ class PgsqlEntity extends Entity {
     function sqlOrders($orders) {
         if (!$orders) return;
         foreach ($orders as $order) {
-            if ($order['column'] && array_key_exists($order['column'], $this->columns)) {
+            if ($order['column']) {
                 $_orders[] = "{$this->table_name}.{$order['column']} {$order['option']}";
             }
         }
@@ -2205,7 +2247,8 @@ class PgsqlEntity extends Entity {
     function pgDatabases() {
         $this->dbname = null;
         $this->loadDBInfo();
-        $sql = "SELECT * FROM pg_database WHERE datacl IS NULL;";
+        //$sql = "SELECT * FROM pg_database WHERE datacl IS NULL;";
+        $sql = "SELECT * FROM pg_database;";
         return $this->fetchRows($sql);
     }
 

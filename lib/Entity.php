@@ -209,7 +209,7 @@ class Entity {
     public function takeValues($values) {
         if (!$values) return $this;
         foreach ($this->columns as $column_name => $value) {
-            if (isset($values[$column_name])) {
+            if (array_key_exists($column_name, $values)) {
                 $column = $this->columns[$column_name];
                 $type = $column['type'];
                 $this->value[$column_name] = $this->cast($type, $values[$column_name]);
@@ -316,7 +316,7 @@ class Entity {
         if ($value === '') return null;
 
         if (is_string($value)) {
-            return DateHelper::stringToArray($value);
+            return DateHelper::convertString($value);
         } else if (is_array($value)) {
             $timestamp = DateHelper::arrayToString($value);
             return $this->castTimestamp($timestamp);
@@ -324,6 +324,7 @@ class Entity {
             return $value;
         }
     }
+
 
     /**
      * castInt
@@ -617,6 +618,7 @@ class Entity {
         $params['name'] = "{$this->entity_name}[{$column}]";
         if ($params['value_column']) $params['value'] = $params['value_column'];
         if ($params['model'] && !$params['value']) $params['value'] = $this->id_column;
+
         $tag = FormHelper::radio($params, $this->value[$column]);
         return $tag;
     }
