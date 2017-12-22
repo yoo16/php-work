@@ -451,7 +451,7 @@ class Entity {
      */
     function castRows($rows) {
         if (is_array($rows)) {
-            foreach ($rows as $index => $row) {
+            foreach ($rows as $row) {
                 if (isset($this->id_index) && $this->id_index == true) {
                     $id = (int) $row[$this->id_column];
                     $values[$id] = $this->castRow($row);

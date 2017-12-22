@@ -25,9 +25,7 @@ class PgsqlEntity extends Entity {
     var $value = null;
     var $conditions = null;
     var $orders = null;
-    var $limits = null;
-    var $extra_columns = false;
-    var $group_columns = false;
+    var $limit = null;
     var $joins = array();
     var $sql = null;
     var $sqls = null;
@@ -134,7 +132,6 @@ class PgsqlEntity extends Entity {
     function createSequence($table_name, $id_column = 'id') {
         $sequence_name = self::sequenceName($table_name, $id_column);
         $sql = "CREATE SEQUENCE {$sequence_name};";
-        //$sql = "CREATE SEQUENCE IF NOT EXISTS {$sequence_name};";
         return $this->query($sql);
     }
 
@@ -148,7 +145,6 @@ class PgsqlEntity extends Entity {
     function dropSequence($table_name, $id_column = 'id') {
         $sequence_name = self::sequenceName($table_name, $id_column);
         $sql = "DROP SEQUENCE {$sequence_name};";
-        //$sql = "DROP SEQUENCE IF EXISTS {$sequence_name};";
         return $this->query($sql);
     }
 
@@ -710,28 +706,12 @@ class PgsqlEntity extends Entity {
     * @return array
     */
     function fetchRows($sql) {
-        $rs = $this->query($sql);
-        if ($rs) {
+        if ($rs = $this->query($sql)) {
             if ($this->columns) {
-                //cast
                 if ($this->is_value_object) {
-                    while ($row = pg_fetch_object($rs)) {
-                        if (isset($this->id_index) && $this->id_index == true) {
-                            $id = (int) $row[$this->id_column];
-                            $rows[$id] = $this->castRow($row);
-                        } else {
-                            $rows[] = $this->castRow($row);
-                        }
-                    }
+                    while ($row = pg_fetch_object($rs)) $rows[] = $this->castRow($row);
                 } else {
-                    while ($row = pg_fetch_assoc($rs)) {
-                        if (isset($this->id_index) && $this->id_index == true) {
-                            $id = (int) $row[$this->id_column];
-                            $rows[$id] = $this->castRow($row);
-                        } else {
-                            $rows[] = $this->castRow($row);
-                        }
-                    }
+                    while ($row = pg_fetch_assoc($rs)) $rows[] = $this->castRow($row);
                 }
             } else {
                 $rows = pg_fetch_all($rs);
@@ -745,31 +725,31 @@ class PgsqlEntity extends Entity {
     /**
     * fetchRow
     * 
+    * @param string $sql
     * @return array
     */
     function fetchRow($sql) {
-        $rs = $this->query($sql);
-        if ($rs) {
+        if ($rs = $this->query($sql)) {
             if ($this->is_value_object) {
                 $row = pg_fetch_object($rs);
             } else {
-                //$row = pg_fetch_array($rs, null, PGSQL_ASSOC);
                 $row = pg_fetch_assoc($rs);
             }
-            return ($row) ? $row : null;
+            $this->value = $this->castRow($row);
+            return $this->value;
         } else {
             return;
         }
     }
 
     /**
-    * fetch_result
+    * fetch result
     * 
+    * @param string $sql
     * @return string
     */
-    function fetch_result($sql) {
-        $rs = $this->query($sql);
-        if ($rs) {
+    function fetchResult($sql) {
+        if ($rs = $this->query($sql)) {
             $result = pg_fetch_result($rs, 0, 0);
             return (isset($result)) ? $result : null;
         } else {
@@ -778,6 +758,7 @@ class PgsqlEntity extends Entity {
     }
 
     /**
+    * table partition
     * 
     * @param string $key
     * @param string $separater
@@ -786,46 +767,6 @@ class PgsqlEntity extends Entity {
     public function partition($key, $separater = '_') {
         if (!$key) return;
         $this->table_name = "{$this->name}{$separater}{$key}";
-    }
-
-    /**
-    * fetch
-    * 
-    * @param  int $id
-    * @param  array $params
-    * @return Object
-    */
-    public function fetch($id, $params=null) {
-        $this->conditions = null;
-        $this->orders = null;
-        $this->values = null;
-        if (!$id) return $this;
-
-        $this->where("{$this->id_column} = {$id}")->one($params);
-
-        $this->before_value = $this->value;
-        return $this;
-    }
-
-    /**
-    * find
-    * 
-    * @param  int $id
-    * @return Object
-    */
-    public function find($id) {
-        return $this->fetch($id);
-    }
-
-    /**
-    * first
-    * 
-    * @param  int $id
-    * @return Object
-    */
-    public function first() {
-        $this->limit(1);
-        return $this->all();
     }
 
     public function chunk($limit) {
@@ -1098,9 +1039,48 @@ class PgsqlEntity extends Entity {
         $sql = $this->selectSql();
         $value = $this->fetchRow($sql);
 
-        $this->value = $this->castRow($value);
         $this->id = $this->value[$this->id_column];
         return $this;
+    }
+
+    /**
+    * fetch
+    * 
+    * @param  int $id
+    * @param  array $params
+    * @return Object
+    */
+    public function fetch($id, $params=null) {
+        $this->conditions = null;
+        $this->orders = null;
+        $this->values = null;
+        if (!$id) return $this;
+
+        $this->where("{$this->id_column} = {$id}")->one($params);
+
+        $this->before_value = $this->value;
+        return $this;
+    }
+
+    /**
+    * find
+    * 
+    * @param  int $id
+    * @return Object
+    */
+    public function find($id) {
+        return $this->fetch($id);
+    }
+
+    /**
+    * first
+    * 
+    * @param  int $id
+    * @return Object
+    */
+    public function first() {
+        $this->limit(1);
+        return $this->all();
     }
 
     /**
@@ -1123,11 +1103,18 @@ class PgsqlEntity extends Entity {
         if ($this->is_bulk_select) {
             return $this->bulkAll($this->limit);
         } else {
+            // $benchmark = new BenchmarkTimer(); 
+            // $benchmark->start();
+
             if (!$this->orders && $this->columns['sort_order']) {
                 $this->order('sort_order');
             }
             $sql = $this->selectSql();
             $this->values = $this->fetchRows($sql);
+
+            // $benchmark->stop();
+            // $benchmark->status();
+
             return $this;
         }
     }
@@ -1234,7 +1221,7 @@ class PgsqlEntity extends Entity {
             return $this;
         }
 
-        if ($result = $this->fetch_result($sql)) {
+        if ($result = $this->fetchResult($sql)) {
             $this->id = (int) $result;
             $this->value[$this->id_column] = $this->id;
         } else {
@@ -1273,6 +1260,30 @@ class PgsqlEntity extends Entity {
         $result = $this->query($sql);
         if ($result === false) $this->addError('sql', 'error');
         return $this;
+    }
+
+    /**
+     * upsert 
+     * 
+     * PostgreSQL 9.5 >
+     * 
+     * @return [type] [description]
+     */
+    public function upsert() {
+        if ($id > 0) $this->fetch($id);
+        if (!$this->id) return $this;
+
+        $this->before_value = $this->value;
+
+        if ($posts) $this->takeValues($posts);
+
+        $this->validate();
+        if ($this->errors) return $this;
+
+        $sql = $this->upsertSql();
+
+        echo($sql).PHP_EOL;
+        exit;
     }
 
     /**
@@ -1488,7 +1499,7 @@ class PgsqlEntity extends Entity {
     /**
     * where
     * 
-    * @param  string $condition
+    * @param  object $condition
     * @param  string $value
     * @param  string $eq
     * @return PgsqlEntity
@@ -1498,7 +1509,32 @@ class PgsqlEntity extends Entity {
         if (isset($value) && isset($eq)) {
             $this->conditions[] = "{$condition} {$eq} {$value}";
         } else {
-            $this->conditions[] = $condition; 
+            if (is_array($condition)) {
+                $column = $condition[0];
+                $value = $condition[1];
+                $eq = (isset($conditinos[3])) ? $conditinos[3] : '=';
+                
+                $this->conditions[] = "{$column} {$eq} {$value}";
+            } else {
+                $this->conditions[] = $condition; 
+            }
+        }
+        $this->conditions = array_unique($this->conditions);
+        return $this;
+    }
+
+    /**
+    * filter
+    * 
+    * @param  string $condition
+    * @param  string $value
+    * @param  string $eq
+    * @return PgsqlEntity
+    */
+    public function filter($filters) {
+        if (!is_array($filters)) return $this;
+        foreach ($filters as $column => $filter) {
+            $this->conditions[] = "{$column} {$filter['eq']} '{$filter['value']}'";
         }
         $this->conditions = array_unique($this->conditions);
         return $this;
@@ -1732,27 +1768,62 @@ class PgsqlEntity extends Entity {
     }
 
     /**
+    * select column array
+    * 
+    * @return string
+    */
+    private function selectColumnArray() {
+        $columns = array_keys($this->columns);
+        if ($this->id_column) $columns[] = $this->id_column; 
+        foreach ($columns as $key => $column) {
+            $columns[$key] = "{$this->table_name}.{$column}";
+        }
+        return $columns;
+    }
+
+    /**
+    * select join column array
+    * 
+    * @return string
+    */
+    private function selectJoinColumnArray($columns) {
+        if ($this->joins) {
+            foreach ($this->joins as $join) {
+                $join_class = $join['join_class'];
+                foreach ($join_class->columns as $join_column_name => $join_column) {
+                    $columns[] = "{$join['join_name']}.{$join_column_name} AS {$join['join_entity_name']}_{$join_column_name}";
+                }
+            }
+        }
+        return $columns;
+    }
+
+    /**
+    * select column string
+    * 
+    * @param $columns
+    * @return string
+    */
+    private function selectColumnString($columns) {
+        $column = implode(", \n", $columns).PHP_EOL;
+        return $column;
+    }
+
+    //TODO column name
+    /**
     * selectSql
     * 
     * @return string
     */
     private function selectSql() {
-        if ($this->select_columns) {
-            $column = implode(", \n", $this->select_columns).PHP_EOL;
+        if (is_array($this->select_columns)) {
+            $columns = $this->select_columns;
         } else {
-            if ($this->joins) {
-                $columns[] = "{$this->table_name}.*";
-                foreach ($this->joins as $join) {
-                    $join_class = $join['join_class'];
-                    foreach ($join_class->columns as $join_column_name => $join_column) {
-                        $columns[] = "{$join['join_name']}.{$join_column_name} AS {$join['join_entity_name']}_{$join_column_name}";
-                    }
-                }
-                $column = implode(", \n", $columns).PHP_EOL;
-            } else {
-                $column = "{$this->table_name}.*";
-            }
+            $columns = $this->selectColumnArray();
+            $columns = $this->selectJoinColumnArray($columns);
         }
+
+        $column = $this->selectColumnString($columns);
 
         $sql = "SELECT {$column} FROM {$this->table_name}";
 
@@ -1762,6 +1833,30 @@ class PgsqlEntity extends Entity {
         $sql.= $this->orderBySql();
         $sql.= $this->limitSql();
         $sql.= $this->offsetSql();
+        $sql.= ";";
+        return $sql;
+    }
+
+    /**
+    * selectSql
+    * 
+    * @return string
+    */
+    private function selectOneSql() {
+        if (is_array($this->select_columns)) {
+            $columns = $this->select_columns;
+        } else {
+            $columns = $this->selectColumnArray();
+            $columns = $this->selectJoinColumnArray($columns);
+        }
+
+        $column = $this->selectColumnString($columns);
+
+        $sql = "SELECT {$column} FROM {$this->table_name}";
+
+        if ($this->joins) $sql.= $this->joinSql();
+
+        $sql.= $this->whereSql();
         $sql.= ";";
         return $sql;
     }
@@ -1940,6 +2035,21 @@ class PgsqlEntity extends Entity {
         return $sql;
     }
 
+    private function upsertSql() {
+        if ($this->primary_key) {
+            echo('Not found primary key!').PHP_EOL;
+            exit;
+        }
+        $insert_sql = $this->insertSQL();
+        $update_sql = $this->updateSQL();
+
+        $sql = $update_sql;
+        $sql.= "ON CONFLICT ON CONSTRAINT DO {$this->primary_key} ";
+        $sql.= $insert_sql;
+
+        return $sql;
+    }
+
     /**
     * updateSql
     * 
@@ -2023,7 +2133,7 @@ class PgsqlEntity extends Entity {
     public function count($column = null) {
         //TODO GROUP BY
         $sql = $this->selectCountSql($column);
-        $count = $this->fetch_result($sql); 
+        $count = $this->fetchResult($sql); 
         if (is_null($count)) $count = 0;
         return $count;
     }
