@@ -707,14 +707,17 @@ class PgsqlEntity extends Entity {
     */
     function fetchRows($sql) {
         if ($rs = $this->query($sql)) {
-            if ($this->columns) {
-                if ($this->is_value_object) {
-                    while ($row = pg_fetch_object($rs)) $rows[] = $this->castRow($row);
-                } else {
-                    while ($row = pg_fetch_assoc($rs)) $rows[] = $this->castRow($row);
+            if ($this->is_value_object) {
+                while ($row = pg_fetch_object($rs)) {
+                    if ($this->id_index) {
+                        $rows[$row[$this->id_column]] = $this->castRow($row);
+                    } else {
+                        $rows[] = $this->castRow($row);
+                    }
                 }
             } else {
                 $rows = pg_fetch_all($rs);
+                if ($this->columns) $rows = $this->castRows($rows);
             }
             return $rows;
         } else {
@@ -925,7 +928,6 @@ class PgsqlEntity extends Entity {
 
         if (!$foreign_key) $foreign_key = "{$this->entity_name}_id";
         if (!$value_key) $value_key = $this->id_column;
-
 
         $value = $this->value[$value_key];
         if (is_null($value)) {
@@ -1325,19 +1327,41 @@ class PgsqlEntity extends Entity {
         pg_copy_from($this->connection(), $this->table_name, $rows);
     }
 
+   /**
+    * レコード複数挿入、更新
+    *
+    * @return Bool
+    */ 
+    function inserts($rows) {
+        $model_columns = array_keys($this->columns);
+        foreach ($rows as $row) {
+            $sql_values = null;
+            foreach ($model_columns as $column_name) {
+                $sql_values[] = $this->sqlValue($row[$column_name]);
+            }
+            $value = implode(', ', $sql_values);
+            $values[] = "\n({$value})";
+        }
+
+        $column = implode(', ', $model_columns);
+        $value = implode(', ', $values);
+
+        $sql = "INSERT INTO {$this->table_name} ({$column}) VALUES {$value}";
+        $result = $this->query($sql);
+        return $this;
+    }
+
     /**
     * inserts
     * 
     * @param  array $posts
     * @return PgsqlEntity
     */
-    public function inserts($posts) {
+    public function pgInsert($posts) {
         $model_columns = array_keys($this->columns);
-
         pg_insert($this->connection(), $this->table_name, $posts);
     }
-
-
+    
    /**
     * update sort_order
     *
