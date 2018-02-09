@@ -44,6 +44,28 @@ function url_for($params, $option = null) {
 }
 
 
+/**
+* is POST method
+*
+* @param 
+* @return bool
+*/ 
+function isPost() {
+    return $_SERVER['REQUEST_METHOD'] == 'POST';
+}
+
+/**
+* convert url
+*
+* @param string $values
+* @return string
+*/ 
+function urlLinkConvert($values){
+    $values = mb_ereg_replace('(https?://[-_.!~*\'()a-zA-Z0-9;/?:@&=+$,%#]+)', '<a href="\1" target="_blank">\1</a>', $values);
+    return $values;
+}
+
+
 function jsonDump($object, $file = null, $line = null) {
     $dump = json_encode($object);
     error_log("<DUMP> {$file}:{$line}\n{$dump}");

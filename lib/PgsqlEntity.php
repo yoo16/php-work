@@ -11,42 +11,45 @@ require_once 'Entity.php';
 //TODO pg_field_num, pg_field_name
 
 class PgsqlEntity extends Entity {
-    var $pg_info = null;
-    var $pg_info_array = null;
-    var $dbname = null;
-    var $host = 'localhost';
-    var $user = 'postgres';
-    var $port = 5432;
-    var $password = null;
-    var $is_pconnect = false;
-    var $is_connect_forece_new = false;
-    var $table_name = null;
-    var $values = null;
-    var $value = null;
-    var $conditions = null;
-    var $orders = null;
-    var $limit = null;
-    var $joins = array();
-    var $sql = null;
-    var $sqls = null;
-    var $is_bulk_select = false;
-    var $is_old_table = false;
+    public $pg_info = null;
+    public $pg_info_array = null;
+    public $dbname = null;
+    public $host = 'localhost';
+    public $user = 'postgres';
+    public $port = 5432;
+    public $password = null;
+    public $is_pconnect = false;
+    public $is_connect_forece_new = false;
+    public $table_name = null;
+    public $values = null;
+    public $value = null;
+    public $conditions = null;
+    public $orders = null;
+    public $limit = null;
+    public $joins = [];
+    public $sql = null;
+    public $sqls = null;
+    public $is_bulk_select = false;
+    public $is_old_table = false;
+    public $is_sort_order = true;
+    public $is_excute_sql = true;
 
-    static $pg_info_columns = ['dbname', 'user', 'host', 'port', 'password'];
-    static $constraint_keys = ['p' => 'Primary Key',
-                              'u' => 'Unique',
-                              'f' => 'Foreign Key',
-                              'c' => 'Check'
-                              ];
-    static $constraint_actions = [
-                               'a' => 'NO ACTION',
-                               'c' => 'CASCADE',
-                               'r' => 'RESTRICT',
-                               'n' => 'SET NULL',
-                               'd' => 'SET DEFAULT'
-                              ];
+    public static $pg_info_columns = ['dbname', 'user', 'host', 'port', 'password'];
+    public static $constraint_keys = [
+                                      'p' => 'Primary Key',
+                                      'u' => 'Unique',
+                                      'f' => 'Foreign Key',
+                                      'c' => 'Check'
+                                     ];
+    public static $constraint_actions = [
+                                         'a' => 'NO ACTION',
+                                         'c' => 'CASCADE',
+                                         'r' => 'RESTRICT',
+                                         'n' => 'SET NULL',
+                                         'd' => 'SET DEFAULT'
+                                        ];
 
-    static $number_types = ['int2', 'int4', 'int8', 'float', 'float8', 'double', 'real'];
+public static $number_types = ['int2', 'int4', 'int8', 'float', 'float8', 'double', 'real'];
 
     /**
     * constructor
@@ -63,7 +66,7 @@ class PgsqlEntity extends Entity {
         }
         $this->table_name = $this->name;
         if (!$this->dbname) exit("Not Found: dbname");
-    }
+        }
 
 
     /**
@@ -195,7 +198,6 @@ class PgsqlEntity extends Entity {
         $this->loadDBInfo();
         return $this;
     }
-
 
     /**
     * database name
@@ -574,6 +576,23 @@ class PgsqlEntity extends Entity {
     * @return resource
     */
     public function changeColumnType($table_name, $column, $options) {
+        $this->sql = $this->alterColumnTypeSQL($table_name, $column, $options);
+        if ($this->is_excute_sql) {
+            return $this->query($this->sql);
+        } else {
+            echo("** Mode: Do not execute SQL").PHP_EOL;
+        }
+    }
+
+    /**
+    * ALTER column type SQL
+    * 
+    * @param string $table_name
+    * @param string $column
+    * @param array $options
+    * @return string
+    */
+    public function alterColumnTypeSQL($table_name, $column, $options) {
         if (!$table_name) return;
         if (!$column) return;
         if (!$options) return;
@@ -586,10 +605,7 @@ class PgsqlEntity extends Entity {
             $using = " USING {$column}::int";
         }
         $sql = "ALTER TABLE \"{$table_name}\" ALTER COLUMN \"{$column}\" TYPE {$type}{$using};";
-        $results = $this->query($sql);
-        if ($this->sql_error) {
-            return false;
-        }
+        return $sql;
     }
 
     /**
@@ -633,10 +649,20 @@ class PgsqlEntity extends Entity {
         if (!$column) return;
         if (!$options) return;
 
-        $sql = self::addColumnSql($table_name, $column, $options);
-        return $this->query($sql);
+        $this->sql = $this->addColumnSql($table_name, $column, $options);
+        if ($this->is_excute_sql) {
+            return $this->query($this->sql);
+        }
     }
 
+    /**
+    * add column SQL
+    * 
+    * @param string $table_name
+    * @param string $column
+    * @param array $options
+    * @return string $sql
+     */
     public function addColumnSql($table_name, $column, $options) {
         $type = $this->sqlColumnType($options['type'], $options['length']);
         $option = $option = self::columnOptionSql($options);
@@ -677,7 +703,8 @@ class PgsqlEntity extends Entity {
 
     /**
     * connection
-    * 
+    *
+    * @param string $sql 
     * @return resource
     */
     function query($sql) {
@@ -804,13 +831,13 @@ class PgsqlEntity extends Entity {
     */
     public function bindOne($model_name, $foreign_key = null, $value_key = null) {
         if (!is_string($model_name)) exit('bindOne: $model_name is not string');
-        $relation = DB::table($model_name);
+            $relation = DB::table($model_name);
 
-        $column_name = $relation->entity_name;
-        $relation = $this->hasOne(get_class($relation), $foreign_key, $value_key);
-        $this->$column_name = $relation;
-        return $this;
-    }
+            $column_name = $relation->entity_name;
+            $relation = $this->hasOne(get_class($relation), $foreign_key, $value_key);
+            $this->$column_name = $relation;
+            return $this;
+        }
 
     /**
     * relation by model
@@ -822,13 +849,13 @@ class PgsqlEntity extends Entity {
     */
     public function bindMany($model_name, $foreign_key = null, $value_key = null) {
         if (!is_string($model_name)) exit('bindMany: $model_name is not string');
-        $relation = DB::table($model_name);
+            $relation = DB::table($model_name);
 
-        $column_name = $relation->entity_name;
-        $relation = $this->hasMany(get_class($relation), $foreign_key, $value_key);
-        $this->$column_name = $relation;
-        return $this;
-    }
+            $column_name = $relation->entity_name;
+            $relation = $this->hasMany(get_class($relation), $foreign_key, $value_key);
+            $this->$column_name = $relation;
+            return $this;
+        }
 
     /**
     * relation by model
@@ -840,13 +867,13 @@ class PgsqlEntity extends Entity {
     */
     public function bindBelongsTo($model_name, $foreign_key = null, $value_key = null) {
         if (!is_string($model_name)) exit('bindBelongsTo: $model_name is not string');
-        $relation = DB::table($model_name);
+            $relation = DB::table($model_name);
 
-        $column_name = $relation->entity_name;
-        $relation = $this->belongsTo(get_class($relation), $foreign_key, $value_key);
-        $this->$column_name = $relation;
-        return $this;
-    }
+            $column_name = $relation->entity_name;
+            $relation = $this->belongsTo(get_class($relation), $foreign_key, $value_key);
+            $this->$column_name = $relation;
+            return $this;
+        }
 
     /**
     * relations by model
@@ -904,7 +931,8 @@ class PgsqlEntity extends Entity {
 
         $value = $this->value[$value_key];
         if (is_null($value)) {
-            exit('hasMany: not found value');
+            return $this;
+            //exit('hasMany: not found value');
         }
 
         $condition = "{$foreign_key} = '{$value}'";
@@ -931,7 +959,8 @@ class PgsqlEntity extends Entity {
 
         $value = $this->value[$value_key];
         if (is_null($value)) {
-            exit('hasMany: not found value');
+            //exit('hasMany: not found value');
+            return $this;
         }
 
         $condition = "{$foreign_key} = '{$value}'";
@@ -953,17 +982,16 @@ class PgsqlEntity extends Entity {
         $relation = DB::table($class_name);
 
         if (!is_string($through_class_name)) exit('hasMany: $through_class_name is not string');
-        $through = DB::table($through_class_name);
+            $through = DB::table($through_class_name);
 
-        $through_left_column = "{$this->entity_name}_id";
-        $through_right_column = "{$relation->entity_name}_id";
+            $through_left_column = "{$this->entity_name}_id";
+            $through_right_column = "{$relation->entity_name}_id";
 
-        $this->join($through_class_name, $through_left_column, 'id');
-        $this->join($through_class_name, $through_right_column, 'id', $class_name);
+            $this->join($through_class_name, $through_left_column, 'id');
+            $this->join($through_class_name, $through_right_column, 'id', $class_name);
 
-        return $relation->all();
-    }
-
+            return $relation->all();
+        }
 
     /**
     * relation by model
@@ -974,7 +1002,7 @@ class PgsqlEntity extends Entity {
     * @return PgsqlEntity
     */
     public function belongsTo($class_name, $foreign_key = null, $value_key = null) {
-        if (is_null($this->value)) return $this;
+        if (is_null($this->value)) return;
 
         if (!is_string($class_name)) exit('belongsTo: $class_name is not string');
         $relation = DB::table($class_name);
@@ -983,7 +1011,7 @@ class PgsqlEntity extends Entity {
         if (!$value_key) $value_key = "{$relation->entity_name}_id";
 
         $value = $this->value[$value_key];
-        if (is_null($value)) return $this;
+        if (is_null($value)) return;
         $condition = "{$foreign_key} = '{$value}'";
         return $relation->where($condition)->one();
     }
@@ -1006,6 +1034,16 @@ class PgsqlEntity extends Entity {
         return $this;
     }
 
+    /**
+     * has record value
+     * 
+     * @return PgsqlEntity
+     */
+    function hasData() {
+        $this->limit(1)->one();
+        $this->orders = null;
+        return $this->value;
+    }
 
     /**
     * fetch
@@ -1039,9 +1077,10 @@ class PgsqlEntity extends Entity {
     public function one() {
         $this->values = null;
         $sql = $this->selectSql();
-        $value = $this->fetchRow($sql);
+        $this->fetchRow($sql);
 
         $this->id = $this->value[$this->id_column];
+        $this->before_value = $this->value;
         return $this;
     }
 
@@ -1059,8 +1098,6 @@ class PgsqlEntity extends Entity {
         if (!$id) return $this;
 
         $this->where("{$this->id_column} = {$id}")->one($params);
-
-        $this->before_value = $this->value;
         return $this;
     }
 
@@ -1246,9 +1283,6 @@ class PgsqlEntity extends Entity {
     public function update($posts = null, $id = null) {
         if ($id > 0) $this->fetch($id);
         if (!$this->id) return $this;
-
-        $this->before_value = $this->value;
-
         if ($posts) $this->takeValues($posts);
 
         $this->after_value = $this->value;
@@ -1271,21 +1305,18 @@ class PgsqlEntity extends Entity {
      * 
      * @return [type] [description]
      */
-    public function upsert() {
-        if ($id > 0) $this->fetch($id);
-        if (!$this->id) return $this;
-
-        $this->before_value = $this->value;
-
-        if ($posts) $this->takeValues($posts);
-
-        $this->validate();
-        if ($this->errors) return $this;
-
+    public function upsert($posts) {
+        $this->takeValues($posts);
         $sql = $this->upsertSql();
 
-        echo($sql).PHP_EOL;
-        exit;
+        $result = $this->query($sql);
+        if ($result === false) {
+            $this->addError('sql', 'error');
+            $message = "SQL Error: {$sql}";
+            echo($message);
+            exit;
+        }
+        return $this;
     }
 
     /**
@@ -1332,24 +1363,24 @@ class PgsqlEntity extends Entity {
     *
     * @return Bool
     */ 
-    function inserts($rows) {
-        $model_columns = array_keys($this->columns);
-        foreach ($rows as $row) {
-            $sql_values = null;
-            foreach ($model_columns as $column_name) {
-                $sql_values[] = $this->sqlValue($row[$column_name]);
-            }
-            $value = implode(', ', $sql_values);
-            $values[] = "\n({$value})";
+   function inserts($rows) {
+    $model_columns = array_keys($this->columns);
+    foreach ($rows as $row) {
+        $sql_values = null;
+        foreach ($model_columns as $column_name) {
+            $sql_values[] = $this->sqlValue($row[$column_name]);
         }
-
-        $column = implode(', ', $model_columns);
-        $value = implode(', ', $values);
-
-        $sql = "INSERT INTO {$this->table_name} ({$column}) VALUES {$value}";
-        $result = $this->query($sql);
-        return $this;
+        $value = implode(', ', $sql_values);
+        $values[] = "\n({$value})";
     }
+
+    $column = implode(', ', $model_columns);
+    $value = implode(', ', $values);
+
+    $sql = "INSERT INTO {$this->table_name} ({$column}) VALUES {$value}";
+    $result = $this->query($sql);
+    return $this;
+}
 
     /**
     * inserts
@@ -1368,8 +1399,8 @@ class PgsqlEntity extends Entity {
     * @param array $sort_orders
     * @return PgsqlEntity
     */
-    function updateSortOrder($sort_orders) {
-        if (is_array($sort_orders)) {
+   function updateSortOrder($sort_orders) {
+       if (is_array($sort_orders)) {
             foreach ($sort_orders as $id => $sort_order) {
                 if (is_numeric($id) && is_numeric($sort_order)) {
                     $posts['sort_order'] = (int) $sort_order;
@@ -1536,7 +1567,7 @@ class PgsqlEntity extends Entity {
             if (is_array($condition)) {
                 $column = $condition[0];
                 $value = $condition[1];
-                $eq = (isset($conditinos[3])) ? $conditinos[3] : '=';
+                $eq = (isset($conditions[3])) ? $conditions[3] : '=';
                 
                 $this->conditions[] = "{$column} {$eq} {$value}";
             } else {
@@ -1544,6 +1575,24 @@ class PgsqlEntity extends Entity {
             }
         }
         $this->conditions = array_unique($this->conditions);
+        return $this;
+    }
+
+    /**
+    * where
+    * 
+    * @param  string $column
+    * @param  array $values
+    * @return PgsqlEntity
+    */
+    public function whereIn($column, $values) {
+        if (!$column) return $this;
+        if (!$values) return $this;
+        if (is_array($values)) {
+            $value = implode(', ', $values);
+            $condition = "{$column} in ({$value})";
+            $this->where($condition);
+        }
         return $this;
     }
 
@@ -1558,6 +1607,7 @@ class PgsqlEntity extends Entity {
     public function filter($filters) {
         if (!is_array($filters)) return $this;
         foreach ($filters as $column => $filter) {
+            if (!$filter['eq']) $filter['eq'] = '=';
             $this->conditions[] = "{$column} {$filter['eq']} '{$filter['value']}'";
         }
         $this->conditions = array_unique($this->conditions);
@@ -1759,7 +1809,6 @@ class PgsqlEntity extends Entity {
     */
     private function orderBySql() {
         $sql = '';
-        if ($this->columns['sort_order']) $this->order('sort_order'); 
         if (!$this->orders) return;
         if ($order = $this->sqlOrders($this->orders)) $sql = " ORDER BY {$order}";
         return $sql;
@@ -1839,7 +1888,7 @@ class PgsqlEntity extends Entity {
     * 
     * @return string
     */
-    private function selectSql() {
+    public function selectSql() {
         if (is_array($this->select_columns)) {
             $columns = $this->select_columns;
         } else {
@@ -1898,7 +1947,6 @@ class PgsqlEntity extends Entity {
         $sql = "SELECT {$column} FROM {$this->old_name}";
 
         $sql.= $this->whereSql();
-        $sql.= $this->whereSql();
         if ($this->old_id_column) " ORDER BY {$this->old_id_column}";
 
         //$sql.= $this->orderBySql();
@@ -1906,6 +1954,24 @@ class PgsqlEntity extends Entity {
         $sql.= $this->offsetSql();
         $sql.= ";";
         return $sql;
+    }
+
+    /**
+    * old column for SQL select
+    * 
+    * @return PgsqlEntity
+    */
+    public function selectOldColumns() {
+        $this->select_columns = null;
+        if ($this->old_id_column) $select_columns[] = $this->old_id_column;
+        if ($this->columns) {
+            foreach ($this->columns as $column_name => $column) {
+                if ($column['old_name']) {
+                    $this->select_columns[] = $column['old_name'];
+                }
+            }
+        }
+        return $this;
     }
 
     /**
@@ -2059,23 +2125,61 @@ class PgsqlEntity extends Entity {
         return $sql;
     }
 
+    public function reloadPrimaryKey() {
+        $this->primary_key = "{$this->table_name}_pkey";
+        return $this;
+    }
+
+    public function setUpsertConstraint($constraint_name) {
+        $this->upsert_constraint = $constraint_name;
+        return $this;
+    }
+
     private function upsertSql() {
-        if ($this->primary_key) {
-            echo('Not found primary key!').PHP_EOL;
+        if (!$this->upsert_constraint) {
+            echo('Not found upsert constraint key!').PHP_EOL;
             exit;
         }
-        $insert_sql = $this->insertSQL();
-        $update_sql = $this->updateSQL();
 
-        $sql = $update_sql;
-        $sql.= "ON CONFLICT ON CONSTRAINT DO {$this->primary_key} ";
-        $sql.= $insert_sql;
+        //insert
+        foreach ($this->columns as $key => $type) {
+            $value = $this->sqlValue($this->value[$key]);
+            if ($key == 'created_at') $value = 'current_timestamp';
+            $columns[] = $key;
+            $values[] = $value;
+        }
+        $column = implode(',', $columns);
+        $value = implode(',', $values);
+        $insert_sql = "INSERT INTO {$this->table_name} ({$column}) VALUES ({$value})";
+
+        //update
+        foreach ($this->value as $key => $value) {
+            if ($key) {
+                if (is_bool($value)) {
+                    if ($value === true) {
+                        $value = 'TRUE';
+                    } else {
+                        $value = 'FALSE';
+                    }
+                    $set_values[] = "{$key} = {$value}";
+                } else {
+                    $set_values[] = "{$key} = '{$value}'";
+                }
+            }
+        }
+        if (isset($this->columns['updated_at'])) $set_values[] = "updated_at = current_timestamp";
+        if ($set_values) $set_value = implode(', ', $set_values);
+        $update_sql = "UPDATE SET {$set_value}";
+
+        $sql = $insert_sql;
+        $sql.= " ON CONFLICT ON CONSTRAINT {$this->upsert_constraint} DO ";
+        $sql.= $update_sql;
 
         return $sql;
     }
 
     /**
-    * updateSql
+    * updates Sql
     * 
     * @return string
     */
@@ -2419,13 +2523,13 @@ class PgsqlEntity extends Entity {
     **/
     function pgClassByRelname($relname, $relkind = 'r', $schema_name = 'public') {
         $sql = "SELECT pg_class.oid AS pg_class_id, * FROM pg_class 
-                LEFT JOIN pg_tables ON pg_tables.tablename = pg_class.relname
-                LEFT JOIN pg_namespace ON pg_namespace.oid = pg_class.relnamespace
-                WHERE relkind = '{$relkind}' 
-                AND relfilenode > 0 
-                AND nspname = '{$schema_name}'
-                AND relname = '{$relname}';
-                ";
+        LEFT JOIN pg_tables ON pg_tables.tablename = pg_class.relname
+        LEFT JOIN pg_namespace ON pg_namespace.oid = pg_class.relnamespace
+        WHERE relkind = '{$relkind}' 
+        AND relfilenode > 0 
+        AND nspname = '{$schema_name}'
+        AND relname = '{$relname}';
+        ";
         return $this->fetchRow($sql);
     }
 
@@ -2433,15 +2537,15 @@ class PgsqlEntity extends Entity {
     * pg_class
     *
     * @param int $pg_class_id
-    * @param array $conditinos
+    * @param array $conditions
     * @param string $relkind
     * @param string $schema_name
     * @return array
     **/
-    function pgClass($pg_class_id, $conditinos = null, $relkind = 'r', $schema_name = 'public') {
+    function pgClass($pg_class_id, $conditions = null, $relkind = 'r', $schema_name = 'public') {
         $sql = "SELECT pg_class.oid AS pg_class_id, * FROM pg_class 
-                LEFT JOIN pg_tables ON pg_tables.tablename = pg_class.relname
-                LEFT JOIN pg_namespace ON pg_namespace.oid = pg_class.relnamespace";
+        LEFT JOIN pg_tables ON pg_tables.tablename = pg_class.relname
+        LEFT JOIN pg_namespace ON pg_namespace.oid = pg_class.relnamespace";
 
         $conditions[] = "relkind = '{$relkind}'";
         $conditions[] = "relfilenode > 0";
@@ -2466,15 +2570,15 @@ class PgsqlEntity extends Entity {
     * f: foreign table
     *
     * @param array $pg_class_ids
-    * @param array $conditinos
+    * @param array $conditions
     * @param string $relkind
     * @param string $schema_name
     * @return array
     **/
-    function pgClasses($pg_class_ids = null, $conditinos = null, $relkind = 'r', $schema_name = 'public') {
+    function pgClasses($pg_class_ids = null, $conditions = null, $relkind = 'r', $schema_name = 'public') {
         $sql = "SELECT pg_class.oid AS pg_class_id, * FROM pg_class 
-                LEFT JOIN pg_tables ON pg_tables.tablename = pg_class.relname
-                LEFT JOIN pg_namespace ON pg_namespace.oid = pg_class.relnamespace";
+        LEFT JOIN pg_tables ON pg_tables.tablename = pg_class.relname
+        LEFT JOIN pg_namespace ON pg_namespace.oid = pg_class.relnamespace";
 
         $conditions[] = "relkind = '{$relkind}'";
         $conditions[] = "relfilenode > 0";
@@ -2500,11 +2604,11 @@ class PgsqlEntity extends Entity {
     **/
     function pgClassById($pg_class_id, $relkind = 'r', $schema_name = 'public') {
         $sql = "SELECT * FROM pg_class 
-                LEFT JOIN pg_tables ON pg_tables.tablename = pg_class.relname
-                LEFT JOIN pg_namespace ON pg_namespace.oid = pg_class.relnamespace
-                WHERE relkind = '{$relkind}' 
-                AND nspname = '{$schema_name}'
-                AND pg_class.oid = '{$pg_class_id}';";
+        LEFT JOIN pg_tables ON pg_tables.tablename = pg_class.relname
+        LEFT JOIN pg_namespace ON pg_namespace.oid = pg_class.relnamespace
+        WHERE relkind = '{$relkind}' 
+        AND nspname = '{$schema_name}'
+        AND pg_class.oid = '{$pg_class_id}';";
         return $this->fetchRow($sql);
     }
 
@@ -2523,14 +2627,17 @@ class PgsqlEntity extends Entity {
     /**
     * attributes
     *
+    * TODO: select_columns
+    *
     * @param string $table_name
+    * @param array $select_columns
     * @return array
     **/
-    function pgAttributes($table_name = null) {
+    function pgAttributes($table_name = null, $select_columns = null) {
         $sql = "SELECT pg_class.oid AS pg_class_id, * FROM pg_class 
                 LEFT JOIN pg_attribute ON pg_class.oid = pg_attribute.attrelid
                 LEFT JOIN information_schema.columns ON information_schema.columns.table_name = pg_class.relname
-                          AND information_schema.columns.column_name = pg_attribute.attname 
+                AND information_schema.columns.column_name = pg_attribute.attname 
                 WHERE pg_attribute.attnum > 0
                 AND atttypid > 0 
                 AND relacl IS NULL";
@@ -2556,7 +2663,7 @@ class PgsqlEntity extends Entity {
                 AND atttypid > 0 
                 AND attname = '{$column_name}'
                 AND relname = '{$table_name}';";
-        return $this->fetchRow($sql);
+                return $this->fetchRow($sql);
     }
 
     /**
@@ -2570,9 +2677,9 @@ class PgsqlEntity extends Entity {
         if (!$pg_class_id) return;
         if (!$attnum) return;
         $sql = "SELECT * FROM pg_attribute
-                WHERE attnum > 0
-                AND attnum = '{$attnum}'
-                AND attrelid = '{$pg_class_id}';";
+        WHERE attnum > 0
+        AND attnum = '{$attnum}'
+        AND attrelid = '{$pg_class_id}';";
         return $this->fetchRow($sql);
     }
 
@@ -2658,8 +2765,8 @@ class PgsqlEntity extends Entity {
         $sql = "SELECT psut.relname ,pd.description
                 FROM pg_stat_user_tables psut ,pg_description pd
                 WHERE psut.relid = pd.objoid
-                    AND schemaname = '{$schama_name}' 
-                    AND pd.objsubid = 0";
+                AND schemaname = '{$schama_name}' 
+                AND pd.objsubid = 0";
 
         if ($table_name) $sql.= "relfilename = '{$table_name}'";
         $sql.= ";";
@@ -2871,35 +2978,35 @@ class PgsqlEntity extends Entity {
         if (!$pg_class_id) return;
 
         $sql = "SELECT 
-                    origin.*,
-                    pg_class.oid as foreign_class_id,
-                    pg_class.relname as foreign_relname,
-                    pg_attribute.attnum as foreign_attnum,
-                    pg_attribute.attname as foreign_attname
-                    FROM 
-                    (
-                        SELECT 
-                        pg_constraint.conrelid
-                        , pg_constraint.conname
-                        , pg_class.oid as pg_class_id
-                        , pg_class.relname
-                        , pg_attribute.attnum
-                        , pg_attribute.attname
-                        , pg_constraint.confrelid
-                        , pg_constraint.confkey
-                        , pg_constraint.contype
-                        , pg_constraint.confupdtype
-                        , pg_constraint.confdeltype
-                        FROM  pg_constraint
-                            LEFT JOIN pg_attribute ON pg_constraint.conrelid = pg_attribute.attrelid 
-                                AND pg_attribute.attnum = ANY(pg_constraint.conkey)
-                            LEFT JOIN pg_class ON pg_constraint.conrelid = pg_class.oid
-                        WHERE pg_constraint.contype = 'f' AND pg_constraint.conrelid = '{$pg_class_id}'
-                        ) AS origin
-                    LEFT JOIN pg_attribute ON origin.confrelid = pg_attribute.attrelid 
-                        AND pg_attribute.attnum = ANY(origin.confkey)
-                    LEFT JOIN pg_class ON origin.confrelid = pg_class.oid
-                    ;";
+                origin.*,
+                pg_class.oid as foreign_class_id,
+                pg_class.relname as foreign_relname,
+                pg_attribute.attnum as foreign_attnum,
+                pg_attribute.attname as foreign_attname
+                FROM 
+                (
+                SELECT 
+                    pg_constraint.conrelid
+                    , pg_constraint.conname
+                    , pg_class.oid as pg_class_id
+                    , pg_class.relname
+                    , pg_attribute.attnum
+                    , pg_attribute.attname
+                    , pg_constraint.confrelid
+                    , pg_constraint.confkey
+                    , pg_constraint.contype
+                    , pg_constraint.confupdtype
+                    , pg_constraint.confdeltype
+                    FROM  pg_constraint
+                    LEFT JOIN pg_attribute ON pg_constraint.conrelid = pg_attribute.attrelid 
+                    AND pg_attribute.attnum = ANY(pg_constraint.conkey)
+                    LEFT JOIN pg_class ON pg_constraint.conrelid = pg_class.oid
+                    WHERE pg_constraint.contype = 'f' AND pg_constraint.conrelid = '{$pg_class_id}'
+                ) AS origin
+                LEFT JOIN pg_attribute ON origin.confrelid = pg_attribute.attrelid 
+                AND pg_attribute.attnum = ANY(origin.confkey)
+                LEFT JOIN pg_class ON origin.confrelid = pg_class.oid
+                ;";
 
         return $this->fetchRows($sql);
     }
@@ -3189,6 +3296,76 @@ class PgsqlEntity extends Entity {
         $values = str_replace('}', '', $values);
         $values = explode(',', $values);
         return $values;
+    }
+
+    /**
+     * diff from vo model
+     *
+     * @return void
+     */
+    public function diffFromVoModel() {
+        $model_path = BASE_DIR."app/models/vo/*.php";
+        foreach (glob($model_path) as $model_file) {
+            $path_info = pathinfo($model_file);
+            $model = new $path_info['filename'];
+
+            $pg_class = $this->pgClassByRelname($model->name);
+
+            if (!$pg_class) {
+                $sql = $this->createTableSql($model);
+                $sql.= $this->constraintSql($model);
+
+                if ($this->is_excute_sql) {
+                    $this->query($sql);
+                }
+
+                $status = "---- Not Found table ----".PHP_EOL;
+                $status.= "{$path_info['filename']}".PHP_EOL;
+                $status.= "{$model->name}".PHP_EOL;
+                $status.= $sql.PHP_EOL;
+                $status.= $sql_error->sql.PHP_EOL;
+
+                echo($status);
+            } else if ($model->columns) {
+                foreach ($this->pgAttributes($model->name) as $pg_attribute) {
+                    if ($pg_attribute['attname']) {
+                        $pg_attributes[$pg_attribute['attname']] = $pg_attribute;
+                    }
+                }
+                if ($pg_attributes) {
+                    foreach ($model->columns as $column_name => $column) {
+                        $status = '';
+                        $attribute = $pg_attributes[$column_name];
+                        if (!$attribute) {
+                            $options['type'] = $column['type'];
+                            $options['length'] = $column['length'];
+                            $options['is_required'] = $column['is_required'];
+                            $options['is_default_null'] = $column['is_default_null'];
+
+                            $this->addColumn($model->name, $column_name, $options);
+
+                            //TODO status function
+                            $status = "---- Not found column----".PHP_EOL;
+                            $status.= "{$model->name}.{$column_name}".PHP_EOL;
+                            $status.= $this->sql.PHP_EOL;
+                            $status.= $sql_error->sql.PHP_EOL;
+                        } else if ($column['type'] != $attribute['udt_name']) {
+                            $options['type'] = $column['type'];
+                            $options['length'] = $column['length'];
+
+                            $this->changeColumnType($model->name, $column_name, $options);
+
+                            //TODO status function
+                            $status = "---- Alter column type ----".PHP_EOL;
+                            $status.= "{$model->name}.{$column_name} : {$column['type']} != {$attribute['udt_name']}".PHP_EOL;
+                            $status.= $this->sql.PHP_EOL;
+                            $status.= $sql_error->sql.PHP_EOL;
+                        }
+                        echo($status);
+                    }
+                }
+            }
+        }
     }
 
 }

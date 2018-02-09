@@ -108,4 +108,23 @@ class DateHelper {
         }
         return $date;
     }
+
+    /**
+     * number to string
+     *
+     * @param string $number
+     * @return string
+     **/
+    static function numberToDate($number) {
+        if ($number) {
+            $pattern = "/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})$/";
+            $replacement = "\$1-\$2-\$3 \$4:\$5";
+            $date_str = preg_replace($pattern, $replacement, $number);
+
+            $time = strtotime($date_str);    
+            $date = date("Y-m-d H:i", $time);
+            return $date;
+        }
+    }
+
 }

@@ -6,20 +6,20 @@
  */
 
 class Entity {
-    var $conditions = array();
-    var $columns = array();
-    var $errors = array();
-    var $values = null;
-    var $value = null;
-    var $id = null;
-    var $id_column = 'id';
-    var $id_index = false;
-    var $posts = null;
-    var $session = null;
-    var $limit = null;
+    public $conditions = [];
+    public $columns = [];
+    public $errors = [];
+    public $values = null;
+    public $value = null;
+    public $id = null;
+    public $id_column = 'id';
+    public $id_index = false;
+    public $posts = null;
+    public $session = null;
+    public $limit = null;
 
-    static $except_columns = ['id', 'created_at', 'updated_at'];
-    static $app_columns = ['id', 'created_at', 'updated_at', 'sort_order', 'old_db', 'old_host', 'old_id'];
+    public static $except_columns = ['id', 'created_at', 'updated_at'];
+    public static $app_columns = ['id', 'created_at', 'updated_at', 'sort_order', 'old_db', 'old_host', 'old_id'];
 
     function __construct($params = null) {
 
@@ -551,7 +551,11 @@ class Entity {
     */
     function formInput($column, $params = null) {
         if (!$column) return;
-        $name = "{$this->entity_name}[{$column}]";
+        if ($params['name']) {
+            $name = $params['name'];
+        } else {
+            $name = "{$this->entity_name}[{$column}]";
+        }
         $tag = FormHelper::text($name, $this->value[$column], $params);
         return $tag;
     }
@@ -607,7 +611,7 @@ class Entity {
     */
     function formSelect($column, $params = null) {
         if (!$column) return;
-        $params['name'] = "{$this->entity_name}[{$column}]";
+        if (!$params['name']) $params['name'] = "{$this->entity_name}[{$column}]";
         if ($params['model'] && !$params['value']) $params['value'] = $this->id_column;
         if ($params['value_column']) $params['value'] = $params['value_column'];
         $tag = FormHelper::select($params, $this->value[$column]);
@@ -623,7 +627,7 @@ class Entity {
      */
     function formSelectDate($column, $params = null) {
         if (!$column) return;
-        $params['name'] = "{$this->entity_name}[{$column}]";
+        if (!$params['name']) $params['name'] = "{$this->entity_name}[{$column}]";
 
         $tag = FormHelper::selectDate($params, $this->value[$column]);
         return $tag;
@@ -638,7 +642,7 @@ class Entity {
     */
     function formRadio($column, $params = null) {
         if (!$column) return;
-        $params['name'] = "{$this->entity_name}[{$column}]";
+        if (!$params['name']) $params['name'] = "{$this->entity_name}[{$column}]";
         if ($params['value_column']) $params['value'] = $params['value_column'];
         if ($params['model'] && !$params['value']) $params['value'] = $this->id_column;
         $tag = FormHelper::radio($params, $this->value[$column]);
@@ -654,7 +658,7 @@ class Entity {
     */
     function formCheckbox($column, $params = null) {
         if (!$column) return;
-        $params['name'] = "{$this->entity_name}[{$column}]";
+        if (!$params['name']) $params['name'] = "{$this->entity_name}[{$column}]";
         if ($params['value_column']) $params['value'] = $params['value_column'];
         $tag = FormHelper::checkbox($params, $this->value[$column]);
         return $tag;
