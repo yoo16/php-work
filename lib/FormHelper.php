@@ -6,9 +6,25 @@
  */
 
 class FormHelper {
-    //TODO except columns
-    static $except_columns = ['csv', 'model', 'label', 'where', 'value', 'values', 'label_separate', 'unselect'];
-    static $radio_except_columns = ['csv', 'model', 'label', 'where', 'values', 'label_separate', 'unselect'];
+    static $radio_columns = ['value'];
+
+    static $except_columns = ['csv',
+                              'model',
+                              'label',
+                              'where',
+                              'wheres',
+                              'order',
+                              'select_columns',
+                              'value',
+                              'values',
+                              'label_separate',
+                              'unselect',
+                              'unselct_label',
+                              'unselct_value',
+                              'effective-digit'
+                            ];
+
+    static $http_tag_columns = ['id', 'class'];
 
     /**
      * selectタグ
@@ -19,11 +35,11 @@ class FormHelper {
      */
     static function select($params, $selected=null) {
         if (!$params) return;
-        if (!isset($params['class'])) $params['class'] = 'form-control col-4';
+        if (!isset($params['class'])) $params['class'] = 'form-control';
 
         $tag = self::selectOptions($params, $selected);
 
-        $tag = self::selectTag($tag, $params);
+        if ($tag) $tag = self::selectTag($tag, $params);
         return $tag;
     }
 
@@ -38,13 +54,15 @@ class FormHelper {
         if (!$params) return;
         
         $params['class'].= ' form-control';
-        if (!$params['hide_year']) $tag.= self::selectYear($params, $selected);
-        if (!$params['hide_month']) $tag.= self::selectMonth($params, $selected);
-        if (!$params['hide_day']) $tag.= self::selectDays($params, $selected);
-        if ($params['show_hour']) $tag = self::selectTime($params, $selected);
+        if (!$params['hide_year']) $tag.= FormHelper::selectYear($params, $selected);
+        if (!$params['hide_month']) $tag.= FormHelper::selectMonth($params, $selected);
+        if (!$params['hide_day']) $tag.= FormHelper::selectDays($params, $selected);
+        if ($params['show_hour']) $tag = FormHelper::selectTime($params, $selected);
 
-        $tag = "<div class=\"form-group\">\n{$tag}\n</div>\n";
-        $tag = "<div class=\"form-inline\">\n{$tag}\n</div>\n";
+        if ($params['one_day']) {
+            $name = "{$params['name']}[day]";
+            $tag.= FormHelper::input(['type' => 'hidden', 'name' => $name, 'value' => 1]);
+        }
         return $tag;
     }
 
@@ -264,7 +282,7 @@ class FormHelper {
      */
     static function selectTag($tag, $attributes = null) {
        foreach (self::$except_columns as $except_column) {
-           if ($attributes[$except_column]) {
+           if (isset($attributes[$except_column])) {
                 unset($attributes[$except_column]); 
            }
        }
@@ -280,9 +298,11 @@ class FormHelper {
      * @return string
      */
     static function radioTag($attributes = null) {
-        foreach (self::$radio_except_columns as $except_column) {
-            if ($attributes[$except_column]) {
-                unset($attributes[$except_column]); 
+        foreach (self::$except_columns as $except_column) {
+            if (!in_array($except_column, self::$radio_columns)) {
+                if ($attributes[$except_column]) {
+                    unset($attributes[$except_column]); 
+                }
             }
         }
         $attributes['type'] = 'radio';
@@ -354,13 +374,18 @@ class FormHelper {
      */
     static function values($params) {
         if (isset($params['csv']) && $params['csv']) {
-            $values = CsvLite::options($params['csv']);
+            $lang = AppSession::get('lang');
+            $values = CsvLite::options($params['csv'], $lang);
         } else if (isset($params['model']) && $params['model']) {
-            $values = DB::table($params['model'])
-                                ->where($params['where'])
-                                ->order($params['order'])
-                                ->all()
-                                ->values;
+            $instance = DB::table($params['model']);
+
+            if (isset($params['select_columns'])) $instance->select($params['select_columns']);
+            if (isset($params['where'])) $instance->where($params['where']);
+            if (isset($params['wheres'])) $instance->wheres($params['wheres']);
+            if (isset($params['order'])) $instance->order($params['order']);
+            $instance->all();
+
+            $values = $instance->values;
         } else {
             $values = $params['values'];
         }
@@ -420,8 +445,12 @@ class FormHelper {
      */
     static function unselectOption($params) {
         $tag = '';
-        if (isset($params['unselect'])) {
-            $tag.= "<option value=\"{$params['unselect']['value']}\">{$params['unselect']['label']}</option>\n";
+        if (isset($params['unselect']) && $params['unselect']) {
+            $unselect_value = '';
+            $unselect_label = '';
+            if (isset($params['unselect_value'])) $unselect_value = $params['unselect_value'];
+            if (isset($params['unselect_label'])) $unselect_label = $params['unselect_label'];
+            $tag.= "<option value=\"{$unselect_value}\">{$unselect_label}</option>\n";
         }
         return $tag;
     }
@@ -530,38 +559,48 @@ class FormHelper {
     static function checkedTag($value, $selected) {
         if (is_bool($value) && (bool) $value == (bool) $selected) {
             $tag = 'checked';
+        } else if (is_bool($selected) && (bool) $value == (bool) $selected) {
+            $tag = 'checked';
         } elseif (isset($value) && $value == $selected) {
             $tag = 'checked';
         }
         return $tag;
     }
 
-
     /**
      * input(radio)タグ
      *
-     * @param Array $params
+     * @param array $params
      * @param Object $selected
-     * @return String
+     * @return string
      */
     static function radio($params, $selected = null) {
         $values = self::values($params);
         if (!is_array($values)) return;
 
         $value_key = isset($params['value']) ? $params['value'] : 'value';
-
-        $attributes['name'] = $params['name'];
         foreach ($values as $value) {
-            $attributes['value'] = $value[$value_key];
-            $attributes['checked'] = self::checkedTag($attributes['value'], $selected);
-            $attributes['id'] = "{$attributes['name']}_{$attributes['value']}";
+            $params['value'] = $value[$value_key];
+            $params['checked'] = self::checkedTag($params['value'], $selected);
+            $params['id'] = "{$params['name']}_{$params['value']}";
+            $tag.= self::radioTag($params, $value);
 
-            $tag.= self::radioTag($attributes);
-
-            $label = self::convertLabel($value, $params);
-            $tag.= "<label class=\"radio inline\" for=\"{$attributes['id']}\">{$input_tag}&nbsp;{$label}</label>&nbsp;\n";
+            $label_params['id'] = $attributes['id'];
+            $label_params['label'] = $label = self::convertLabel($value, $params);
+            $tag.= FormHelper::label($label_params);
         }
-        $tag = "<div class=\"form-group\">{$tag}</div>";
+        return $tag;
+    }
+
+    /**
+     * input(radio)タグ
+     *
+     * @param array $params
+     * @param Object $selected
+     * @return string
+     */
+    static function label($params) {
+        $tag.= "<label class=\"radio inline\" for=\"{$params['id']}\">{$params['label']}</label>&nbsp;\n";
         return $tag;
     }
 
@@ -588,7 +627,7 @@ class FormHelper {
      * @return string
      */
     static function checkbox($params, $selected = null) {
-        $label = ($params['label']) ? $params['label'] : LABEL_TRUE;
+        $label = (isset($params['label'])) ? $params['label'] : LABEL_TRUE;
         if (!isset($params['value'])) $params['value'] = 1;
 
         $attributes['type'] = 'checkbox';
@@ -607,9 +646,9 @@ class FormHelper {
     /**
      * チェックボックス（複数）
      *
-     * @param Array $params
+     * @param array $params
      * @param Object $seleted
-     * @return String
+     * @return string
      */
     function multiCheckbox($params, $selected=null, $value_key=null, $label_key=null, $values=null) {
         $params = self::checkParams($params, $selected, $value_key, $label_key, $values);
@@ -673,16 +712,15 @@ class FormHelper {
      *
      * @param string $action
      * @param string $label
-     * @param array $query
      * @param array $params
      * @return string
      */
-    static function link($action, $label, $query = null, $params = null) {
+    static function link($action, $params = null) {
         $attribute = self::attribute($params);
         if (substr($action, 0, 1) == '#') {
             $href = '#';
         } else {
-            $href = url_for($action, $query);
+            $href = TagHelper::urlFor($action, $query);
         }
         $tag = "<a href=\"{$href}\" {$attribute}>{$label}</a>\n";
         return $tag;
@@ -692,14 +730,15 @@ class FormHelper {
      * link button
      *
      * @param string $action
-     * @param string $label
-     * @param array $query
      * @param array $params
      * @return string
      */
-    static function linkButton($action, $label, $query = null, $params = null) {
-        if (!$params['class']) $params['class'] = 'btn btn-outline-primary';
-        $tag = self::link($action, $label, $query, $params);
+    static function linkButton($action, $id = null, $params = null) {
+        if (is_array($params) && !$params['class']) $params['class'] = 'btn btn-outline-primary';
+        $controller = $GLOBALS['controller'];
+        if ($controller) {
+            $tag = $controller->linkTag($controller->name, $action, $id, $params);
+        }
         return $tag;
     }
 
@@ -779,9 +818,7 @@ class FormHelper {
      */
     static function textarea($name, $value = null, $params = null) {
         if (isset($name)) $params['name'] = $name;
-        if (!$params['class']) $params['class'] = 'col-12';
         if (!$params['rows']) $params['rows'] = '10';
-        $params['class'].= " form-control";
 
         $tag = self::tag('textarea', $value, $params);
         return $tag;
@@ -798,7 +835,21 @@ class FormHelper {
     static function text($name, $value = null, $params = null) {
         $params['type'] = "text";
         //if (!$params['class']) $params['class'] = 'col-4';
-        $params['class'].= " form-control";
+        //$params['class'].= " form-control";
+
+        if (isset($value)) {
+            if ($params['date-formatter']) {
+                $value = date($params['date-formatter'], strtotime($value));
+            }
+            if (is_numeric($value)) {
+                if ($params['number-formatter']) {
+                    $value = sprintf($params['number-formatter'], $value);
+                } else if (is_numeric($params['effective-digit'])) {
+                    $formatter = "%.{$params['effective-digit']}f";
+                    $value = sprintf($formatter, $value);
+                }
+            }
+        }
 
         $tag = self::input($params, $name, $value);
         return $tag;
@@ -822,14 +873,45 @@ class FormHelper {
     /**
      * delete
      *
-     * @param string $value
-     * @param array $params
-     * @param string $name
-     * @return string $name
+     * @param Array $params
+     * @return String
      */
-    static function delete($value = null, $params = null, $name = null) {
+    static function delete($params = null) {
         if (!$params['class']) $params['class'] = 'btn btn-danger';
-        $tag = self::submit($value, $params, $name);
+        if ($params['is_check_delete']) {
+            $rel_name = "delete_link";
+            $params['id'] = $rel_name;
+            $params['disabled'] = 'disabled';
+        }
+        if ($params['is_confirm']) {
+            $params['class'].= ' confirm-dialog'; 
+            unset($params['is_confirm']);
+        }
+
+        $params['class'].= ' fa fa-erase';
+
+        $tag = self::submit($params['label'], $params);
+
+        if ($params['is_check_delete']) {
+            $check_delete_tag = "<label for=\"delete_checkbox\"><input class=\"delete_checkbox\" type=\"checkbox\" rel=\"{$rel_name}\"></label>";
+            $tag.= $check_delete_tag;
+            unset($params['is_check_delete']);
+        }
+        return $tag;
+    }
+
+    /**
+     * delete
+     *
+     * @param Array $params
+     * @return String
+     */
+    static function confirmDelete($params = null) {
+        if (!isset($params['label'])) $params['label'] = LABEL_DELETE;
+        if (!isset($params['class'])) $params['class'] = 'btn btn-danger';
+        $params['class'].= ' confirm-delete fa fa-erase';
+
+        $tag = "<a class=\"{$params['class']}\" delete-id={$params['value']} title={$params['title']}>{$params['label']}</a>";
         return $tag;
     }
 
@@ -872,7 +954,11 @@ class FormHelper {
      */
     static function password($name, $value = null, $params = null) {
         $params['type'] = "password";
-        $tag = self::input($params, $name);
+        if ($params['is_show_value']) {
+            $tag = self::input($params, $name, $value);
+        } else {
+            $tag = self::input($params, $name);
+        }
         return $tag;
     }
 
@@ -887,6 +973,23 @@ class FormHelper {
     static function hidden($name, $value = null, $params = null) {
         $params['type'] = "hidden";
         $tag = self::input($params, $name, $value);
+        return $tag;
+    }
+
+    /**
+    * label
+    *
+    * @param Boolean $is_active
+    * @return String
+    */ 
+    static function changeActiveLabelTag($action, $params, $is_active, $valid_label = LABEL_TRUE, $invalid_label = LABEL_FALSE) {
+        if ($is_active) {
+            $tag = "<span class=\"btn btn-sm btn-danger action-loading\">{$valid_label}</span>";
+        } else {
+            $tag = "<span class=\"btn btn-sm btn-outline-primary btn-sm action-loading\">{$invalid_label}</span>";
+        }
+        $href = url_for($action, $params);
+        $tag = "<a href=\"{$href}\">{$tag}</a>";
         return $tag;
     }
 
@@ -929,7 +1032,8 @@ class FormHelper {
      * @param string $selected
      * @return string
      */
-    static function linkActive($key, $selected) {
+    static function linkActive($key, $selected = null) {
+        if (!$selected) $selected = $GLOBALS['controller']->name;
         if ($key == $selected) {
             $tag.=' active';
         }

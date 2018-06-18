@@ -14,6 +14,73 @@ class DataMigration {
     }
 
     /**
+     * migrate
+     *
+     * @param string $class_name
+     * @param array $old_db_info
+     * @param array $foreigns
+     * @param array $old_id_column
+     * @param array $default_values
+     * @return void
+     */
+    static function migrate($class_name, $old_db_info, $foreigns = null, $old_id_column = 'id', $default_values = null) {
+        if (!$old_db_info) return;
+        $old = DB::table($class_name)->setDBInfo($old_db_info)->useOldTable()->all();
+        $default_db_name = $old_db_info['dbname'];
+        if (!$old->values) return;
+
+        if (is_array($foreigns)) {
+            foreach ($foreigns as $column => $foreign) {
+                $db_name = ($foreign['db_name']) ? $foreign['db_name'] : $default_db_name;
+                $foreign_ids[$column] = DB::table($foreign['class_name'])->where('old_db', $db_name)->ids('old_id', 'id');
+                if ($foreign['is_search']) $search_columns[] = $column;
+            }
+        }
+        $ids = DB::table($class_name)->where('old_db', $old_db_info['dbname'])->ids('old_id', 'id');
+        foreach ($old->values as $old->value) {
+            $old_id = $old->value['id'];
+            $posts = $old->oldValueToValue()->value;
+
+            $posts['old_db'] = $old_db_info['dbname'];
+            $posts['old_id'] = $old_id;
+
+            if (is_array($foreign_ids)) {
+                foreach ($foreign_ids as $column => $foreign_id) {
+                    $posts[$column] = $foreign_id[$old->value[$column]];
+                }
+            }
+
+            if (is_array($default_values)) {
+                foreach ($default_values as $column => $default_value) {
+                    $posts[$column] = $default_value; 
+                }
+            }
+
+            //search
+            if ($search_columns) {
+                $search = DB::table($class_name);
+                foreach ($search_columns as $search_column) {
+                    $search->where("{$search_column} = '{$posts[$search_column]}'");
+                }
+                $search->one();
+                $id = $search->value['id'];
+            } else {
+                $id = $ids[$posts['old_id']];
+            }
+
+            if ($posts['old_db']) {
+                $new = DB::table($class_name)->save($posts, $id);
+                if ($new->sql_error) {
+                    $errors['model_name'] = $class_name;
+                    $errors['sql'] = $new->sql;
+                    $errors['sql'] = $new->sql;
+                    DB::table('MigrateError')->insert($errors);
+                }
+            }
+        }
+    }
+
+    /**
      * pgsql instance
      * 
      * @param  array $params
@@ -57,7 +124,6 @@ class DataMigration {
                         echo($db_info['port']).PHP_EOL;
                         echo($db_info['user']).PHP_EOL;
                         echo("{$class_name} reduplication : id = {$id}").PHP_EOL;
-                        var_dump($value);
                         exit;
                     } else {
                         $values[$id] = $value;
@@ -123,7 +189,6 @@ class DataMigration {
                         $foreign = DataMigration::fetchByOldId($old_foregin_pgsql, $foreign_class['class_name'], $value[$foreign_column]);
                     }
                     $value[$foreign_column] = $foreign->value['id'];
-
                     //TODO refectoring
                     $is_update = !($foreign_class['is_require'] && !$value[$foreign_column]);
                 }
@@ -149,17 +214,8 @@ class DataMigration {
                 } else {
                     $new_class = DB::table($class_name)->insert($value);
                 }
-
-                //TODO LOG
-                // if ($new_class->sql_error) {
-                //     $error.= $new_class->sql.PHP_EOL;
-                //     $error.= $new_class->name.PHP_EOL;
-                //     $error.= $new_class->sql_error.PHP_EOL;
-                //     $error.= PHP_EOL;
-                // }
             }
         }
-        //$this->exportErrorLog($error, $class_name);
     }
 
     /**
@@ -175,10 +231,8 @@ class DataMigration {
         if ($old_id && $old_pgsql->host && $old_pgsql->dbname) {
             $instance->select(['*'])
                       ->where("old_id IS NOT NULL")
-                      ->where("old_host IS NOT NULL")
                       ->where("old_db IS NOT NULL")
                       ->where("old_id = {$old_id}")
-                      ->where("old_host = '{$old_pgsql->host}'")
                       ->where("old_db = '{$old_pgsql->dbname}'")
                       ->one();
         }
@@ -365,10 +419,7 @@ class DataMigration {
         foreach ($values as $value) {
             $value = $this->bindFkIdsByFkIds($fk_ids, $value);
 
-            if ($old_id_column) {
-                $value[$old_id_column] = $fk_ids[$old_id_column][$value['old_id']];
-            }
-
+            if ($old_id_column) $value[$old_id_column] = $fk_ids[$old_id_column][$value['old_id']];
             if (!isset($value['old_id'])) $value['old_id'] = null;
 
             $model = DB::table($class_name);
@@ -379,10 +430,8 @@ class DataMigration {
                 $model->one();
             } else {
                 $model->where("old_id IS NOT NULL")
-                      ->where("old_host IS NOT NULL")
                       ->where("old_db IS NOT NULL")
                       ->where("old_id = {$value['old_id']}")
-                      ->where("old_host = '{$this->from_pgsql->host}'")
                       ->where("old_db = '{$this->from_pgsql->dbname}'")
                       ->one();
             }
@@ -422,6 +471,20 @@ class DataMigration {
             echo($file_name).PHP_EOL;
             echo($contents).PHP_EOL;
         }
+    }
+
+    /**
+     * export error log
+     * @param  String $contents
+     * @param  String $class_name
+     * @return void
+     */
+    function exportErrorLog($contents, $class_name) {
+        if ($contents) {
+            $file_name = date('Ymd')."_error_{$class_name}.log";
+            $error_log_dir = LOG_DIR."error_log/";
+            FileManager::outputFile($error_log_dir, $file_name, $contents);
+        }   
     }
 
 }

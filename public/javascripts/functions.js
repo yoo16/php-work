@@ -3,6 +3,64 @@
  * 
  * Copyright (c) 2013 Yohei Yoshikawa (http://yoo-s.com/)
  */
+$(document).on('click', '.action-loading', function() {
+    showLoading();
+});
+
+function showLoading() {
+    $(document).ready(function() {
+        $.LoadingOverlay("show");
+    });
+}
+
+$(document).on('click', '.change-sortable', function() {
+    var id = '#' + $(this).attr('rel') + ' tbody';
+    var sort_orders;
+    $('.update-sortable').show();
+    $('.close-sortable').show();
+
+    $(id).sortable();
+    $(id).sortable('enable');
+    $(id).disableSelection();
+    $(id).sortable({
+        update: function(ev, ui) {
+            sort_orders = $(id).sortable('toArray');
+        }
+    });
+
+    $(document).on('click', '.update-sortable', function() {
+        showLoading();
+
+        var controller = $(this).attr('controller');
+        var url = projectUrl() + controller + '/update_sort';
+        var params = {sort_order: sort_orders};
+        console.log(params);
+        console.log(controller);
+        postApi(url, params, callback);
+
+        function callback(data) {
+            $(id).sortable('disable');
+            $('.update-sortable').hide();
+            $('.close-sortable').hide();
+            $.LoadingOverlay("hide");
+        } 
+    });
+
+    $(document).on('click', '.close-sortable', function() {
+        $('.update-sortable').hide();
+        $('.close-sortable').hide();
+    });
+});
+
+$(document).on('click', '.action-close', function() {
+    var window_id = '#' + $(this).attr('window-id');
+    $(window_id).hide();
+});
+
+$(function(){
+    $('.update-sortable').hide();
+    $('.close-sortable').hide();
+});
 
 $(document).on('click', '.action-close', function() {
     var window_id = '#' + $(this).attr('window-id');

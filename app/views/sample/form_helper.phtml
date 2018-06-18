@@ -1,101 +1,123 @@
 <h2>FormHelper.php</h2>
 
 <div class="card">
-  <h4 class="card-header">select($params, $selected=null)</h4>
+  <div class="card-header">
+    <h4>select($params, $selected=null)</h4>
+  </div>
 
   <div class="card-block">
 
-<h4>FormHelper::select($this->forms['area'], 2)</h4>
+    <h4>FormHelper::select($this->forms['area'], 2)</h4>
 
-<form action="" class="form-inline">
-  <?= FormHelper::select($this->forms['area'], 2); ?>
-</form>
+    <form action="" class="form-inline">
+      <?= FormHelper::select($this->forms['area'], 2); ?>
+    </form>
 
-  <h5>$this->forms['area']</h5>
-  <table class="table">
-<? foreach ($this->forms['area'] as $key => $value): ?>
+    <h5>$this->forms['area']</h5>
+    <table class="table">
+      <? foreach ($this->forms['area'] as $key => $value): ?>
 
-    <tr>
-      <th><?= $key ?></th>
-      <td>
-<? if (is_array($value)): ?>
+        <tr>
+          <th>
+            <?= $key ?>
+          </th>
+          <td>
+            <? if (is_array($value)): ?>
 
-        <table class="table">
+              <table class="table">
 
-<? foreach ($value as $key2 => $value2): ?>
-          <tr>
-            <th><?= $key2 ?></th>
-            <td><? if (is_array($value2)): ?><? print_r($value2) ?><? else: ?><?= $value2 ?><? endif ?></td>
-          </tr>
-<? endforeach ?>
+                <? foreach ($value as $key2 => $value2): ?>
+                  <tr>
+                    <th>
+                      <?= $key2 ?>
+                    </th>
+                    <td>
+                      <? if (is_array($value2)): ?>
+                        <? print_r($value2) ?>
+                          <? else: ?>
+                            <?= $value2 ?>
+                            <? endif ?>
+                    </td>
+                  </tr>
+                  <? endforeach ?>
 
-        </table>
+              </table>
 
-<? else: ?>
+              <? else: ?>
 
-<?= $value ?>
+                <?= $value ?>
 
-<? endif ?>
-        </td>
+                <? endif ?>
+          </td>
 
-    </tr>
+        </tr>
 
-<? endforeach ?>
-</table>
+        <? endforeach ?>
+    </table>
 
-<h4>FormHelper::select(['csv' => 'prefecture'], 13);</h4>
+    <h4>FormHelper::select(['csv' => 'prefecture'], 13);</h4>
 
-<form action="" class="form-inline">
-  <?= FormHelper::select(['csv' => 'prefecture'], 13); ?>
-</form>
+    <form action="" class="form-inline">
+      <?= FormHelper::select(['csv' => 'prefecture'], 13); ?>
+    </form>
 
-</div>
+  </div>
 </div>
 
 <div class="card">
   <h4 class="card-header">multiCheckbox($params, $selected=null)</h4>
 
-<div class="card-block">
+  <div class="card-block">
 
-<form action="" class="form-inline">
-  <div class="form-group">
-    <?= FormHelper::multiCheckbox($this->forms['area_checkbox'], array(2, 3), 'id', 'name'); ?>
-  </div>
-</form>
+    <form action="" class="form-inline">
+      <div class="form-group">
+        <?= FormHelper::multiCheckbox($this->forms['area_checkbox'], array(2, 3), 'id', 'name'); ?>
+      </div>
+    </form>
 
-<h4>FormHelper::multiCheckbox($this->forms['area_checkbox'], array(2, 3))</h4>
+    <h4>FormHelper::multiCheckbox($this->forms['area_checkbox'], array(2, 3))</h4>
 
-<h5>$this->forms['area_checkbox']</h5>
-<table class="table">
-  <? foreach ($this->forms['area_checkbox'] as $key => $value): ?>
+    <h5>$this->forms['area_checkbox']</h5>
+    <table class="table">
+      <? foreach ($this->forms['area_checkbox'] as $key => $value): ?>
 
-  <tr>
-    <th><?= $key ?></th>
-    <td>
-      <? if (is_array($value)): ?>
-
-      <table class="table">
-
-<? foreach ($value as $key2 => $value2): ?>
         <tr>
-          <th><?= $key2 ?></th>
-          <td><? if (is_array($value2)): ?><? print_r($value2) ?><? else: ?><?= $value2 ?><? endif ?></td>
+          <th>
+            <?= $key ?>
+          </th>
+          <td>
+            <? if (is_array($value)): ?>
+
+              <table class="table">
+
+                <? foreach ($value as $key2 => $value2): ?>
+                  <tr>
+                    <th>
+                      <?= $key2 ?>
+                    </th>
+                    <td>
+                      <? if (is_array($value2)): ?>
+                        <? print_r($value2) ?>
+                          <? else: ?>
+                            <?= $value2 ?>
+                            <? endif ?>
+                    </td>
+                  </tr>
+                  <? endforeach ?>
+
+              </table>
+
+              <? else: ?>
+
+                <?= $value ?>
+
+                <? endif ?>
+          </td>
+
         </tr>
-<? endforeach ?>
 
-      </table>
-
-<? else: ?>
-
-<?= $value ?>
-
-<? endif ?>
-    </td>
-
-  </tr>
-
-<? endforeach ?>
-</table>
+        <? endforeach ?>
+    </table>
 
   </div>
 </div>
@@ -112,33 +134,43 @@
 
     <h5>$this->forms['area_radio']</h5>
     <table class="table">
-<? foreach ($this->forms['area_radio'] as $key => $value): ?>
+      <? foreach ($this->forms['area_radio'] as $key => $value): ?>
 
-      <tr>
-        <th><?= $key ?></th>
-        <td>
-          <? if (is_array($value)): ?>
+        <tr>
+          <th>
+            <?= $key ?>
+          </th>
+          <td>
+            <? if (is_array($value)): ?>
 
-          <table class="table">
+              <table class="table">
 
-<? foreach ($value as $key2 => $value2): ?>
-            <tr>
-              <th><?= $key2 ?></th>
-              <td><? if (is_array($value2)): ?><? print_r($value2) ?><? else: ?><?= $value2 ?><? endif ?></td>
-            </tr>
-<? endforeach ?>
+                <? foreach ($value as $key2 => $value2): ?>
+                  <tr>
+                    <th>
+                      <?= $key2 ?>
+                    </th>
+                    <td>
+                      <? if (is_array($value2)): ?>
+                        <? print_r($value2) ?>
+                          <? else: ?>
+                            <?= $value2 ?>
+                            <? endif ?>
+                    </td>
+                  </tr>
+                  <? endforeach ?>
 
-          </table>
-<? else: ?>
+              </table>
+              <? else: ?>
 
-  <?= $value ?>
-<? endif ?>
-        </td>
+                <?= $value ?>
+                <? endif ?>
+          </td>
 
-      </tr>
+        </tr>
 
-  <? endforeach ?>
-  </table>
+        <? endforeach ?>
+    </table>
 
   </div>
 </div>
@@ -148,40 +180,50 @@
 
   <div class="card-block">
 
-  <form action="" class="form-inline">
-    <?= FormHelper::selectDate($this->forms['date']) ?>
-  </form>
+    <form action="" class="form-inline">
+      <?= FormHelper::selectDate($this->forms['date']) ?>
+    </form>
 
-  <h4>FormHelper::selectDate($this->forms['date'])</h4>
+    <h4>FormHelper::selectDate($this->forms['date'])</h4>
 
-  <h5>$this->forms['date']</h5>
-  <table class="table">
-    <? foreach ($this->forms['date'] as $key => $value): ?>
+    <h5>$this->forms['date']</h5>
+    <table class="table">
+      <? foreach ($this->forms['date'] as $key => $value): ?>
 
-    <tr>
-      <th><?= $key ?></th>
-      <td>
-<? if (is_array($value)): ?>
+        <tr>
+          <th>
+            <?= $key ?>
+          </th>
+          <td>
+            <? if (is_array($value)): ?>
 
-        <table class="table">
+              <table class="table">
 
-<? foreach ($value as $key2 => $value2): ?>
-          <tr>
-            <th><?= $key2 ?></th>
-            <td><? if (is_array($value2)): ?><? print_r($value2) ?><? else: ?><?= $value2 ?><? endif ?></td>
-          </tr>
-<? endforeach ?>
+                <? foreach ($value as $key2 => $value2): ?>
+                  <tr>
+                    <th>
+                      <?= $key2 ?>
+                    </th>
+                    <td>
+                      <? if (is_array($value2)): ?>
+                        <? print_r($value2) ?>
+                          <? else: ?>
+                            <?= $value2 ?>
+                            <? endif ?>
+                    </td>
+                  </tr>
+                  <? endforeach ?>
 
-        </table>
+              </table>
 
-<? else: ?>
+              <? else: ?>
 
-<?= $value ?>
-<? endif ?>
-</td>
+                <?= $value ?>
+                <? endif ?>
+          </td>
 
-</tr>
+        </tr>
 
-<? endforeach ?>
-</table>
+        <? endforeach ?>
+    </table>
 </div>

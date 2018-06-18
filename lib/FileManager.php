@@ -6,6 +6,11 @@
  **/
 
 class FileManager {
+    public $base_dir;
+    public $base_url;
+    public $file;
+    public $file_name;
+    public $file_path;
 
     static $irregular_rules = array(
         'men'       =>  'man',
@@ -74,15 +79,52 @@ class FileManager {
         '(.)s$'         =>  '$1',
     );
 
-    public $base_dir;
-    public $base_url;
-
-    function __construct($path=null) {
+    function __construct($path = null) {
         $this->base_dir = $path;
     }
 
+    function setBaseDir($base_dir) {
+        $this->base_dir = $base_dir;
+        return $this;
+    }
+
+    function setFileName($file_name) {
+        $this->file_name = $file_name;
+        $this->loadFilePath();
+        return $this;
+    }
+
+    function loadFilePath() {
+        $this->file_path = $this->base_dir.$this->file_name;
+        return $this;
+    }
+
+    function create($is_add = false) {
+        FileManager::createDir($this->base_dir);
+        $mode = ($is_add) ? 'a' : 'w';
+        $this->file = fopen($this->file_path, $mode);
+    }
+
     /**
-     * ログファイル
+     * output file
+     *
+     * @param array $contents
+     **/
+    function output($contents) {
+        FileManager::createDir($this->base_dir);
+
+        file_put_contents($this->file_path, $contents);
+
+        $cmd = "mhmod 666 {$file}";
+        exec($cmd);
+    }
+
+    function writeRow() {
+
+    }
+
+    /**
+     * log files
      *
      * @param array
      **/
@@ -96,12 +138,12 @@ class FileManager {
     }
 
     /**
-     * ログ書き出し
+     * output log file
      *
-     * @param String $content
-     * @param String $file_name
+     * @param string $content
+     * @param string $file_name
      **/
-    static function log($content, $file_name=null) {
+    static function log($content, $file_name = null) {
         if (defined('LOG_DIR')) {
             $date = date('Ymd');
             if ($file_name) {
@@ -117,15 +159,15 @@ class FileManager {
     }
 
     /**
-     * ファイル書き出し
+     * output file
      *
-     * @param String $output_dir
-     * @param String $file_name
-     * @param String $contents
+     * @param string $output_dir
+     * @param string $file_name
+     * @param string $contents
      * @param bool $is_backup
      * @param bool $is_add
      **/
-    static function outputFile($output_dir, $file_name, $contents, $is_backup=false, $is_add=false) {
+    static function outputFile($output_dir, $file_name, $contents, $is_backup = false, $is_add = false) {
         self::createDir($output_dir);
 
         $file = $output_dir.$file_name;
@@ -153,7 +195,7 @@ class FileManager {
     /**
      * Image Extentions
      *
-     * @return Array
+     * @return array
      */
     static function getImageExts() {
         $types['image/gif'] = "gif";
@@ -169,7 +211,7 @@ class FileManager {
     /**
      * Image file types
      *
-     * @return Array
+     * @return array
      */
     static function getImageTypes() {
         $types['gif'] = "image/gif";
@@ -182,7 +224,7 @@ class FileManager {
     /**
      * Image file type by file name
      *
-     * @return Array
+     * @return array
      */
     static function getImageTypeWithFileName($file_name) {
         $ext = self::getFileExt($file_name);
@@ -195,9 +237,8 @@ class FileManager {
     /**
      * image extention
      *
-     * @param String $file_type
-     *
-     * @return Array
+     * @param string $file_type
+     * @return array
      */
     static function getImageExt($file_type) {
         $types = self::getImageExts();
@@ -207,10 +248,10 @@ class FileManager {
     /**
      * File list
      *
-     * @param String $base_dir
-     * @param Array $params
+     * @param string $base_dir
+     * @param array $params
      *
-     * @return Array
+     * @return array
      */
     static function loadFiles($base_dir, $params=null) {
          $i = 0;
@@ -253,9 +294,8 @@ class FileManager {
     /**
      * Upload file contents
      *
-     * @param String $key
-     *
-     * @return Array
+     * @param string $key
+     * @return array
      */
     static function loadContents($key='file') {
         $files = $_FILES[$key];
@@ -269,9 +309,8 @@ class FileManager {
     /**
      * Upload file path
      *
-     * @param String $key
-     *
-     * @return String
+     * @param string $key
+     * @return string
      */
     static function uploadFilePath($key='file') {
         $files = $_FILES[$key];
@@ -282,9 +321,8 @@ class FileManager {
     /**
      * Upload file path
      *
-     * @param String $key
-     *
-     * @return String
+     * @param string $key
+     * @return string
      */
     static function uploadFileType($key='file') {
         $files = $_FILES[$key];
@@ -294,9 +332,8 @@ class FileManager {
     /**
      * uploaded file name
      *
-     * @param String $key
-     *
-     * @return String
+     * @param string $key
+     * @return string
      */
     static function uploadFileName($key='file') {
         $files = $_FILES[$key];
@@ -307,9 +344,8 @@ class FileManager {
     /**
      * uploaded image file extention
      *
-     * @param String $key
-     *
-     * @return String
+     * @param string $key
+     * @return string
      */
     static function uploadImageExt($key='file') {
         $files = $_FILES[$key];
@@ -322,10 +358,9 @@ class FileManager {
     /**
      * upload file
      *
-     * @param String $to_path
-     * @param String $key
-     *
-     * @return String
+     * @param string $to_path
+     * @param string $key
+     * @return string
      */
     static function uploadFile($to_path, $key='file') {
         $files = $_FILES[$key];
@@ -339,8 +374,8 @@ class FileManager {
     /**
      * upload image file
      *
-     * @param String $to_path
-     * @param String $key
+     * @param string $to_path
+     * @param string $key
      *
      * @return void
      */
@@ -359,14 +394,13 @@ class FileManager {
     /**
      * remove file
      *
-     * @param String $path
+     * @param string $path
      * @param bool $is_file_delete
      *
      * @return bool
      */
     static function removeFile($path, $is_file_delete=false) {
         if (file_exists($path)) {
-            dump($path);
             if (defined('PHP_FUNCTION_MODE') && PHP_FUNCTION_MODE) {
                 if (is_dir($path)) {
                     if ($is_file_delete) {
@@ -393,27 +427,21 @@ class FileManager {
     /**
      * move file
      *
-     * @param String $path
-     * @param String $to_path
+     * @param string $path
+     * @param string $to_path
      *
      * @return bool
      */
     static function moveFile($from_path, $to_path) {
         if (file_exists($from_path)) {
-            dump($from_path);
-            dump($to_path);
             if (defined('PHP_FUNCTION_MODE') && PHP_FUNCTION_MODE) {
                 $is_success = rename($from_path, $to_path);
-                dump($is_success);
                 $is_success = chmod($to_path, 0755);
-                dump($is_success);
             } else {
                 $cmd = "mv {$from_path} {$to_path}";
                 exec($cmd);
-                dump($cmd);
                 $cmd = "chmod 777 {$to_path}";
                 exec($cmd);
-                dump($cmd);
                 return true;
             }
         }
@@ -422,8 +450,8 @@ class FileManager {
     /**
      * remove image file(multi extention)
      *
-     * @param String $path
-     * @param String $to_path
+     * @param string $path
+     * @param string $to_path
      *
      * @return void
      */
@@ -445,9 +473,9 @@ class FileManager {
     /**
      * is image
      *
-     * @param String $file
+     * @param string $file
      *
-     * @return String
+     * @return string
      */
     static function isImage($file) {
         $ext = self::getImageExt($file);
@@ -455,12 +483,12 @@ class FileManager {
     }
 
    /**
-    * 画像ディレクトリ作成
+    * create dir
     *
-    * @param  Array $path
+    * @param  array $path
     * @return void
     */ 
-    static function createDir($path) {
+    static function createDir($path, $chmod = '777') {
         if (!file_exists($path)) {
             if (defined('PHP_FUNCTION_MODE') && PHP_FUNCTION_MODE) {
                 $is_suceess = mkdir($path);
@@ -474,16 +502,16 @@ class FileManager {
             } else {
                 $cmd = "mkdir -p {$path}";
                 exec($cmd);
-                $cmd = "chmod 777 {$path}";
+                $cmd = "chmod {$chmod} {$path}";
                 exec($cmd);
             }
         }
     }
 
    /**
-    * アクセス修正
+    * chmod
     *
-    * @param  Array $path
+    * @param  array $path
     * @return void
     */ 
     static function chmodFile($path) {
@@ -503,7 +531,7 @@ class FileManager {
    /**
     * file base name
     *
-    * @param  Array $path
+    * @param  array $path
     * @return void
     */ 
     static function getFileBaseName($path) {
@@ -513,7 +541,7 @@ class FileManager {
    /**
     * file name
     *
-    * @param  Array $path
+    * @param  array $path
     * @return void
     */ 
     static function getFileName($path) {
@@ -523,7 +551,7 @@ class FileManager {
    /**
     * file extention
     *
-    * @param  Array $path
+    * @param  array $path
     * @return void
     */ 
     static function getFileExt($path) {
@@ -531,10 +559,100 @@ class FileManager {
     }
 
     /**
-     * ファイルダウンロード
+     * zipArchive
      *
-     * @param String $url
-     * @param String $path
+     * @param string $base_dir
+     * @param string $dir_name
+     * @param string $zip_file_name
+     * @param boolean $is_delete_dir
+     * @param boolean
+     *
+     **/
+    static function zipArchive($base_dir, $dir_name, $zip_file_name = null, $is_delete_dir = true) {
+        $result = false;
+        if (is_null($zip_file_name)) $zip_file_name = "{$dir_name}.zip";
+        $archive_dir = "{$base_dir}{$dir_name}";
+        $zip_file_path = "{$base_dir}{$zip_file_name}";
+        if (file_exists($zip_file_path)) unlink($zip_file_path);
+
+        if (file_exists($archive_dir)) {
+            $zip_file = "{$base_dir}{$zip_file_name}";
+            $cmd = "cd {$base_dir} && zip {$zip_file_name} {$dir_name}/*";
+            $result = exec($cmd);
+
+            if ($is_delete_dir)  {
+                $cmd = "rm -rf {$archive_dir}";
+                exec($cmd);
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * output download header
+     * 
+     * @param  string $file_name
+     * @return void
+     */
+    static function outputDownloadHeader($file_name) {
+        if (FileManager::isIE()) {
+            $file_name = mb_convert_encoding($file_name, 'SJIS', 'UTF-8');
+        }
+        header("Content-type: application/octet-stream; name=\"{$file_name}\"");
+        header("Content-Disposition: Attachment; filename=\"{$file_name}\""); 
+        header('Pragma: private');
+        header('Cache-control: private, must-revalidate');
+    }
+
+    /**
+     * output csv line
+     *
+     * @param array $values
+     * @return void
+     */
+    static function outputCsvLine($values) {
+        $line = implode(',', $values);
+        $line.="\r\n";
+        $line = mb_convert_encoding($line, 'SJIS', 'UTF-8');
+        echo($line);
+    }
+
+    /**
+     * is IE
+     *
+     **/
+    static function isIE() {
+        if (preg_match('/MSIE/', $_SERVER['HTTP_USER_AGENT']) || strpos($_SERVER['HTTP_USER_AGENT'], 'Trident')) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * download file
+     *
+     **/
+    static function downloadFile($file_path, $file_name) {
+        if (file_exists($file_path)) {
+            if (FileManager::isIE($_SERVER)) {
+                $file_name = mb_convert_encoding($file_name, 'SJIS', 'UTF-8');
+            }
+            header("Content-Disposition: Attachment; filename=\"{$file_name}\""); 
+            header("Content-type: application/octet-stream; name=\"{$file_name}\"");
+            header('Pragma: private');
+            header('Cache-control: private, must-revalidate');
+            readfile($file_path);
+        } else {
+            exit('Not found file');
+        }
+    }
+
+    /**
+     * download file by url
+     *
+     * @param string $url
+     * @param string $path
      * @return void
      **/
     static function downloadToPath($url, $path) {
@@ -543,20 +661,14 @@ class FileManager {
     }
 
     /**
-     * contents download
+     * download contents
      *
-     * @param String $url
-     * @param String $path
+     * @param string $file_name
+     * @param string $contents
      * @return void
      **/
-    function downloadContents($file_name, $contents) {
-        if (preg_match('/MSIE/', $_SERVER['HTTP_USER_AGENT']) || strpos($_SERVER['HTTP_USER_AGENT'], 'Trident')) {
-            $file_name = mb_convert_encoding($file_name, 'SJIS', 'UTF-8');
-        }
-        header('Cache-Control: public');
-        header('Pragma: public');
-        header("Content-Disposition: Attachment; filename=\"{$file_name}\""); 
-        header("Content-type: application/octet-stream; name=\"{$file_name}\"");
+    static function downloadContents($file_name, $contents) {
+        FileManager::outputDownloadHeader($file_name);
         echo($contents);
         exit;
     }
@@ -564,10 +676,10 @@ class FileManager {
    /**
     * file list
     *
-    * @param  Array $path
+    * @param  array $path
     * @return void
     */ 
-    public function fileList($page=0) {
+    public function fileList($page = 0) {
         $file_count = 12;
         $i = 0;
         $count = 0;
@@ -620,10 +732,9 @@ class FileManager {
     /**
      * excape line break
      *
-     * @param String $value
-     * @param String $to
-     *
-     * @return String
+     * @param string $value
+     * @param string $to
+     * @return string
      */
     static function escapeLinebreak($value, $to = "\\n") {   
         return preg_replace("/\r\n|\r|\n/", $to, $value);
@@ -688,12 +799,24 @@ class FileManager {
         return $result;
     }
 
+    /**
+     * phpClassNameFromEntityName
+     *
+     * @param string $entity_name
+     * @return void
+     */
     static function phpClassNameFromEntityName($entity_name) {
         $name = FileManager::pluralToSingular($entity_name);
         $class_name = FileManager::phpClassName($name);
         return $class_name;
     }
 
+    /**
+     * phpClassName
+     *
+     * @param string $name
+     * @return void
+     */
     static function phpClassName($name) {
         $names = explode('_', $name);
         if (is_array($names)) {
@@ -706,6 +829,13 @@ class FileManager {
         return $class_name;
     }
 
+    /**
+     * bufferFileContetns
+     *
+     * @param string $path
+     * @param array $values
+     * @return array
+     */
     static function bufferFileContetns($path, $values) {
         if (file_exists($path)) {
             ob_start();
@@ -716,4 +846,52 @@ class FileManager {
         return $contents;
     }
 
+
+   /**
+    * convrt jpeg to png
+    *
+    * @param string $path
+    * @return void
+    */ 
+    static public function convertJpgToPng($path) {
+        $image = @imagecreatefromjpeg($path);
+        imagepng($image, $path);
+    }
+
+    /**
+     * thread exec
+     *
+     * @return void
+     */
+    static function threadExec($path, $params = null) {
+        if (file_exists($path)) {
+            if ($params) {
+                foreach ($params as $key => $param) {
+                    if (is_array($param)) {
+                        $param = json_encode($param);
+                    }
+                    $params[$key] = "'{$param}'";
+                }
+                $param = implode(' ', $params);
+            }
+            $cmd = COMAND_PHP_PATH." {$path} {$param} > /dev/null &";
+            dump($cmd);
+            exec($cmd);
+        }
+    }
+
+    /**
+     * file count
+     *
+     * @param string $dir_path
+     * @return interger
+     */
+    static function fileCount($dir_path)
+    {
+        if (is_dir($dir_path)) {
+            $path = "{$dir_path}*";
+            $iterator = new GlobIterator($path);
+            if ($iterator) return $iterator->count();
+        }
+    }
 }

@@ -12,7 +12,9 @@
         <a class="navbar-brand" href="<?= url_for('/') ?>"><?= APP_NAME ?></a>
       </div>
       <nav class="nav nav-pills flex-column flex-sm-row">
-        <a class="flex-sm-fill text-sm-center nav-link" href="<?= url_for('form_helper') ?>">FormHelper</a>
+        <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlActionFor('index') ?>">Index</a>
+        <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlActionFor('controller') ?>">Controller</a>
+        <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlActionFor('form_helper') ?>">FormHelper</a>
       </nav>
     </div>
   </div>

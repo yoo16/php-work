@@ -13,8 +13,22 @@ class SampleController extends AppController {
 
     function index() {
 
-    }
+	}
+	
+	/**
+	 * controller
+	 *
+	 * @return void
+	 */
+	function action_controller() {
 
+	}
+
+	/**
+	 * form helper
+	 *
+	 * @return void
+	 */
     function action_form_helper() {
         $values = null;
         $values[] = array('id' => 1, 'name' => 'Tokyo', 'country' => 'Japan');
@@ -120,7 +134,6 @@ class SampleController extends AppController {
     	$this->forms['questions'] = $params;
     }
 
-
     function action_upload_file() {
         $this->contents = FileManager::loadContents();
         $this->encoding = mb_detect_encoding($this->contents);
@@ -130,5 +143,8 @@ class SampleController extends AppController {
 
         $this->file_type = FileManager::uploadFileType();
     }
+
+    function action_action() {
+	}
 
 }
