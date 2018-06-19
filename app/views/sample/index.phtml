@@ -1,23 +1,237 @@
-
 <div class="hero-unit">
 
-  <h1>Hello, world!</h1>
+  <h1>Hello, php-work!</h1>
+  <h2>MVC Framework</h2>
+  <div class="alert alert-success">
+    <ul>
+      <li>M is Model.</li>
+      <li>Model file is possible O/R mapping with vo file.</li>
+      <li>vo file is 'app/models/vo/xxxx.php'.</li>
+      <li>vo file must inherit 'PgsqlEntity.php'.(Currently, only PostgreSQL)</li>
+      <li>You need define model attributes.</li>
+      <li>Control the model with the 'DB' class library.</li>
+    </ul>
+  </div>
+  <h2>Sample 1.</h2>
+  <div>
+    Country.php
+  </div>
+  <h3>(1) Model file name is 'country'.</h3>
+  <div>
+    <pre>
+    require_once 'models/vo/_Country.php';
 
-  <p>This is a template for a simple marketing or informational website. It includes a large callout called the hero unit and three supporting pieces of content. Use it as a starting point to create something more unique.</p>
+    class Country extends _Country {
+    
+    }
+    </pre>
+  </div>
+  <h3>(2) vo file (O/R mapping file) is '_Country.php'</h3>
+  <div>
+    <pre>
+    require_once 'PgsqlEntity.php';
 
-  <p><a class="btn btn-primary btn-large">Learn more &raquo;</a></p>
-
-
-  <div class="draggable ui-widget-content">
-    <h2>Heading</h2>
-
-    <p>Drag me around</p>
-
-    <p>Donec id elit non mi porta gravida at eget metus. Fusce dapibus, tellus ac cursus commodo, tortor mauris condimentum nibh, ut fermentum massa justo sit amet risus. Etiam porta sem malesuada magna mollis euismod. Donec sed odio dui. </p>
-
-    <p><a class="btn" href="#">View details &raquo;</a></p>
-
+    class _Country extends PgsqlEntity {
+    
+        public $id_column = 'id';
+        public $name = 'countries';
+        public $entity_name = 'country';
+    
+        public $columns = array(
+            'created_at' => array('type' => 'timestamp'),
+            'name' => array('type' => 'varchar', 'length' => 256, 'is_required' => true),
+            'sort_order' => array('type' => 'int4'),
+            'updated_at' => array('type' => 'timestamp'),
+        );
+    
+        public $primary_key = 'Country_pkey';
+    
+        public $unique = array(
+                'countries_name_key' => [
+                            'name',
+                            ],
+        );
+    }
+    </pre>
   </div>
 
+  <h3>(3) vo files be generated automatically using 'project-manager'.</h3>
+  <div>
+    <a href="https://github.com/yoo16/project-manager" target="_blank">https://github.com/yoo16/project-manager</a>
+  </div>
+
+  <div class="alert alert-success">
+    <h3>Controller</h3>
+    <ul>
+      <li>C is Controller.</li>
+      <li>Controller file is necessary extends 'Controller.php'.</li>
+      <li>Controller file control Model file and View file.</li>
+      <li>Controller file determines url and processes it.</li>
+      <li>It is usually better to inherit 'AppController.php' for controller files using global controller's function.</li>
+    </ul>
+  </div>
+  <h2>URL : http://domain/(1) controller name/(2) method name/(3)id?(4)url_paramater.</h2>
+  <h2>Sample 1.</h2>
+  <div>
+    http://domain/country/edit/1?name=Japan.
+  </div>
+  <h3>(1) controller name is 'country'.</h3>
+  <div>
+    <pre>
+    require_once 'AppController.php';
+
+    class CountryController extends AppController {
+      
+    }
+    </pre>
+  </div>
+  <h3>(2) method name is 'edit'</h3>
+  <div>
+    <pre>
+    function edit() {
+
+    }
+    </pre>
+  </div>
+  <h3>(3) 'id' is taked by http query $this->params['id']</h3>
+  <div>
+    <pre>
+    function edit() {
+        $this->country = DB::table('Country')->fetch($this->params['id']);
+        var_export($this->country->value);
+
+        //$this->params['id'] = 1
+        //this method is SQL => SELECT * FROM countries WHERE id = 1;'
+    }
+    </pre>
+  </div>
+  <h2>Sample 2.</h2>
+  <div>
+    http://domain/country/search/?name=Japan.
+  </div>
+  <h3>(4) 'url params (GET)' is taked $this->params[xxxx]</h3>
+  <div>
+    <pre>
+    function search() {
+        $this->country = DB::table('Country')->where('name', $this->params['name'])->all();
+        var_export($this->country->values);
+
+        //$this->params['name'] = Japan
+        //this method is SQL => SELECT * FROM countries WHERE name = 'Japan';
+    }
+    </pre>
+  </div>
 </div>
 
+<div class="alert alert-success">
+    <ul>
+      <li>V is Model.</li>
+      <li>View is renderd using instance in contoller.</li>
+      <li>View file name is usually the same method name in controller.</li>
+      <li>View file is in app/views/controller_name/xxxx.phtml</li>
+      <li>HTML layout is in app/views/layouts/xxxx.phtml.</li>
+      <li>HTML layout file name is setting by instance '$layout' in controller.</li>
+      <li>View file renderd as child view by '$this->content_for_layout' of layout.</li>
+    </ul>
+  </div>
+  <h2>Sample 1.</h2>
+  <div>
+    Country.php
+  </div>
+  <h3>(1) layout name.</h3>
+  <div>
+    <pre>
+    require_once 'AppController.php';
+
+    class CountryController extends AppController {
+        var $layout = 'sample';
+        //file path : app/views/layouts/sample.phtml
+    
+    }
+    </pre>
+  </div>
+
+  <h3>(2) render file is 'method name.phtml'.</h3>
+  <div>
+    <pre>
+    require_once 'AppController.php';
+
+    class CountryController extends AppController {
+        var $layout = 'sample';
+
+        function edit() {
+            //app/views/country/edit.phtml
+            $this->country = DB::table('Country')->fetch($this->params['id']);
+        }
+    
+    }
+    </pre>
+  </div>
+
+  <h3>(3) write coding and display layout file</h3>
+  <div>
+    <pre>
+    <?= htmlspecialchars("
+      <html lang=\"ja\">
+        <head>
+          <? include('components/meta.phtml') ?>
+          <? include('components/stylesheet.phtml') ?>
+          <? include('components/javascript.phtml') ?>
+        </head>
+        <body>
+        
+          <div class=\"nav\">
+            <div class=\"container\">
+              <div class=\"navbar-header\">
+                <a class=\"navbar-brand\" href=\"<?= \$this->base ?>\"><?= APP_NAME ?></a>
+              </div>
+              <nav class=\"nav nav-pills flex-column flex-sm-row\">
+        
+              </nav>
+            </div>
+          </div>
+        
+          <div class=\"container\">
+        
+            <?= \$this->content_for_layout ?>
+        
+          </div>
+        
+        </body>
+        </html>
+    ") ?>
+    </pre>
+
+    <h4>result</h4>
+    <div>
+        <form action="<?= $this->urlFor('country', 'update', $this->country->value['id']) ?>" method="post">
+        id : <?= $this->country->value['id'] ?>
+        <?= $this->country->formInput('name', ['class' => 'form-control']) ?>
+        <?= FormHelper::submit(LABEL_SAVE) ?>
+        </form>
+      </div>
+  </div>
+
+  <h3>(4) write coding and display in 'edit.phtml'</h3>
+  <div>
+    <pre>
+    <?= htmlspecialchars("
+      <div>
+        <form action=\"<?= \$this->urlFor('country', 'update', \$this->country->value['id']) ?>\" method=\"post\">
+        id : <?= \$this->country->value['id'] ?>
+        <?= \$this->country->formInput('name') ?>
+        <?= FormHelper::submit(LABEL_SAVE) ?>
+        </form>
+      </div>
+    ") ?>
+    </pre>
+
+    <h4>result</h4>
+    <div>
+        <form action="<?= $this->urlFor('country', 'update', $this->country->value['id']) ?>" method="post">
+        id : <?= $this->country->value['id'] ?>
+        <?= $this->country->formInput('name', ['class' => 'form-control']) ?>
+        <?= FormHelper::submit(LABEL_SAVE) ?>
+        </form>
+      </div>
+  </div>

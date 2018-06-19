@@ -1523,8 +1523,12 @@ class PgsqlEntity extends Entity
             $sql_values = null;
             foreach ($model_columns as $column_name) {
                 $value = null;
-                if (isset($row[$column_name])) $value = $row[$column_name];
-                $sql_values[] = $this->sqlValue($value);
+                if ($column_name == 'created_at') {
+                    $sql_values[] = 'current_timestamp';
+                } else {
+                    if (isset($row[$column_name])) $value = $row[$column_name];
+                    $sql_values[] = $this->sqlValue($value);
+                }
             }
             $value = implode(', ', $sql_values);
             $values[] = "\n({$value})";
@@ -1566,7 +1570,7 @@ class PgsqlEntity extends Entity
                     $current_value = $this->values[$id];
                     if ($current_value['sort_order'] != $sort_order) {
                         $posts['sort_order'] = (int) $sort_order;
-                        DB::table($class_name)->update($posts, $id);
+                        $class = DB::table($class_name)->update($posts, $id);
                     }
                 }
             }

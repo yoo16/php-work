@@ -12,7 +12,7 @@ class SampleController extends AppController {
     var $layout = 'sample';
 
     function index() {
-
+		$this->country = DB::table('Country')->fetch(1);
 	}
 	
 	/**
@@ -23,6 +23,33 @@ class SampleController extends AppController {
 	function action_controller() {
 
 	}
+
+	function action_inserts_countries() {
+		$values[] = ['name' => 'Japan', 'sort_order' => 1];
+        $values[] = ['name' => 'USA', 'sort_order' => 2];
+        $values[] = ['name' => 'France', 'sort_order' => 3];
+		$values[] = ['name' => 'Italy', 'sort_order' => 4];
+
+		$country = DB::table('Country');
+		$country->inserts($values);
+		var_export($country->sql);
+		var_export($country->sql_error);
+	}
+
+	function action_update_sort_countries() {
+		//primary id
+		$_REQUEST['sort_order'][] = 2; 
+		$_REQUEST['sort_order'][] = 1; 
+		$_REQUEST['sort_order'][] = 4; 
+		$_REQUEST['sort_order'][] = 3; 
+
+        $this->updateSort('Country', false);
+
+		$country = DB::table('Country');
+		$country->all();
+		var_export($country->values);
+	}
+
 
 	/**
 	 * form helper

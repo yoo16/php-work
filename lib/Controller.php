@@ -1159,9 +1159,11 @@ class Controller extends RuntimeException {
                 $results['is_success'] = true;
             }
         }
-        $results = json_encode($results);
-        echo($results);
-        exit;
+        if ($is_json) {
+            $results = json_encode($results);
+            echo($results);
+            exit;
+        }
     }
     
     /**
@@ -1186,5 +1188,14 @@ class Controller extends RuntimeException {
         $json = json_encode($values);
         echo ($json);
         exit;
+    }
+
+    /**
+     * check POST method
+     *
+     * @return boolean
+     */
+    function isRequestPost() {
+        if ($_SERVER['REQUEST_METHOD'] != 'POST') exit;
     }
 }
