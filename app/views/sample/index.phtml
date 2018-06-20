@@ -1,23 +1,63 @@
 <div class="hero-unit">
 
-  <h1>Hello, php-work!</h1>
-  <h2>MVC Framework</h2>
+  <h1>MVC on php-work</h1>
+  <p class="text-danger">
+    *Currently, only PostgreSQL
+  </p>
+  <h2>Model</h2>
   <div class="alert alert-success">
     <ul>
       <li>M is Model.</li>
       <li>Model file is possible O/R mapping with vo file.</li>
-      <li>vo file is 'app/models/vo/xxxx.php'.</li>
-      <li>vo file must inherit 'PgsqlEntity.php'.(Currently, only PostgreSQL)</li>
-      <li>You need define model attributes.</li>
-      <li>Control the model with the 'DB' class library.</li>
+      <li>vo fil is O/R mapping file on Database table.</li>
+      <li>vo file path is 'app/models/vo/xxxx.php'.</li>
+      <li>If you need use O/R mapping with DB, Model file must inherit vo file.</li>
+      <li>vo file must inherit 'PgsqlEntity.php'.</li>
+      <li>You need define the vo file with table's attributes.</li>
+      <li>If you use 'DB' class library in php-work, you can control the model.</li>
     </ul>
   </div>
   <h2>Sample 1.</h2>
   <div>
-    Country.php
+    <dl>
+      <dt>Model file</dt>
+      <dd>Country.php </dd>
+      <dt>Table</dt>
+      <dd>countries</dd>
+    </dl>
   </div>
-  <h3>(1) Model file name is 'country'.</h3>
+  <h3>(1) Prepare database(current only PostgreSQL),</h3>
   <div>
+    <h4>createdb</h4>
+    <pre>
+    postgres$ createdb sample
+    </pre>
+    </div>
+  <h3>(2) Create setting file for access Database.</h3>
+  <p>
+    PostgreSQL setting file'name is same server hostname.
+    <br> You confirm hostname, for example using shell command 'hostname',
+  </p>
+  <div>
+    <h4>hostname</h4>
+    <pre>
+    $ hostname
+    debian
+    </pre>
+    <h4>app/settings/pgsql/'hostname'.php</h4>
+    <p>Create database(current only PostgreSQL).</p>
+    ex) app/settings/pgsql/debian.php
+    <pre>
+    define('DB_NAME', 'sample');    //Database name
+    define('DB_HOST', 'localhost'); //Database hostname *default localhost
+    define('DB_USER', 'postgres');  //Database user *default postgres
+    define('DB_PORT', '5432');      //Database host *default 5432
+    </pre>
+  </div>
+
+  <h3>(3) Create model file.</h3>
+  <div>
+    ex) app/models/Country.php
     <pre>
     require_once 'models/vo/_Country.php';
 
@@ -26,17 +66,22 @@
     }
     </pre>
   </div>
-  <h3>(2) vo file (O/R mapping file) is '_Country.php'</h3>
+  <h3>(4) Create O/R mapping file(vo file).</h3>
   <div>
+    <p>
+      If you define table attributes(table name, columns and more) for Database, you access and manage Database.
+    </p>
+    ex) app/models/vo/_Country.php
     <pre>
     require_once 'PgsqlEntity.php';
 
     class _Country extends PgsqlEntity {
     
-        public $id_column = 'id';
-        public $name = 'countries';
-        public $entity_name = 'country';
+        public $id_column = 'id';         //primary id column *default id
+        public $name = 'countries';       //default table name
+        public $entity_name = 'country';  //entity name
     
+        //talbe columns 
         public $columns = array(
             'created_at' => array('type' => 'timestamp'),
             'name' => array('type' => 'varchar', 'length' => 256, 'is_required' => true),
@@ -44,8 +89,10 @@
             'updated_at' => array('type' => 'timestamp'),
         );
     
-        public $primary_key = 'Country_pkey';
+        //primary key name
+        public $primary_key = 'countries_pkey';
     
+        //constraint information
         public $unique = array(
                 'countries_name_key' => [
                             'name',
@@ -53,15 +100,81 @@
         );
     }
     </pre>
+    <p>
+      <ul>
+        <li>
+          You can genrate automatically using 'project-manager'.<br>
+          <a href="https://github.com/yoo16/project-manager" target="_blank">https://github.com/yoo16/project-manager</a>
+        </li>
+      </ul>
+    </p>
+    <div>
+      
+    </div>
   </div>
 
-  <h3>(3) vo files be generated automatically using 'project-manager'.</h3>
+  <h3>(5) Execute 'create table' or 'alter table' by model file.</h3>
   <div>
-    <a href="https://github.com/yoo16/project-manager" target="_blank">https://github.com/yoo16/project-manager</a>
+    <p>
+      using 'scripts/sql/check_schema_from_model.php', you can query 'create table' by model vo file's attributes.
+    </p>
+    <h4>check_schema_from_model.php param1 param2</h4>
+    <ul>
+      <li>*param1 : execute query: '' or 1</li>
+      <li>*param2 : hostname</li>
+    </ul>
+    <pre>
+    $ php check_schema_from_model.php 1 localhost
+
+    --- Mode: Do not excute SQL ---
+    host: localhost
+    ---- Not Found table ----
+    _Country
+    countries
+    CREATE TABLE IF NOT EXISTS "countries" (
+    id SERIAL PRIMARY KEY NOT NULL
+    , created_at TIMESTAMP
+    , name VARCHAR(256) NOT NULL
+    , sort_order INT4
+    , updated_at TIMESTAMP
+    );
+    
+    ALTER TABLE countries
+          ADD CONSTRAINT countries_name_key
+          UNIQUE (name);
+  </pre>
   </div>
 
+  <h3>(6) Export Database SQL file.</h3>
+  <div>
+    <p>
+      using 'scripts/sql/create_sql_from_model.php', export Database SQL to db/sql/create.sql
+    </p>
+    <h4>create_sql_from_model.php</h4>
+    <pre>
+    $ php check_schema_from_model.php 1 localhost
+
+    --- Mode: Do not excute SQL ---
+    host: localhost
+    ---- Not Found table ----
+    _Country
+    countries
+    CREATE TABLE IF NOT EXISTS "countries" (
+    id SERIAL PRIMARY KEY NOT NULL
+    , created_at TIMESTAMP
+    , name VARCHAR(256) NOT NULL
+    , sort_order INT4
+    , updated_at TIMESTAMP
+    );
+    
+    ALTER TABLE countries
+          ADD CONSTRAINT countries_name_key
+          UNIQUE (name);
+  </pre>
+  </div>
+
+  <h2>Controller</h2>
   <div class="alert alert-success">
-    <h3>Controller</h3>
     <ul>
       <li>C is Controller.</li>
       <li>Controller file is necessary extends 'Controller.php'.</li>
@@ -117,30 +230,30 @@
         var_export($this->country->values);
 
         //$this->params['name'] = Japan
-        //this method is SQL => SELECT * FROM countries WHERE name = 'Japan';
+        //this method means SQL => SELECT * FROM countries WHERE name = 'Japan';
     }
     </pre>
   </div>
 </div>
 
 <div class="alert alert-success">
-    <ul>
-      <li>V is Model.</li>
-      <li>View is renderd using instance in contoller.</li>
-      <li>View file name is usually the same method name in controller.</li>
-      <li>View file is in app/views/controller_name/xxxx.phtml</li>
-      <li>HTML layout is in app/views/layouts/xxxx.phtml.</li>
-      <li>HTML layout file name is setting by instance '$layout' in controller.</li>
-      <li>View file renderd as child view by '$this->content_for_layout' of layout.</li>
-    </ul>
-  </div>
-  <h2>Sample 1.</h2>
-  <div>
-    Country.php
-  </div>
-  <h3>(1) layout name.</h3>
-  <div>
-    <pre>
+  <ul>
+    <li>V is View.</li>
+    <li>View is renderd using instance in contoller.</li>
+    <li>View file name is usually the same method name in controller.</li>
+    <li>View file is in app/views/controller_name/xxxx.phtml</li>
+    <li>HTML layout is in app/views/layouts/xxxx.phtml.</li>
+    <li>HTML layout file name is setting by instance '$layout' in controller.</li>
+    <li>View file render as child view by '$this->content_for_layout' of layout.</li>
+  </ul>
+</div>
+<h2>Sample 1.</h2>
+<div>
+  Country.php
+</div>
+<h3>(1) layout name.</h3>
+<div>
+  <pre>
     require_once 'AppController.php';
 
     class CountryController extends AppController {
@@ -149,11 +262,11 @@
     
     }
     </pre>
-  </div>
+</div>
 
-  <h3>(2) render file is 'method name.phtml'.</h3>
-  <div>
-    <pre>
+<h3>(2) render file is 'method name.phtml'.</h3>
+<div>
+  <pre>
     require_once 'AppController.php';
 
     class CountryController extends AppController {
@@ -166,11 +279,11 @@
     
     }
     </pre>
-  </div>
+</div>
 
-  <h3>(3) write coding and display layout file</h3>
-  <div>
-    <pre>
+<h3>(3) write coding and display layout file</h3>
+<div>
+  <pre>
     <?= htmlspecialchars("
       <html lang=\"ja\">
         <head>
@@ -198,23 +311,14 @@
           </div>
         
         </body>
-        </html>
+      </html>
     ") ?>
     </pre>
+</div>
 
-    <h4>result</h4>
-    <div>
-        <form action="<?= $this->urlFor('country', 'update', $this->country->value['id']) ?>" method="post">
-        id : <?= $this->country->value['id'] ?>
-        <?= $this->country->formInput('name', ['class' => 'form-control']) ?>
-        <?= FormHelper::submit(LABEL_SAVE) ?>
-        </form>
-      </div>
-  </div>
-
-  <h3>(4) write coding and display in 'edit.phtml'</h3>
-  <div>
-    <pre>
+<h3>(4) write coding and display in 'edit.phtml'</h3>
+<div>
+  <pre>
     <?= htmlspecialchars("
       <div>
         <form action=\"<?= \$this->urlFor('country', 'update', \$this->country->value['id']) ?>\" method=\"post\">
@@ -226,12 +330,13 @@
     ") ?>
     </pre>
 
-    <h4>result</h4>
-    <div>
-        <form action="<?= $this->urlFor('country', 'update', $this->country->value['id']) ?>" method="post">
-        id : <?= $this->country->value['id'] ?>
-        <?= $this->country->formInput('name', ['class' => 'form-control']) ?>
-        <?= FormHelper::submit(LABEL_SAVE) ?>
-        </form>
-      </div>
+  <h4>result</h4>
+  <div>
+    <form action="<?= $this->urlFor('country', 'update', $this->country->value['id']) ?>" method="post">
+      id :
+      <?= $this->country->value['id'] ?>
+      <?= $this->country->formInput('name', ['class' => 'form-control']) ?>
+      <?= FormHelper::submit(LABEL_SAVE) ?>
+    </form>
+  </div>
   </div>

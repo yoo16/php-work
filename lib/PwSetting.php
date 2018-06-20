@@ -87,7 +87,16 @@ class PwSetting {
      * @return String
      */
     static function loadDBSetting() {
-        if (defined('DB_SETTING_FILE')) PwSetting::loadFile(DB_SETTING_FILE);
+        if (defined('DB_SETTING_FILE')) {
+            PwSetting::loadFile(DB_SETTING_FILE);
+        } else {
+            $host_name = PwSetting::hostname();
+            $pgsql_setting_path = BASE_DIR."app/settings/pgsql/{$host_name}.php";
+            if (file_exists($pgsql_setting_path)) {
+                define('DB_SETTING_FILE', $pgsql_setting_path);
+                PwSetting::loadFile(DB_SETTING_FILE);
+            }
+        }
     }
 
     /**

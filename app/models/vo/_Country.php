@@ -18,6 +18,8 @@ class _Country extends PgsqlEntity {
     public $columns = array(
         'created_at' => array('type' => 'timestamp'),
         'name' => array('type' => 'varchar', 'length' => 256, 'is_required' => true),
+        'area' => array('type' => 'varchar', 'length' => 256),
+        'is_provide' => array('type' => 'bool'),
         'sort_order' => array('type' => 'int4'),
         'updated_at' => array('type' => 'timestamp'),
     );
