@@ -23,12 +23,69 @@ class SampleController extends AppController {
 	function action_controller() {
 
 	}
+	
+	/**
+	 * model
+	 *
+	 * @return void
+	 */
+	function action_model() {
+		//$pgsql = new PgsqlEntity();
+		//$results = $pgsql->createDatabase();
+		//var_export($results);
+
+		//$country = DB::model('Country')->insert(['name' => 'Japan', 'area' => 'Asia', 'sort_order' => 1]);
+		//$country = DB::model('Country')->fetch(2);
+		//var_export($country->value);
+		//$country = DB::model('Country')->update(['name' => 'United States America'], 2);
+		//$country = DB::model('Country')->update(['area' => 'Asia'], 1);
+		//$country = DB::model('Country')->delete(5);
+		//$country = DB::model('Country')->deletes();
+		//$values = [1, 3, 4];
+		//$country = DB::model('Country')->whereIn('id', $values)->all();
+		// $country = DB::model('Country')->order('name')->all();
+		//$country = DB::model('Country')->setUpsertConstraint('countries_name_key')->upsert(['name' => 'Japan', 'is_provide' => true]);
+		//$count = DB::model('Country')->count('name');
+		//$country = DB::model('Country')->where('area', 'Asia')->one();
+		//$country = DB::model('Country')->select(['name'])->fetch(1);
+		//$version = DB::model('Country')->pgVersion();
+
+		//$country = DB::model('Country')->fetch(1);
+		//$user = $country->relation('User')->all();
+		//$user = $country->relation('User', 'country_id', 'id')->all();
+		//var_export($user->values);
+
+		// $user = DB::model('User')->fetch(5);
+		// $country = $user->belongsTo('Country');
+		// var_export($country->value);
+		// var_export($country->sql);
+		//$user = DB::model('User')->fetch(5)->bindBelongsTo('Country');
+
+	}
+
+    function action_edit() {
+
+	}
+
+	function action_inserts_users() {
+        $values[] = ['name' => 'Yamada', 'country_id' => 1];
+        $values[] = ['name' => 'Ito', 'country_id' => 1];
+		$values[] = ['name' => 'Sato', 'country_id' => 1];
+        $values[] = ['name' => 'Mike', 'country_id' => 2];
+        $values[] = ['name' => 'Martin', 'country_id' => 3];
+		$values[] = ['name' => 'Mario', 'country_id' => 4];
+
+		$country = DB::table('User');
+		$country->inserts($values);
+		var_export($country->sql);
+		var_export($country->sql_error);
+	}
 
 	function action_inserts_countries() {
-		$values[] = ['name' => 'Japan', 'sort_order' => 1];
         $values[] = ['name' => 'USA', 'sort_order' => 2];
         $values[] = ['name' => 'France', 'sort_order' => 3];
 		$values[] = ['name' => 'Italy', 'sort_order' => 4];
+		$values[] = ['name' => 'China', 'sort_order' => 5];
 
 		$country = DB::table('Country');
 		$country->inserts($values);
@@ -50,6 +107,15 @@ class SampleController extends AppController {
 		var_export($country->values);
 	}
 
+	function action_delete_user_records() {
+		$country = DB::table('User');
+		$country->deleteRecords();
+	}
+
+	function action_delete_records() {
+		$country = DB::table('Country');
+		$country->deleteRecords();
+	}
 
 	/**
 	 * form helper
@@ -170,8 +236,5 @@ class SampleController extends AppController {
 
         $this->file_type = FileManager::uploadFileType();
     }
-
-    function action_action() {
-	}
 
 }

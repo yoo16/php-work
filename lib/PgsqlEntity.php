@@ -74,7 +74,6 @@ class PgsqlEntity extends Entity
         if (!$this->dbname) exit("Not Found: dbname");
     }
 
-
     /**
      * PostgreSQL version information
      * 
@@ -448,16 +447,12 @@ class PgsqlEntity extends Entity
                 $sql.= "ALTER TABLE {$model->name}" . PHP_EOL;
                 $sql.= "      ADD CONSTRAINT {$conname} FOREIGN KEY ({$foreign['column']})" . PHP_EOL;
                 $sql.= "      REFERENCES {$foreign['foreign_table']}({$foreign['foreign_column']})" . PHP_EOL;
-                if ($model->cascade_update_type == 'c') {
-                    $sql.= "      ON UPDATE CASCADE".PHP_EOL;
-                } else {
-                    $sql.= "      ON UPDATE NO ACTION" . PHP_EOL;
-                }
-                if ($model->cascade_update_type == 'c') {
-                    $sql.= "      ON DELETE CASCADE" . PHP_EOL;
-                } else {
-                    $sql.= "      ON DELETE NO ACTION" . PHP_EOL;
-                }
+
+                $update_type = PgsqlEntity::$constraint_actions[$foreign['cascade_update_type']];
+                $delete_type = PgsqlEntity::$constraint_actions[$foreign['cascade_delete_type']];
+
+                if ($update_type) $sql.= "      ON UPDATE {$update_type}" . PHP_EOL;
+                if ($delete_type) $sql.= "      ON DELETE {$delete_type}" . PHP_EOL;
                 $sql.= ';';
                 $sql .= PHP_EOL;
             }
@@ -532,7 +527,6 @@ class PgsqlEntity extends Entity
                 $class_name = $file['filename'];
                 require_once $file_path;
                 $vo = new $class_name();
-
                 $sql .= $this->createTableSql($vo);
             }
         }
@@ -1033,27 +1027,6 @@ class PgsqlEntity extends Entity
     }
 
     /**
-     * relation one to one by model
-     * 
-     * @param  string $class_name
-     * @param  string $foreign_key
-     * @param  string $value_key
-     * @return PgsqlEntity
-     */
-    public function relationOne($class_name, $foreign_key = null, $value_key = null)
-    {
-        if (!class_exists($class_name)) exit('hasMany class_name: not found '.$class_name);
-        if (!$foreign_key) $foreign_key = "{$this->entity_name}_id";
-        if (!$value_key) $value_key = $this->id_column;
-        $relation = DB::table($class_name);
-
-        if (is_null($this->value)) return $relation;
-        $value = $this->value[$value_key];
-        if (is_null($value)) return $relation;
-        return $relation->where($foreign_key, $value)->one();
-    }
-
-    /**
      * relations by model
      * 
      * @param  string $class_name
@@ -1075,6 +1048,27 @@ class PgsqlEntity extends Entity
     }
 
     /**
+     * relation one to one by model
+     * 
+     * @param  string $class_name
+     * @param  string $foreign_key
+     * @param  string $value_key
+     * @return PgsqlEntity
+     */
+    public function relationOne($class_name, $foreign_key = null, $value_key = null)
+    {
+        if (!class_exists($class_name)) exit('hasMany class_name: not found '.$class_name);
+        if (!$foreign_key) $foreign_key = "{$this->entity_name}_id";
+        if (!$value_key) $value_key = $this->id_column;
+        $relation = DB::table($class_name);
+
+        if (is_null($this->value)) return $relation;
+        $value = $this->value[$value_key];
+        if (is_null($value)) return $relation;
+        return $relation->where($foreign_key, $value)->one();
+    }
+
+    /**
      * through relations by model
      * 
      * @param  string $class_name
@@ -1085,7 +1079,7 @@ class PgsqlEntity extends Entity
      */
     public function hasManyThrough($class_name, $through_class_name, $foreign_key = null, $value_key = null)
     {
-        if (!class_exists($class_name)) exit('hasMany: not found '.$class_name);
+        if (!class_exists($class_name)) exit('hasMany class_name: not found '.$class_name);
         $relation = DB::table($class_name);
 
         if (!class_exists($through_class_name)) exit('hasMany: not found '.$through_class_name);
@@ -1109,17 +1103,17 @@ class PgsqlEntity extends Entity
      */
     public function belongsTo($class_name, $foreign_key = null, $value_key = null)
     {
-        if (is_null($this->value)) return;
-
-        if (!is_string($class_name)) exit('belongsTo: $class_name is not string');
+        if (!class_exists($class_name)) exit('hasMany class_name: not found '.$class_name);
         $relation = DB::table($class_name);
 
         if (!$foreign_key) $foreign_key = $relation->id_column;
         if (!$value_key) $value_key = "{$relation->entity_name}_id";
+        if (is_null($this->value)) return $relation;
 
         $value = $this->value[$value_key];
-        if (is_null($value)) return;
-        $condition = "{$foreign_key} = '{$value}'";
+        if (is_null($value)) return $relation;
+
+        $condition = "{$relation->id_column} = {$value}";
         return $relation->where($condition)->one();
     }
 
@@ -1218,6 +1212,21 @@ class PgsqlEntity extends Entity
         return $this;
     }
 
+    //TODO GROUP BY
+    /**
+     * count
+     * 
+     * @return integer
+     **/
+    public function count($column = null)
+    {
+        //TODO GROUP BY
+        $sql = $this->selectCountSql($column);
+        $count = $this->fetchResult($sql);
+        if (is_null($count)) $count = 0;
+        return $count;
+    }
+
     /**
      * find
      * 
@@ -1255,7 +1264,6 @@ class PgsqlEntity extends Entity
     /**
      * select all
      * 
-     * @param  array $params
      * @return PgsqlEntity
      */
     public function all()
@@ -1362,11 +1370,11 @@ class PgsqlEntity extends Entity
         if ($this->errors) return $this;
 
         $sql = $this->insertSql();
+        $this->sql = $sql;
         if (!$sql) {
             $this->addError('save', 'error');
             return $this;
         }
-
         if ($result = $this->fetchResult($sql)) {
             $this->id = (int)$result;
             $this->value[$this->id_column] = $this->id;
@@ -1433,7 +1441,7 @@ class PgsqlEntity extends Entity
      * 
      * PostgreSQL 9.5 >
      * 
-     * @return [type] [description]
+     * @return array $posts
      */
     public function upsert($posts)
     {
@@ -1447,8 +1455,7 @@ class PgsqlEntity extends Entity
         if ($result === false) {
             $this->addError('save', 'error');
             $message = "SQL Error: {$sql}";
-            echo ($message);
-            exit;
+            dump ($message);
         }
         return $this;
     }
@@ -1637,8 +1644,6 @@ class PgsqlEntity extends Entity
     /**
      * delete
      *
-     * TODO pg_delete ?
-     * 
      * @param  int $id
      * @return PgsqlEntity
      */
@@ -2595,19 +2600,19 @@ class PgsqlEntity extends Entity
     /**
      * upsertSql
      * 
-     * @return String
+     * @return string
      */
     private function upsertSql()
     {
         if (!$this->columns) {
             $msg = 'Not found columns';
-            dump($msg);
-            return;
+            //dump($msg);
+            //return;
         }
         if (!$this->upsert_constraint) {
             $msg = 'Not found upsert constraint key!';
-            dump($msg);
-            return;
+            //dump($msg);
+            //return;
         }
         //insert
         foreach ($this->columns as $key => $type) {
@@ -2718,21 +2723,6 @@ class PgsqlEntity extends Entity
     {
         $sql = "TRUNCATE {$this->table_name} {$option};";
         return $sql;
-    }
-
-    //TODO GROUP BY
-    /**
-     * count
-     * 
-     * @return int
-     **/
-    public function count($column = null)
-    {
-        //TODO GROUP BY
-        $sql = $this->selectCountSql($column);
-        $count = $this->fetchResult($sql);
-        if (is_null($count)) $count = 0;
-        return $count;
     }
 
     /**
@@ -3948,6 +3938,49 @@ class PgsqlEntity extends Entity
             }
         }
 
+    }
+
+    /**
+     * delete records and reset sequence
+     *
+     * @return 
+     */
+    function deleteRecords($is_drop_primary = false) {
+        $this->deletes();
+
+        if ($this->sql_error) {
+            echo($class_name).PHP_EOL;
+            echo($this->sql_error).PHP_EOL;
+            exit;
+        }
+        if ($this->errors) {
+            echo($class_name).PHP_EOL;
+            exit;
+        }
+
+        if ($is_drop_primary) {
+            $result = $this->deletePgPrimaryKey($this->name);
+            if (!$result) {
+                echo($class_name).PHP_EOL;
+                echo("Error: delete primary key").PHP_EOL;
+                exit;
+            }
+            $result = $this->addPgPrimaryKey($this->name);
+            if (!$result) {
+                echo($class_name).PHP_EOL;
+                echo("Error: add primary key").PHP_EOL;
+                exit;
+            }
+        }
+        $result = $this->resetSequence($this->name);
+        if (!$result) {
+            $sequence_name = PgsqlEntity::sequenceName($this->name);
+
+            echo($class_name).PHP_EOL;
+            echo($sequence_name).PHP_EOL;
+            echo("Error: reset sequence").PHP_EOL;
+            exit;
+        }
     }
 
 }

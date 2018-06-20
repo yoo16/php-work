@@ -16,15 +16,15 @@ class _Country extends PgsqlEntity {
     public $entity_name = 'country';
 
     public $columns = array(
-        'created_at' => array('type' => 'timestamp'),
-        'name' => array('type' => 'varchar', 'length' => 256, 'is_required' => true),
         'area' => array('type' => 'varchar', 'length' => 256),
+        'created_at' => array('type' => 'timestamp'),
         'is_provide' => array('type' => 'bool'),
+        'name' => array('type' => 'varchar', 'length' => 256, 'is_required' => true),
         'sort_order' => array('type' => 'int4'),
         'updated_at' => array('type' => 'timestamp'),
     );
 
-    public $primary_key = 'Country_pkey';
+    public $primary_key = 'countries_pkey';
 
     public $unique = array(
             'countries_name_key' => [

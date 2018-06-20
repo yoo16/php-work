@@ -1,21 +1,17 @@
 
 <div class="hero-unit">
 
-  <h1>Hello, ProjectManager!</h1>
+  <h1>Hello, <?= APP_NAME ?>!</h1>
 
   build with <a href="https://v4-alpha.getbootstrap.com/" target="_blank">Bootstrap4</a>
 
   <div>
     <h2>Sample</h2>
-    <a href="<?= url_for('sample/') ?>">Sample</a>
+    <a href="<?= $this->urlControllerFor('sample') ?>">Sample</a>
   </div>
 
   <h2>Application Information</h2>
-  <table class="table">
-    <tr>
-      <th>setting file path</th>
-      <td><?= undefineLabel('APP_SETTING_FILE_PATH', APP_SETTING_FILE_PATH) ?></td>
-    </tr>
+  <table class="table table-form">
     <tr>
       <th>BASE_DIR</th>
       <td><?= undefineLabel('BASE_DIR', BASE_DIR) ?></td>
@@ -55,7 +51,7 @@
   </table>
 
   <h2>Application Setting</h2>
-  <table class="table">
+  <table class="table table-form">
     <tr>
       <th>file path</th>
       <td><?= BASE_DIR."app/application_setting.php" ?></td>
@@ -75,7 +71,7 @@
   </table>
 
   <h2>PostgreSQL</h2>
-  <table class="table">
+  <table class="table table-form">
     <tr>
       <th>DB_NAME</th>
       <td>
@@ -96,6 +92,6 @@
     </tr>
   </table>
 
-  <h2><a href="<?= url_for('defined') ?>">Defined</a></h2>
+  <h2><a href="<?= $this->urlActionFor('defined') ?>">Defined</a></h2>
 
 </div>

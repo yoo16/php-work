@@ -1,195 +1,378 @@
+<h1>PgsqlEntity Basic functions</h1>
+<div class="card">
+  <h2 class="card-header">pgVersion() : array</h2>
+  <div class="card-block">
+    <h4>code</h4>
+    <pre>
+$results = DB::model('Country')->pgVersion();
+    </pre>
+    <h4>Result</h4>
+    <pre>
+array (
+  'client' => '10.3 (Debian 10.3-2)',
+  'protocol' => 3,
+  'server' => '9.5.12',
+  'server_encoding' => 'UTF8',
+  'client_encoding' => 'UTF8',
+  'is_superuser' => 'on',
+  'session_authorization' => 'postgres',
+  'DateStyle' => 'ISO, MDY',
+  'IntervalStyle' => 'postgres',
+  'TimeZone' => 'Japan',
+  'integer_datetimes' => 'on',
+  'standard_conforming_strings' => 'on',
+  'application_name' => '',
+)
+    </pre>
+  </div>
+</div>
+
+<div class="card">
+  <h2 class="card-header">createDatabase() : PgsqlEntity</h2>
+  <div class="card-block">
+    <span class="badge badge-danger">need shell command 'createdb' authority</span>
+    <h4>code</h4>
+    <pre>
+$pgsql = new PgsqlEntity();
+$results = $pgsql->createDatabase();
+    </pre>
+    <h4>SQL</h4>
+    <pre>
+array (
+  'cmd' => 'createdb -U postgres -E UTF8 --host localhost --port 5432 sample 2>&1',
+  'output' => 
+  array (
+    0 => 'createdb: database creation failed: ERROR:  database "sample" already exists',
+  ),
+  'return' => 1,
+)
+    </pre>
+  </div>
+</div>
+
 <div class="card">
   <h2 class="card-header">all() : PgsqlEntity</h2>
-
   <div class="card-block">
-    <h3>sample</h3>
-    <a href="<?= $this->urlFor('sample', 'action', 1, ['key' => 'param1']) ?>">Action</a>
-    <h3>code</h3>
-    <div>
-      $this->urlFor('sample', 'action', 1, ['key' => 'param1'])
-    </div>
-    <h3>result</h3>
-    <div>
-      <?= $this->urlFor('sample', 'action', 1, ['key' => 'param1']) ?>
-    </div>
+    <h4>code</h4>
+    <pre>
+$country = DB::model('Country')->all();
+
+//instance bind $values: array
+$country->values;
+</pre>
+    <h4>SQL</h4>
+    <pre>
+SELECT * FROM countries;
+</pre>
   </div>
 </div>
 
 <div class="card">
-  <h2 class="card-header">urlControllerFor($controller, $http_params) : string</h2>
+  <h2 class="card-header">fetch($id) : PgsqlEntity</h2>
 
   <div class="card-block">
-    <h3>sample</h3>
-    <a href="<?= $this->urlControllerFor('sample', ['key' => 'param1']) ?>">Sample</a>
-    <h3>code</h3>
-    <div>
-      $this->urlControllerFor('sample', ['key' => 'param1'])
-    </div>
-    <h3>result</h3>
-    <div>
-      <?= $this->urlControllerFor('sample', ['key' => 'param1']) ?>
-    </div>
+    <h4>code</h4>
+    <pre>
+$country = DB::model('Country')->fetch(1);
+
+//instance bind $value: array list
+$country->value;
+</pre>
+    <h4>SQL</h4>
+    <pre>
+SELECT * FROM countries WHERE id = 1;
+    </pre>
   </div>
 </div>
 
 <div class="card">
-  <h2 class="card-header">urlActionFor($action, $http_params) : string</h2>
-
+  <h2 class="card-header">find($id) : PgsqlEntity</h2>
   <div class="card-block">
-    <h3>sample</h3>
-    <a href="<?= $this->urlActionFor('action', ['key' => 'param1']) ?>">Sample</a>
-    <h3>code</h3>
-    <div>
-      $this->urlActionFor('action', ['key' => 'param1'])
-    </div>
-    <h3>result</h3>
-    <div>
-      <?= $this->urlActionFor('action', ['key' => 'param1']) ?>
-    </div>
+    same function : fetch($id)
   </div>
 </div>
 
 <div class="card">
-  <h2 class="card-header">urlSelfFor($action, $id, $http_params) : string</h2>
+  <h2 class="card-header">select($params = null) : PgsqlEntity</h2>
 
   <div class="card-block">
-    <h3>sample</h3>
-    <a href="<?= $this->urlSelfFor('action', 1, ['key' => 'param1']) ?>">Sample</a>
-    <h3>code</h3>
-    <div>
-      $this->urlSelfFor('action', 1, ['key' => 'param1'])
-    </div>
-    <h3>result</h3>
-    <div>
-      <?= $this->urlSelfFor('action', 1, ['key' => 'param1']) ?>
-    </div>
+    <h4>code</h4>
+    <pre>
+$country = DB::model('Country')->select(['name'])->fetch(1);
+    </pre>
+    <h4>SQL</h4>
+    <pre>
+SELECT name FROM countries WHERE id = 1;
+    </pre>
   </div>
 </div>
 
 <div class="card">
-  <h2 class="card-header">linkTag($controller, $action = null, $id = null, $params = null) : string</h2>
+  <h2 class="card-header">fetch($id) : PgsqlEntity</h2>
 
   <div class="card-block">
-    <h3>sample</h3>
-    <?= $this->linkTag('sample', 'action', 1, ['label' => 'sample', 'class' => 'btn btn-primary',  'http_params' => ['key' => 'param1']]) ?>
-    <h3>code</h3>
-    <div>
-      $this->linkTag('sample', 'action', 1, ['label' => 'sample', 'class' => 'btn btn-primary', 'http_params' => ['key' => 'param1']])
-    </div>
-    <h3>result</h3>
-    <div>
-      <?= htmlspecialchars($this->linkTag('sample', 'action', 1, ['label' => 'sample', 'class' => 'btn btn-primary', 'http_params' => ['key' => 'param1']])) ?>
-    </div>
+    <h4>code</h4>
+    <pre>
+$country = DB::model('Country')->where('area', 'Asia')->one();
+
+//instance bind $value: array list
+$country->value;
+</pre>
+    <h4>SQL</h4>
+    <pre>
+SELECT * FROM countries WHERE area = \'Asia\';
+    </pre>
   </div>
 </div>
 
 <div class="card">
-  <h2 class="card-header">linkControllerTag($controller, $params = null) : string</h2>
+  <h2 class="card-header">where($condition, $value = null, $eq = '=') : PgsqlEntity</h2>
 
   <div class="card-block">
-    <h3>sample</h3>
-    <?= $this->linkControllerTag('sample', ['label' => 'sample', 'class' => 'btn btn-primary', 'http_params' => ['key' => 'param1']]) ?>
-    <h3>code</h3>
-    <div>
-      $this->linkControllerTag('sample', ['label' => 'sample', 'class' => 'btn btn-primary', 'http_params' => ['key' => 'param1']])
-    </div>
-    <h3>result</h3>
-    <div>
-      <?= htmlspecialchars($this->linkControllerTag('sample', ['label' => 'sample', 'class' => 'btn btn-primary', 'http_params' => ['key' => 'param1']])) ?>
-    </div>
+    <h4>code</h4>
+    <pre>
+//param1 only
+$country = DB::model('Country')->where("area = 'Asia'")->all();
+
+//param1 & param2
+$country = DB::model('Country')->where('area', 'Asia')->all();
+
+//param1 & param2 & param3
+$country = DB::model('Country')->where('area', 'Asia', '=')->all();
+  </pre>
+    <h4>SQL</h4>
+    <pre>
+SELECT * FROM countries WHERE area = 'Asia' ORDER BY countries.sort_order;
+
+//not exists 'sort_order' column
+SELECT * FROM countries WHERE area = 'Asia'; 
+    </pre>
   </div>
 </div>
 
 <div class="card">
-  <h2 class="card-header">linkActionTag($action = null, $id = null, $params = null) : string</h2>
+  <h2 class="card-header">wheres($conditions) : PgsqlEntity</h2>
 
   <div class="card-block">
-    <h3>sample</h3>
-    <?= $this->linkActionTag('action', 1, ['label' => 'sample', 'class' => 'btn btn-primary', 'http_params' => ['key' => 'param1']]) ?>
-    <h3>code</h3>
-    <div>
-      $this->linkActionTag('action', 1, ['label' => 'sample', 'class' => 'btn btn-primary', 'http_params' => ['key' => 'param1']])
-    </div>
-    <h3>result</h3>
-    <div>
-      <?= htmlspecialchars($this->linkActionTag('action', 1, ['label' => 'sample', 'class' => 'btn btn-primary', 'http_params' => ['key' => 'param1']])) ?>
-    </div>
+    <h4>code</h4>
+    <pre>
+$conditions[] = "name = 'Japan'";
+$conditions[] = "area = 'Asia'";
+$country = DB::model('Country')->wheres($conditions)->all();
+    </pre>
+    <h4>SQL</h4>
+    <pre>
+SELECT * FROM countries WHERE name = 'Japan' AND area = 'Asia' ORDER BY countries.sort_order;
+
+//not exists 'sort_order' column
+SELECT * FROM countries WHERE name = 'Japan' AND area = 'Asia'; 
+      </pre>
   </div>
 </div>
 
 <div class="card">
-  <h2 class="card-header">redirectTo($action = null, $id = null, $params = null) : void</h2>
+  <h2 class="card-header">whereIn($column, $values) : PgsqlEntity</h2>
 
   <div class="card-block">
-    <h3>code</h3>
-    <div>
-      $this->redirectTo('action', 1, ['key' => 'param1'])
-    </div>
+    <h4>code</h4>
+    <pre>
+$values = [1, 3, 4];
+
+$country = DB::model('Country')->whereIn('id', $values)->all();
+    </pre>
+    <h4>SQL</h4>
+    <pre>
+SELECT * FROM countries WHERE id in (1, 3, 4) ORDER BY countries.sort_order;
+    </pre>
   </div>
 </div>
 
 <div class="card">
-    <h2 class="card-header">updateSort($model_name = null, $is_json = true): void</h2>
-  
-    <div class="card-block">
-      <h3>summary</h3>
-      if Model file for Entity class exists, update sort on 'sort_order' column by $_REQUEST['sort_order'] (= array of primary id).
-      <h3>code</h3>
-      <div>
-        <h4>before</h4>
-        <pre>
-        $values[] = ['name' => 'Japan', 'sort_order' => 1];
-        $values[] = ['name' => 'USA', 'sort_order' => 2];
-        $values[] = ['name' => 'France', 'sort_order' => 3];
-        $values[] = ['name' => 'Italy', 'sort_order' => 4];
+  <h2 class="card-header">insert($posts) : PgsqlEntity</h2>
 
-        DB::table('Country')->inserts($values); //DB inserts
-        </pre>
-        <h4>after</h4>
-        <pre>
-        $_REQUEST['sort_order'] = [2, 1, 4, 3]; //primary id
-
-        $this->updateSort('Country', false);
-    
-        $country = DB::table('Country');
-        $country->all();
-        var_export($country->values);
-
-        array (
-          0 => 
-          array (
-            'id' => 2,
-            'created_at' => '2018-06-19 17:20:38',
-            'updated_at' => '2018-06-19 17:21:02',
-            'sort_order' => 0,
-            'name' => 'USA',
-          ),
-          1 => 
-          array (
-            'id' => 1,
-            'created_at' => '2018-06-19 17:20:38',
-            'updated_at' => NULL,
-            'sort_order' => 1,
-            'name' => 'Japan',
-          ),
-          2 => 
-          array (
-            'id' => 4,
-            'created_at' => '2018-06-19 17:20:38',
-            'updated_at' => '2018-06-19 17:21:02',
-            'sort_order' => 2,
-            'name' => 'Italy',
-          ),
-          3 => 
-          array (
-            'id' => 3,
-            'created_at' => '2018-06-19 17:20:38',
-            'updated_at' => NULL,
-            'sort_order' => 3,
-            'name' => 'France',
-          ),
-        )
-        </pre>
-      </div>
-    </div>
+  <div class="card-block">
+    <h4>code</h4>
+    <pre>
+$country = DB::model('Country')->insert(['name' => 'Japan']);
+  </pre>
+    <h4>SQL</h4>
+    <pre>
+INSERT INTO countries (created_at,name,area,is_provide,sort_order,updated_at) VALUES (current_timestamp,\'Japan\',NULL,NULL,NULL,NULL);SELECT lastval();
+  </pre>
   </div>
+</div>
+
+
+<div class="card">
+  <h2 class="card-header">inserts($posts) : PgsqlEntity</h2>
+
+  <div class="card-block">
+    <h4>code</h4>
+    <pre>
+$values[] = ['name' => 'USA', 'sort_order' => 2];
+$values[] = ['name' => 'France', 'sort_order' => 3];
+$values[] = ['name' => 'Italy', 'sort_order' => 4];
+$values[] = ['name' => 'China', 'sort_order' => 5];
+
+$country = DB::model('Country')->inserts($posts);
+  </pre>
+    <h4>SQL</h4>
+    <pre>
+INSERT INTO countries (created_at, name, area, is_provide, sort_order, updated_at) VALUES 
+  (current_timestamp, \'USA\', NULL, NULL, \'2\', NULL), 
+  (current_timestamp, \'France\', NULL, NULL, \'3\', NULL), 
+  (current_timestamp, \'Italy\', NULL, NULL, \'4\', NULL)
+  (current_timestamp, \'China\', NULL, NULL, \'5\', NULL), 
+  </pre>
+  </div>
+</div>
+
+<div class="card">
+  <h2 class="card-header">update($posts, $id) : PgsqlEntity</h2>
+
+  <div class="card-block">
+    <h4>code</h4>
+    <pre>
+$country = DB::model('Country')->update(['area' => 'Asia'], 1);
+    </pre>
+    <h4>SQL</h4>
+    <pre>
+UPDATE countries SET area = \'Asia\',updated_at = current_timestamp WHERE id = 1;
+    </pre>
+  </div>
+</div>
+
+
+<div class="card">
+  <h2 class="card-header">upsert($posts) : PgsqlEntity <span class="badge badge-danger"> PostgreSQL 9.5 >=</span></h2>
+  <div class="card-block">
+    <h4>code</h4>
+    <pre>
+$country = DB::model('Country');
+$country->setUpsertConstraint('countries_name_key');
+$country->upsert(['name' => 'Japan', 'is_provide' => true]);
+    </pre>
+    <h4>SQL</h4>
+    <pre>
+INSERT INTO countries (created_at,name,area,is_provide,sort_order,updated_at) 
+    VALUES (current_timestamp,'Japan',NULL,TRUE,NULL,NULL) 
+    ON CONFLICT ON CONSTRAINT countries_name_key 
+    DO UPDATE SET name = 'Japan', is_provide = TRUE, updated_at = current_timestamp
+    </pre>
+  </div>
+</div>
+
+<div class="card">
+  <h2 class="card-header">delete($id) : PgsqlEntity</h2>
+
+  <div class="card-block">
+    <h4>code</h4>
+    <pre>
+$country = DB::model('Country')->delete(4);
+  </pre>
+    <h4>SQL</h4>
+    <pre>
+DELETE FROM countries  WHERE id = 5;
+  </pre>
+  </div>
+</div>
+
+<div class="card">
+  <h2 class="card-header">deletes() : PgsqlEntity</h2>
+
+  <div class="card-block">
+    <h4>code</h4>
+    <pre>
+$country = DB::model('Country')->deletes();
+    </pre>
+    <h4>SQL</h4>
+    <pre>
+DELETE FROM countries;
+    </pre>
+  </div>
+</div>
+
+<div class="card">
+  <h2 class="card-header">order($column, $option = null) : integer</h2>
+
+  <div class="card-block">
+    <h4>code</h4>
+    <pre>
+$count = DB::model('Country')->order('name')->all();
+    </pre>
+    <h4>SQL</h4>
+    <pre>
+SELECT * FROM countries ORDER BY countries.name;
+    </pre>
+  </div>
+</div>
+
+<div class="card">
+  <h2 class="card-header">count($column = null): PgsqlEntity</h2>
+
+  <div class="card-block">
+    <h4>code</h4>
+    <pre>
+$count = DB::model('Country')->count('name');
+    </pre>
+    <h4>SQL</h4>
+    <pre>
+SELECT * FROM countries ORDER BY countries.name;
+    </pre>
+  </div>
+</div>
+
+<div class="card">
+  <h2 class="card-header">relation($model_name, $foreign_key = null, $value_key = null)): PgsqlEntity</h2>
+  <div class="card-block">
+    <h4>code</h4>
+    <pre>
+$country = DB::model('Country')->fetch(1);
+
+//param1 only
+$user = $country->relation('User')->all();
+
+//add param2 & param3
+$user = $country->relation('User', 'country_id', 'id')->all();
+    </pre>
+    <h4>SQL</h4>
+    <pre>
+SELECT * FROM countries WHERE id = 1;
+SELECT * FROM users WHERE country_id = '1' ORDER BY users.sort_order
+    </pre>
+  </div>
+</div>
+
+<div class="card">
+  <h2 class="card-header">belongsTo($model_name, $foreign_key = null, $value_key = null)): PgsqlEntity</h2>
+  <div class="card-block">
+    <h4>code</h4>
+    <pre>
+$user = DB::model('User')->fetch(5);
+$country = $user->belongsTo('Country');
+    </pre>
+    <h4>SQL</h4>
+    <pre>
+SELECT * FROM users WHERE id = 5;
+SELECT * FROM countries WHERE id = 3;
+    </pre>
+  </div>
+</div>
+
+<div class="card">
+  <h2 class="card-header">bindBelongsTo($model_name, $foreign_key = null, $value_key = null)): PgsqlEntity</h2>
+  <div class="card-block">
+    <h4>code</h4>
+    <pre>
+$user = DB::model('User')->fetch(5)->bindBelongsTo('Country');
+
+//bind
+$user->country->value;
+    </pre>
+    <h4>SQL</h4>
+    <pre>
+SELECT * FROM users WHERE id = 5;
+SELECT * FROM countries WHERE id = 3;
+    </pre>
+  </div>
+</div>

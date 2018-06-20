@@ -35,6 +35,7 @@ class PwSetting {
         define('CONTROLLER_DIR', APP_DIR.'controllers/');
         define('TEMPLATE_DIR', VIEW_DIR.'templates/');
 
+        require_once 'application_setting.php';
         if (!defined('ROOT_CONTROLLER_NAME')) define('ROOT_CONTROLLER_NAME', 'root');
         if (!defined('APP_NAME')) define('APP_NAME', 'PW-Project');
     }

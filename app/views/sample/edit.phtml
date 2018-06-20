@@ -1,0 +1,115 @@
+<table class="table table-list">
+  <tr>
+    <th>APP_NAME</th>
+    <td>
+      <?= APP_NAME ?>
+    </td>
+  </tr>
+  <tr>
+    <th>$this->base</th>
+    <td>
+      <?= $this->base ?>
+    </td>
+  </tr>
+  <tr>
+    <th>$this->relative_base</th>
+    <td>
+      <?= $this->relative_base?>
+    </td>
+  </tr>
+  <tr>
+    <th>$this->name</th>
+    <td>
+      <?= $this->name ?>
+    </td>
+  </tr>
+  <tr>
+    <th>$this->pw_project_name</th>
+    <td>
+      <?= $this->pw_project_name ?>
+    </td>
+  </tr>
+  <tr>
+    <th>$this->params['controller']</th>
+    <td>
+      <?= $this->params['controller'] ?>
+    </td>
+  </tr>
+  <tr>
+    <th>$this->params['action']</th>
+    <td>
+      <?= $this->params['action'] ?>
+    </td>
+  </tr>
+  <tr>
+    <th>$this->params['id']</th>
+    <td>
+      <?= $this->params['id'] ?>
+    </td>
+  </tr>
+  <tr>
+    <th>$this->pw_method</th>
+    <td>
+      <?= $this->pw_method ?>
+    </td>
+  </tr>
+  <tr>
+    <th>$this->session_name</th>
+    <td>
+      <?= $this->session_name ?>
+    </td>
+  </tr>
+  <tr>
+    <th>$this->session_request_columns</th>
+    <td>
+      <?= $this->session_request_columns ?>
+    </td>
+  </tr>
+  <tr>
+    <th>$this->csv_options</th>
+    <td>
+      <? foreach($this->csv_options as $csv_name => $csv_option): ?>
+        <h2>
+          <?= $csv_name ?>
+        </h2>
+        <? var_export($csv_option) ?>
+          <? endforeach ?>
+    </td>
+  </tr>
+  <tr>
+    <th>$this->lang</th>
+    <td>
+      <?= $this->lang?>
+    </td>
+  </tr>
+  <tr>
+    <th>$this->params['key']</th>
+    <td>
+      <?= $this->params['key'] ?>
+    </td>
+  </tr>
+  <tr>
+    <th>$this->pw_controller</th>
+    <td>
+      <?= $this->pw_controller ?>
+    </td>
+  </tr>
+  <tr>
+    <th>$this->pw_action</th>
+    <td>
+      <?= $this->pw_action ?>
+    </td>
+  </tr>
+  <tr>
+    <th>$this->pw_template</th>
+    <td>
+      <?= $this->pw_template ?>
+    </td>
+  </tr>
+  <tr>
+    <th>$this->layout</th>
+    <td>
+      <?= $this->layout ?>
+    </td>
+  </tr>
+</table>
