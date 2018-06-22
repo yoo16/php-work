@@ -1118,4 +1118,53 @@ class Entity {
         return $ids;
     }
 
+    /**
+     * sum
+     *
+     * @param string $column
+     * @return void
+     */
+    function sum($column) {
+        $sum = 0;
+        if ($this->values) $sum = array_sum(array_column($this->values, $column));
+        return $sum;
+    }
+
+    /**
+     * average
+     *
+     * @param string $column
+     * @return void
+     */
+    function average($column) {
+        $average = 0;
+        $sum = $this->sum($column);
+        $count = $this->counts();
+        if ($count > 0) $average = $sum / $count;
+        return $average;
+    }
+
+    /**
+     * counts
+     *
+     * @param string $column
+     * @param object $filter_value
+     * @return void
+     */
+    function counts($column = null, $filter_value = null) {
+        $count = 0;
+        if ($this->values) {
+            if (isset($column) && isset($filter_value)) {
+                $this->_filter_value = $filter_value;
+                if ($values = array_column($this->values, $column)) {
+                    $filter_values = array_filter($values, function($param) { return ($param == $this->_filter_value); });
+                    if ($filter_values) $count = count($filter_values);
+                }
+            } else {
+                $count = count($this->values);
+            }
+        }
+        return $count;
+    }
+
 }
