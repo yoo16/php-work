@@ -23,6 +23,22 @@ class Entity {
 
     public static $except_columns = ['id', 'created_at', 'updated_at'];
     public static $app_columns = ['id', 'created_at', 'updated_at', 'sort_order', 'old_db', 'old_host', 'old_id'];
+    public static $cast_functions = [
+                                    'int' => 'castInt',
+                                    'int2' => 'castInt',
+                                    'int4' => 'castInt',
+                                    'int8' => 'castInt',
+                                    'real' => 'castInt',
+                                    'float' => 'castFloat',
+                                    'float4' => 'castFloat',
+                                    'float8' => 'castFloat',
+                                    'double' => 'castFloat',
+                                    'double precision' => 'castFloat',
+                                    'bool' => 'castBool',
+                                    'varchar' => 'castString',
+                                    'text' => 'castString',
+                                    'timestamp' => 'castTimestamp',
+                                ];
 
     function __construct($params = null) {
 
@@ -561,26 +577,32 @@ class Entity {
      * @param  array $row
      * @return array
      */
-    function castRows($rows) {
+    public function castRows($rows) {
         $values = null;
         if (!is_array($rows)) return;
-
         foreach ($rows as $row) {
-            $row = $this->castRow($row, $relation_values);
-            if ($this->values_index_column) {
-                if ($index_value = $row[$this->values_index_column]) {
-                    if ($this->values_index_column_type == 'timestamp') $index_value = strtotime($index_value);
-                    if (isset($index_value)) $values[$index_value] = $row;
-                }
-            } else if ($this->id_index === true) {
-                $index_value = (int) $row[$this->id_column];
-                $values[$index_value] = $row;
-            } else {
-                $values[] = $row;
-            }
+            $values[] = $this->castRow($row);
         }
+        $values = $this->indexArray($values);
         return $values;
     } 
+
+    /**
+     * index array
+     *
+     * @param array $rows
+     * @return void
+     */
+    public function indexArray($rows) {
+        if ($this->values_index_column_type == 'timestamp') {
+            $rows = array_column($rows, null, '_index_timestamp'); 
+        } else if ($this->values_index_column) {
+            $rows = array_column($rows, null, $this->values_index_column); 
+        } else if ($this->id_index === true) {
+            $rows = array_column($rows, null, $this->id_column); 
+        }
+        return $rows;
+    }
 
     /**
      * castRow
@@ -588,7 +610,7 @@ class Entity {
      * @param  array $values
      * @return array
      */
-    function castRow($values, $relation_values = null) {
+    function castRow($values) {
         if (!is_array($values)) return;
         foreach ($values as $column_name => $value) {
             if ($column_name === $this->id_column) {
@@ -605,17 +627,22 @@ class Entity {
                 }
             }
         }
+        if ($this->values_index_column_type == 'timestamp') {
+            if ($index_value = $values[$this->values_index_column]) {
+                $values['_index_timestamp'] = strtotime($index_value);
+            }
+        }
         return $values;
     }
 
     /**
      * idIndex
      * 
-     * @param  boolean $is_index
+     * @param  boolean $id_index
      * @return Entity
      */
-    function idIndex($is_index = true) {
-        $this->id_index = $is_index;
+    function idIndex($id_index = true) {
+        $this->id_index = $id_index;
         return $this;
     }
 
@@ -864,7 +891,7 @@ class Entity {
         if (!$this->values) return $this;
 
         //TODO join SQL?
-        $model = DB::table($model_name)->idIndex()->all();
+        $model = DB::model($model_name)->idIndex()->all();
         if (!$model->values) return $this;
         if (!$value_key) $value_key = "{$model->entity_name}_id";
 

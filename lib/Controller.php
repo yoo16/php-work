@@ -236,7 +236,7 @@ class Controller extends RuntimeException {
                 $controller->run($params);
             } catch (Throwable $t) {
                 $errors = Controller::throwErrors($t);
-                Controller::renderError($errors);
+                $controller->renderError($errors);
             } catch (Error $e) {
                 var_dump($e);
             } catch (Exception $e) {
@@ -252,7 +252,7 @@ class Controller extends RuntimeException {
             $errors['controller'] = $params['controller'];
             $errors['signature'] = $_SERVER['SERVER_SIGNATURE'];
 
-            Controller::renderError($errors);
+            $controller->renderError($errors);
         }
     }
 
@@ -278,7 +278,7 @@ class Controller extends RuntimeException {
             $this->_invoke();
         } catch (Throwable $t) {
             $errors = Controller::throwErrors($t);
-            Controller::renderError($errors);
+            $this->renderError($errors);
         } catch (Error $e) {
             var_dump($e);
         } catch (Exception $e) {
@@ -373,7 +373,7 @@ class Controller extends RuntimeException {
                 $this->loadPwTemplate();
             } catch (Throwable $t) {
                 $errors = Controller::throwErrors($t);
-                Controller::renderError($errors);
+                $this->renderError($errors);
             } catch (Error $e) {
                 var_dump($e);
             } catch (Exception $e) {
@@ -410,7 +410,7 @@ class Controller extends RuntimeException {
      * @param  array $errors
      * @return void
      */
-    static function renderError($errors, $is_continue = true) {
+    function renderError($errors, $is_continue = true) {
         if (!isset($GLOBALS['controller'])) {
             $GLOBALS['controller']['relative_base'] = Controller::relativeBaseURLForStatic();
         }
@@ -925,7 +925,7 @@ class Controller extends RuntimeException {
                 $this->$method();
             } catch (Throwable $t) {
                 $errors = Controller::throwErrors($t);
-                Controller::renderError($errors);
+                $this->renderError($errors);
             } catch (Error $e) {
                 var_dump($e);
             } catch (Exception $e) {
@@ -945,7 +945,7 @@ class Controller extends RuntimeException {
             $errors['action'] = $this->pw_action;
             $errors['params'] = $this->params;
             $errors['signature'] = $_SERVER['SERVER_SIGNATURE'];
-            Controller::renderError($errors);
+            $this->renderError($errors);
         }
     }
 
@@ -1134,7 +1134,7 @@ class Controller extends RuntimeException {
     */
     function changeBoolean($model_name, $column, $id_column = 'id') {
         if (isset($this->params[$id_column])) {
-            DB::table($model_name)->reverseBool($this->params[$id_column], $column);
+            DB::model($model_name)->reverseBool($this->params[$id_column], $column);
         }
     }
 
@@ -1164,7 +1164,7 @@ class Controller extends RuntimeException {
         if (!$sort_order) exit('Not found sort_order');
         
         if (class_exists($model_name)) {
-            DB::table($model_name)->updateSortOrder($sort_order);
+            DB::model($model_name)->updateSortOrder($sort_order);
             if ($is_json) {
                 $results['is_success'] = true;
             }
