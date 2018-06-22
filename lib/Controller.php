@@ -29,6 +29,11 @@ class Controller extends RuntimeException {
     public $pw_method = '';
     public $session_request_columns;
     public $csv_options;
+    public $escape_auth_actions = array('login', 'logout', 'auth');
+    public $auth_controller = '';
+    public $auth_model = '';
+    public $auth_top_controller = '';
+    public $is_pw_auth = false;
 
     static $libs = [
         'Helper',
@@ -1060,6 +1065,7 @@ class Controller extends RuntimeException {
      */
     function before_action($action) {
         $this->loadRequestSession();
+        if ($this->auth_controller) $this->checkAuth($action);
     } 
 
     function before_rendering() {}
@@ -1145,8 +1151,9 @@ class Controller extends RuntimeException {
     * @return void
     */
     public function action_update_sort() {
-        if ($_REQUEST['model_name']) {
-            $this->updateSort($_REQUEST['model_name']);
+        if (!$this->is_pw_auth) return;
+        if ($_POST['model_name']) {
+            $this->updateSort($_POST['model_name']);
         }
     }
 
@@ -1160,7 +1167,7 @@ class Controller extends RuntimeException {
     function updateSort($model_name = null, $is_json = true) {
         if (!$model_name) exit('Not found model_name');
 
-        if ($_REQUEST['sort_order']) $sort_order = $_REQUEST['sort_order'];
+        if ($_POST['sort_order']) $sort_order = $_POST['sort_order'];
         if (!$sort_order) exit('Not found sort_order');
         
         if (class_exists($model_name)) {
@@ -1208,4 +1215,97 @@ class Controller extends RuntimeException {
     function isRequestPost() {
         if ($_SERVER['REQUEST_METHOD'] != 'POST') exit;
     }
+
+    /**
+     * check auth
+     * 
+     * @param  string $action
+     * @return void
+     */
+    function checkAuth($action) {
+        if (!$this->auth_controller) return;
+        if (!in_array($action, $this->escape_auth_actions)) {
+            $model = AppSession::getWithKey('pw_auth', $this->auth_controller);
+            if ($model->value['id']) {
+                $this->is_pw_auth = true;
+            } else {
+                if ($this->auth_controller) {
+                    $uri = "{$this->auth_controller}/login";
+                } else {
+                    $uri = 'login';
+                }
+                $this->redirectTo($uri);
+                return;
+            }
+        }
+    }
+
+    /**
+     * auth
+     *
+     * @return void
+     */
+    function auth() {
+        if (!$this->auth_controller) return;
+        if (!$this->auth_model) return;
+        if (class_exists($this->auth_model)) {
+            $model = DB::model($this->auth_model)->auth();
+            if ($model->value) {
+                $this->redirectAuthTop();
+            } else {
+                $this->redirectAuthLogin();
+            }
+        }
+        exit;
+    }
+
+   /**
+    * login
+    *
+    * @param
+    * @return void
+    */ 
+    function action_login() {
+        $this->layout = 'login';
+    }
+
+   /**
+    * logout
+    *
+    * @param
+    * @return void
+    */ 
+    function action_logout() {
+        AppSession::flush();
+        $uri = "{$this->auth_controller}/login";
+        $this->redirectTo($uri);
+        exit;
+    }
+
+    /**
+     * redirectAuthTop
+     *
+     * @return void
+     */
+    function redirectAuthLogin() {
+        if ($this->auth_controller) {
+            $uri = "{$this->auth_controller}/login";
+        } else {
+            $uri = 'login';
+        }
+        $this->redirectTo($uri);
+        exit;
+    }
+
+    /**
+     * redirectAuthTop
+     *
+     * @return void
+     */
+    function redirectAuthTop() {
+        $uri = "{$this->auth_top_controller}/";
+        $this->redirectTo($uri);
+        exit;
+    }
+
 }

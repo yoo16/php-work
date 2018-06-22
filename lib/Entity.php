@@ -1101,7 +1101,7 @@ class Entity {
      * ids
      *
      * @param array $conditions
-     * @return void
+     * @return array
      */
     function ids($key_column, $value_column) {
         return $this->all()->idsForOldId($key_column, $value_column);
@@ -1122,7 +1122,7 @@ class Entity {
      * sum
      *
      * @param string $column
-     * @return void
+     * @return integer
      */
     function sum($column) {
         $sum = 0;
@@ -1134,7 +1134,7 @@ class Entity {
      * average
      *
      * @param string $column
-     * @return void
+     * @return float
      */
     function average($column) {
         $average = 0;
@@ -1149,7 +1149,7 @@ class Entity {
      *
      * @param string $column
      * @param object $filter_value
-     * @return void
+     * @return integer
      */
     function counts($column = null, $filter_value = null) {
         $count = 0;
@@ -1165,6 +1165,56 @@ class Entity {
             }
         }
         return $count;
+    }
+
+    /**
+     * auth
+     *
+     * @return Entity
+     */
+    function auth() {
+        if (!$this->auth_columns) exit('Not defined $auth_columns in Model File');
+        foreach ($this->auth_columns as $column) {
+            $value = $_REQUEST[$column];
+            if (is_array($this->auth_hash_types) && isset($this->auth_hash_types[$column])) {
+                $value = $this->convertHash($value, $this->auth_hash_types[$column]);
+            }
+            $this->where($column, $value);
+        }
+        $this->one();
+        //update login timestamp, remember session
+        if ($this->value && $this->atth_login_at_column) {
+            $this->rememberAuth();
+            $posts['login_at'] = date('Y-m-d H:i');
+            $this->update($posts);
+        }
+        return $this;
+    }
+
+    /**
+     * remember auth
+     *
+     * @param Entity $model
+     * @return void
+     */
+    function rememberAuth() {
+        if (!$this->entity_name) exit('Not defined $entity_name');
+        if (!$this->value) return;
+        $pw_auth = AppSession::get('pw_auth');
+        $pw_auth[$this->entity_name] = $this;
+        AppSession::set('pw_auth', $pw_auth);
+    }
+
+    /**
+     * convert hash
+     *
+     * @param string $value
+     * @param string $hash_type
+     * @return string
+     */
+    function convertHash($value, $hash_type) {
+        $value = hash($hash_type, $value, false);
+        return $value;
     }
 
 }
