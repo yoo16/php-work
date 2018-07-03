@@ -235,6 +235,20 @@ class SampleController extends AppController {
         $this->upload_file_path = FileManager::uploadFilePath();
 
         $this->file_type = FileManager::uploadFileType();
-    }
+	}
+	
+	function action_pw_sortable() {
+
+	}
+
+	function action_update_sort() {
+        $origin = '*';
+        header("Access-Control-Allow-Origin: {$origin}");
+		header("Access-Control-Allow-Headers: X-Requested-With");
+
+		$results['is_success'] = true;
+		$results['post'] = $_POST;
+		$this->renderJson($results);
+	}
 
 }

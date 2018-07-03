@@ -2,7 +2,7 @@
 /**
  * Controller 
  *
- * Copyright (c) 2013 Yohei Yoshikawa (http://yoo-s.com/)
+ * Copyright (c) 2013 Yohei Yoshikawa (https://github.com/yoo16/)
  */
 
 require_once "PwSetting.php";

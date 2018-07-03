@@ -3,7 +3,7 @@
 /**
  * PgsqlEntity 
  *
- * @copyright  Copyright (c) 2017 Yohei Yoshikawa (http://yoo-s.com/)
+ * @copyright  Copyright (c) 2017 Yohei Yoshikawa (https://github.com/yoo16/)
  */
 require_once 'Entity.php';
 

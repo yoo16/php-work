@@ -1,0 +1,222 @@
+<h1>PwSortable.js</h1>
+
+<p class="text-danger">required jQuery jquery.tablednd.js</p>
+<div>
+  <a href="https://github.com/isocra/TableDnD" target="_blank">https://github.com/isocra/TableDnD</a>
+</div>
+
+<h2>Sample</h2>
+<a href="#" class="btn btn-outline-primary pw-lib" pw-lib="PwSortable" pw-action="edit">
+  <?= TagHelper::iconTag('sort') ?>Order</a>
+<a href="#" class="btn btn-primary pw-lib pw-sortable-control" pw-lib="PwSortable" pw-controller="<?= $this->name ?>" pw-action='update_sort'
+  style="display: none">
+  <?= TagHelper::iconTag('save') ?>Save</a>
+<a href="#" class="btn btn-outline-primary pw-lib pw-sortable-control" pw-lib="PwSortable" pw-action="reset" style="display: none">
+  <?= TagHelper::iconTag('times') ?>Reset</a>
+
+<table id="sortable-table" class="table">
+  <thead>
+    <tr>
+      <th>No</th>
+      <th>City</th>
+    </tr>
+  </thead>
+  <tr row-id="1">
+    <td>1</td>
+    <td>Tokyo</td>
+  </tr>
+  <tr row-id="2">
+    <td>2</td>
+    <td>New York</td>
+  </tr>
+  <tr row-id="3">
+    <td>3</td>
+    <td>Paris</td>
+  </tr>
+  <tr row-id="4">
+    <td>4</td>
+    <td>London</td>
+  </tr>
+</table>
+
+<h2>Result</h2>
+<div id="result">
+
+</div>
+
+<h2></h2>
+<h3>(1) import jQuery Library</h3>
+<div>
+  <ul>
+    <li>jquery-1.11.1.min.js</li>
+    <li>jquery-ui.min.js</li>
+    <li>jquery.tablednd.js</li>
+    <li>loadingoverlay.min.js</li>
+  </ul>
+</div>
+<h3>(2) import php-work javascript Library</h3>
+<div>
+  <ul>
+    <li>javascripts/lib/PwController.js</li>
+    <li>javascripts/lib/PwSortable.js</li>
+  </ul>
+</div>
+<h3>(3) set params for PwSortable.js</h3>
+<div>
+  <pre>
+$(document).ready(function () {
+  var params = {};
+  params.is_use_loading = true; //use loadingoverlay
+  params.table_id = 'sortable-table'; //talbe id (default: sortable-table)
+  params.row_id_column = 'row-id'; //talbe id (default: row-id)
+  params.api_uri = 'https://my-domain/php-work/sample/update_sort'; //API URI
+
+  //callback function
+  params.callback = function(data) {
+    $('#result').html(data);
+  }
+  pw_sortable.set(params);
+});
+  </pre>
+</div>
+
+<h3>(4) Set id on table.(default: sortable-table)</h3>
+<div>
+  <pre>
+<?= htmlspecialchars('
+<table id="sortable-table">
+  <thead>
+    <tr>
+      <th>No</th>
+      <th>City</th>
+    </tr>
+  </thead>
+</table>
+')
+?>
+  </pre>
+</div>
+
+<h3>(5) Set row-id on tr tag.(default: row-id) row-id is id for saving DB</h3>
+<div>
+  <pre>
+<?= htmlspecialchars('
+<tr row-id="1">
+  <td>1</td>
+  <td>Tokyo</td>
+</tr>
+<tr row-id="2">
+  <td>2</td>
+  <td>New York</td>
+</tr>
+')
+?>
+  </pre>
+</div>
+
+<h3>(6) Write control tag for PwSortable.js on HTML</h3>
+<div>
+  <pre>
+<?= htmlspecialchars('
+<a href="#" class="btn btn-outline-primary pw-lib" pw-lib="PwSortable" pw-action="edit">Order</a>
+<a href="#" class="btn btn-primary pw-lib pw-sortable-control" pw-lib="PwSortable" pw-controller="sample" pw-action="update_sort" style="display: none">Save</a>
+<a href="#" class="btn btn-outline-primary pw-lib pw-sortable-control" pw-lib="PwSortable" pw-action="reset" style="display: none">Reset</a>
+')
+?>
+  </pre>
+</div>
+<div>
+  <h4>Change mode sortable</h4>
+  <ul>
+    <li>class="pw-lib"</li>
+    <li>pw-lib="PwSortable"</li>
+    <li>pw-action="edit"</li>
+  </ul>
+
+  <h4>Save sort_order</h4>
+  <ul>
+    <li>class="pw-lib"</li>
+    <li>pw-lib="PwSortable"</li>
+    <li>pw-action="update_sort"</li>
+  </ul>
+
+  <h4>Reset sort_order</h4>
+  <ul>
+    <li>class="pw-lib"</li>
+    <li>pw-lib="PwSortable"</li>
+    <li>pw-action="reset"</li>
+  </ul>
+</div>
+
+<h3>(7) Request automatically JSON to server (method = POST), when click on tag 'pw-action="update_sort"'</h3>
+
+<h3>(8) Reseive JSON from server.</h3>
+
+<h2>HTML Source</h2>
+<pre>
+<?= htmlspecialchars('
+<script type="text/javascript" src="../../javascripts/jquery/jquery-1.11.1.min.js"></script>
+<script type="text/javascript" src="../../javascripts/jquery/jquery-ui.min.js"></script>
+<script type="text/javascript" src="../../javascripts/jquery/jquery.tablednd.js"></script>
+<script type="text/javascript" src="../../javascripts/jquery/loadingoverlay.min.js"></script>
+<script type="text/javascript" src="../../javascripts/lib/PwController.js"></script>
+<script type="text/javascript" src="../../javascripts/lib/PwSortable.js"></script>
+
+<a href="#" class="btn btn-outline-primary pw-lib" pw-lib="PwSortable" pw-action="edit"><i class="fa fa-sort"></i>Order</a>
+<a href="#" class="btn btn-primary pw-lib pw-sortable-control" pw-lib="PwSortable" pw-controller="sample" pw-action="update_sort" style="display: none"><i class="fa fa-save"></i>Save</a>
+<a href="#" class="btn btn-outline-primary pw-lib pw-sortable-control" pw-lib="PwSortable" pw-action="reset" style="display: none"><i class="fa fa-times"></i>Reset</a>
+
+<table id="sortable-table" class="table">
+  <thead>
+    <tr>
+      <th>No</th>
+      <th>City</th>
+    </tr>
+  </thead>
+
+  <tr row-id="1">
+    <td>1</td>
+    <td>Tokyo</td>
+  </tr>
+  <tr row-id="2">
+    <td>2</td>
+    <td>New York</td>
+  </tr>
+  <tr row-id="3">
+    <td>3</td>
+    <td>Paris</td>
+  </tr>
+  <tr row-id="4">
+    <td>4</td>
+    <td>London</td>
+  </tr>
+</table>
+    ');
+  ?>
+</pre>
+
+<h2>JavaScript Source</h2>
+<pre>
+$(document).ready(function () {
+  var params = {};
+  params.table_id = 'sortable-table';
+  params.api_uri = 'https://my-domain/php-work/sample/update_sort';
+  params.callback = function(data) {
+    $('#result').html(data);
+  }
+  pw_sortable.set(params);
+});
+</pre>
+
+<script>
+$(document).ready(function () {
+  var params = {};
+  params.is_use_loading = true;
+  params.table_id = 'sortable-table';
+  params.api_uri = 'https://debian9/php-work/sample/update_sort';
+  params.callback = function (data) {
+    $('#result').html(data);
+  }
+  pw_sortable.set(params);
+});
+</script>

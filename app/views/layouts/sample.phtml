@@ -3,6 +3,7 @@
   <? include('components/meta.phtml') ?>
   <? include('components/stylesheet.phtml') ?>
   <? include('components/javascript.phtml') ?>
+  <?= TagHelper::stylesheet('fontawesome/fontawesome-all.min') ?>
 </head>
 <body>
 
@@ -16,6 +17,7 @@
         <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlActionFor('controller') ?>">Controller</a>
         <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlActionFor('model') ?>">PgsqlEntity(Model)</a>
         <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlActionFor('form_helper') ?>">FormHelper</a>
+        <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlActionFor('pw_sortable') ?>">Sortable</a>
       </nav>
     </div>
   </div>
