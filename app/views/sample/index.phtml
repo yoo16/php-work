@@ -206,14 +206,14 @@
     }
     </pre>
   </div>
-  <h3>(3) 'id' is taked by http query $this->params['id']</h3>
+  <h3>(3) 'id' is taked by http query $this->pw_params['id']</h3>
   <div>
     <pre>
     function edit() {
-        $this->country = DB::table('Country')->fetch($this->params['id']);
+        $this->country = DB::table('Country')->fetch($this->pw_params['id']);
         var_export($this->country->value);
 
-        //$this->params['id'] = 1
+        //$this->pw_params['id'] = 1
         //this method is SQL => SELECT * FROM countries WHERE id = 1;'
     }
     </pre>
@@ -222,14 +222,14 @@
   <div>
     http://domain/country/search/?name=Japan.
   </div>
-  <h3>(4) 'url params (GET)' is taked $this->params[xxxx]</h3>
+  <h3>(4) 'url params (GET)' is taked $this->pw_params[xxxx]</h3>
   <div>
     <pre>
     function search() {
-        $this->country = DB::table('Country')->where('name', $this->params['name'])->all();
+        $this->country = DB::table('Country')->where('name', $this->pw_params['name'])->all();
         var_export($this->country->values);
 
-        //$this->params['name'] = Japan
+        //$this->pw_params['name'] = Japan
         //this method means SQL => SELECT * FROM countries WHERE name = 'Japan';
     }
     </pre>
@@ -274,7 +274,7 @@
 
         function edit() {
             //app/views/country/edit.phtml
-            $this->country = DB::table('Country')->fetch($this->params['id']);
+            $this->country = DB::table('Country')->fetch($this->pw_params['id']);
         }
     
     }

@@ -33,7 +33,7 @@ class FormHelper {
      * @param string $selected
      * @return string
      */
-    static function select($params, $selected=null) {
+    static function select($params, $selected = null) {
         if (!$params) return;
         if (!isset($params['class'])) $params['class'] = 'form-control';
         $tag = self::selectOptions($params, $selected);
@@ -396,11 +396,11 @@ class FormHelper {
     /**
      * optionタグ
      *
-     * @param Array $params
-     * @param Object $selected
-     * @return String
+     * @param array $params
+     * @param object $selected
+     * @return string
      */
-    static function selectOptions($params, $selected=null) {
+    static function selectOptions($params, $selected = null) {
         $values = self::values($params);
         if (!is_array($values)) return;
 
@@ -874,8 +874,8 @@ class FormHelper {
     /**
      * delete
      *
-     * @param Array $params
-     * @return String
+     * @param array $params
+     * @return string
      */
     static function delete($params = null) {
         if (!$params['class']) $params['class'] = 'btn btn-danger';
@@ -904,8 +904,8 @@ class FormHelper {
     /**
      * delete
      *
-     * @param Array $params
-     * @return String
+     * @param array $params
+     * @return string
      */
     static function confirmDelete($params = null) {
         if (!isset($params['label'])) $params['label'] = LABEL_DELETE;
