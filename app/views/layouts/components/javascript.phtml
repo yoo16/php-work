@@ -1,18 +1,27 @@
-<!-- TODO setting -->
+<?= TagHelper::pwProjectName($this->pw_project_name) ?>
+
 <?= TagHelper::javascript('jquery/jquery-1.11.1.min') ?>
 <?= TagHelper::javascript('jquery/jquery-ui.min') ?>
 <?= TagHelper::javascript('jquery/jquery.tablednd') ?>
+<?= TagHelper::javascript('jquery/jquery.validate.min') ?>
+<?= TagHelper::javascript('jquery/jquery.datetimepicker') ?>
+<?= TagHelper::javascript('jquery/jpicker-1.1.6.min') ?>
 <?= TagHelper::javascript('jquery/loadingoverlay.min') ?>
 
 <?= TagHelper::javascript('bootstrap/tether.min') ?>
 <?= TagHelper::javascript('bootstrap/bootstrap.min') ?>
 
-<script type="text/javascript">
-  var pw_project_name = '<?= $this->pw_project_name ?>';
-</script>
-
+<?= TagHelper::javascript('application') ?>
 <?= TagHelper::javascript('plugin') ?>
 <?= TagHelper::javascript('functions') ?>
 <?= TagHelper::javascript('lib/PwController') ?>
 <?= TagHelper::javascript('lib/PwSortable') ?>
+<?= TagHelper::javascript('lib/PwDate') ?>
 <?= TagHelper::javascriptController($this->class_name) ?>
+<? if ($this->js_controllers): ?>
+<? foreach ($this->js_controllers as $js_controller): ?>
+<? if ($js_controller != $this->class_name): ?>
+<?= TagHelper::javascriptController($js_controller) ?>
+<? endif ?>
+<? endforeach ?>
+<? endif ?>
