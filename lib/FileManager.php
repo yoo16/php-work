@@ -115,7 +115,7 @@ class FileManager {
 
         file_put_contents($this->file_path, $contents);
 
-        $cmd = "mhmod 666 {$file}";
+        $cmd = "chmod 666 {$file}";
         exec($cmd);
     }
 
@@ -188,7 +188,7 @@ class FileManager {
         flock($fp, LOCK_UN);
         fclose($fp);
 
-        $cmd = "mhmod 666 {$file}";
+        $cmd = "chmod 666 {$file}";
         exec($cmd);
     }
 
@@ -864,6 +864,7 @@ class FileManager {
      * @return void
      */
     static function threadExec($path, $params = null) {
+        dump($path);
         if (file_exists($path)) {
             if ($params) {
                 foreach ($params as $key => $param) {

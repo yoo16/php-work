@@ -1718,7 +1718,7 @@ class PgsqlEntity extends Entity
     /**
      * where
      * 
-     * @param  object $condition
+     * @param  mixed $condition
      * @param  string $value
      * @param  string $eq
      * @return PgsqlEntity
