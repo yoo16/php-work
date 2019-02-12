@@ -3,21 +3,21 @@
   <? include('components/meta.phtml') ?>
   <? include('components/stylesheet.phtml') ?>
   <? include('components/javascript.phtml') ?>
-  <?= TagHelper::stylesheet('fontawesome/fontawesome-all.min') ?>
+  <?= PwTag::stylesheet('fontawesome/fontawesome-all.min') ?>
 </head>
 <body>
 
   <div class="nav">
     <div class="container">
       <div class="navbar-header">
-        <a class="navbar-brand" href="<?= url_for('/') ?>"><?= APP_NAME ?></a>
+        <a class="navbar-brand" href="<?= $this->urlFor(['controller' => 'root']) ?>"><?= APP_NAME ?></a>
       </div>
       <nav class="nav nav-pills flex-column flex-sm-row">
-        <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlActionFor('index') ?>">Index</a>
-        <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlActionFor('controller') ?>">Controller</a>
-        <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlActionFor('model') ?>">PgsqlEntity(Model)</a>
-        <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlActionFor('form_helper') ?>">FormHelper</a>
-        <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlActionFor('pw_sortable') ?>">Sortable</a>
+        <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlFor(['action' => 'index']) ?>">Index</a>
+        <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlFor(['action' => 'controller']) ?>">Controller</a>
+        <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlFor(['action' => 'model']) ?>">PwEntity(Model)</a>
+        <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlFor(['action' => 'form_helper']) ?>">PwForm</a>
+        <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlFor(['action' => 'pw_sortable']) ?>">Sortable</a>
       </nav>
     </div>
   </div>

@@ -7,11 +7,11 @@
 
   <div>
     <h2>Sample</h2>
-    <a href="<?= $this->urlControllerFor('sample') ?>">Sample</a>
+    <a href="<?= $this->urlFor(['controller' => 'sample']) ?>">Sample</a>
   </div>
 
   <h2>Application Information</h2>
-  <table class="table table-form">
+  <table class="table table-auto">
     <tr>
       <th>BASE_DIR</th>
       <td><?= undefineLabel('BASE_DIR', BASE_DIR) ?></td>
@@ -51,7 +51,7 @@
   </table>
 
   <h2>Application Setting</h2>
-  <table class="table table-form">
+  <table class="table table-auto">
     <tr>
       <th>file path</th>
       <td><?= BASE_DIR."app/application_setting.php" ?></td>
@@ -71,7 +71,7 @@
   </table>
 
   <h2>PostgreSQL</h2>
-  <table class="table table-form">
+  <table class="table table-auto">
     <tr>
       <th>DB_NAME</th>
       <td>
@@ -92,6 +92,6 @@
     </tr>
   </table>
 
-  <h2><a href="<?= $this->urlActionFor('defined') ?>">Defined</a></h2>
+  <h2><a href="<?= $this->urlFor(['action' => 'defined']) ?>">Defined</a></h2>
 
 </div>

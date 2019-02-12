@@ -7,9 +7,9 @@
 
 //namespace sample;
 
-require_once 'PgsqlEntity.php';
+require_once 'PwPgsql.php';
 
-class _Country extends PgsqlEntity {
+class _Country extends PwPgsql {
 
     public $id_column = 'id';
     public $name = 'countries';

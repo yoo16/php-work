@@ -6,7 +6,7 @@
 require_once dirname(__FILE__) . '/../../lib/Controller.php';
 
 echo('-- Create SQL --'.PHP_EOL);
-$pgsql = new PgsqlEntity();
+$pgsql = new PwEntity();
 $sql = $pgsql->createTablesSQLForProject();
 
 if (file_exists(DB_DIR)) {

@@ -1,4 +1,4 @@
-<h1>PgsqlEntity Basic functions</h1>
+<h1>PwEntity Basic functions</h1>
 <div class="card">
   <h2 class="card-header">pgVersion() : array</h2>
   <div class="card-block">
@@ -28,12 +28,12 @@ array (
 </div>
 
 <div class="card">
-  <h2 class="card-header">createDatabase() : PgsqlEntity</h2>
+  <h2 class="card-header">createDatabase() : PwEntity</h2>
   <div class="card-block">
     <span class="badge badge-danger">need shell command 'createdb' authority</span>
     <h4>code</h4>
     <pre>
-$pgsql = new PgsqlEntity();
+$pgsql = new PwEntity();
 $results = $pgsql->createDatabase();
     </pre>
     <h4>SQL</h4>
@@ -51,7 +51,7 @@ array (
 </div>
 
 <div class="card">
-  <h2 class="card-header">all() : PgsqlEntity</h2>
+  <h2 class="card-header">all() : PwEntity</h2>
   <div class="card-block">
     <h4>code</h4>
     <pre>
@@ -68,7 +68,7 @@ SELECT * FROM countries;
 </div>
 
 <div class="card">
-  <h2 class="card-header">fetch($id) : PgsqlEntity</h2>
+  <h2 class="card-header">fetch($id) : PwEntity</h2>
 
   <div class="card-block">
     <h4>code</h4>
@@ -86,14 +86,14 @@ SELECT * FROM countries WHERE id = 1;
 </div>
 
 <div class="card">
-  <h2 class="card-header">find($id) : PgsqlEntity</h2>
+  <h2 class="card-header">find($id) : PwEntity</h2>
   <div class="card-block">
     same function : fetch($id)
   </div>
 </div>
 
 <div class="card">
-  <h2 class="card-header">select($params = null) : PgsqlEntity</h2>
+  <h2 class="card-header">select($params = null) : PwEntity</h2>
 
   <div class="card-block">
     <h4>code</h4>
@@ -108,7 +108,7 @@ SELECT name FROM countries WHERE id = 1;
 </div>
 
 <div class="card">
-  <h2 class="card-header">fetch($id) : PgsqlEntity</h2>
+  <h2 class="card-header">fetch($id) : PwEntity</h2>
 
   <div class="card-block">
     <h4>code</h4>
@@ -126,7 +126,7 @@ SELECT * FROM countries WHERE area = \'Asia\';
 </div>
 
 <div class="card">
-  <h2 class="card-header">where($condition, $value = null, $eq = '=') : PgsqlEntity</h2>
+  <h2 class="card-header">where($condition, $value = null, $eq = '=') : PwEntity</h2>
 
   <div class="card-block">
     <h4>code</h4>
@@ -151,7 +151,7 @@ SELECT * FROM countries WHERE area = 'Asia';
 </div>
 
 <div class="card">
-  <h2 class="card-header">wheres($conditions) : PgsqlEntity</h2>
+  <h2 class="card-header">wheres($conditions) : PwEntity</h2>
 
   <div class="card-block">
     <h4>code</h4>
@@ -171,7 +171,7 @@ SELECT * FROM countries WHERE name = 'Japan' AND area = 'Asia';
 </div>
 
 <div class="card">
-  <h2 class="card-header">whereIn($column, $values) : PgsqlEntity</h2>
+  <h2 class="card-header">whereIn($column, $values) : PwEntity</h2>
 
   <div class="card-block">
     <h4>code</h4>
@@ -188,7 +188,7 @@ SELECT * FROM countries WHERE id in (1, 3, 4) ORDER BY countries.sort_order;
 </div>
 
 <div class="card">
-  <h2 class="card-header">insert($posts) : PgsqlEntity</h2>
+  <h2 class="card-header">insert($posts) : PwEntity</h2>
 
   <div class="card-block">
     <h4>code</h4>
@@ -204,7 +204,7 @@ INSERT INTO countries (created_at,name,area,is_provide,sort_order,updated_at) VA
 
 
 <div class="card">
-  <h2 class="card-header">inserts($posts) : PgsqlEntity</h2>
+  <h2 class="card-header">inserts($posts) : PwEntity</h2>
 
   <div class="card-block">
     <h4>code</h4>
@@ -228,7 +228,7 @@ INSERT INTO countries (created_at, name, area, is_provide, sort_order, updated_a
 </div>
 
 <div class="card">
-  <h2 class="card-header">update($posts, $id) : PgsqlEntity</h2>
+  <h2 class="card-header">update($posts, $id) : PwEntity</h2>
 
   <div class="card-block">
     <h4>code</h4>
@@ -244,7 +244,7 @@ UPDATE countries SET area = \'Asia\',updated_at = current_timestamp WHERE id = 1
 
 
 <div class="card">
-  <h2 class="card-header">upsert($posts) : PgsqlEntity <span class="badge badge-danger"> PostgreSQL 9.5 >=</span></h2>
+  <h2 class="card-header">upsert($posts) : PwEntity <span class="badge badge-danger"> PostgreSQL 9.5 >=</span></h2>
   <div class="card-block">
     <h4>code</h4>
     <pre>
@@ -263,7 +263,7 @@ INSERT INTO countries (created_at,name,area,is_provide,sort_order,updated_at)
 </div>
 
 <div class="card">
-  <h2 class="card-header">delete($id) : PgsqlEntity</h2>
+  <h2 class="card-header">delete($id) : PwEntity</h2>
 
   <div class="card-block">
     <h4>code</h4>
@@ -278,7 +278,7 @@ DELETE FROM countries  WHERE id = 5;
 </div>
 
 <div class="card">
-  <h2 class="card-header">deletes() : PgsqlEntity</h2>
+  <h2 class="card-header">deletes() : PwEntity</h2>
 
   <div class="card-block">
     <h4>code</h4>
@@ -308,7 +308,7 @@ SELECT * FROM countries ORDER BY countries.name;
 </div>
 
 <div class="card">
-  <h2 class="card-header">count($column = null): PgsqlEntity</h2>
+  <h2 class="card-header">count($column = null): PwEntity</h2>
 
   <div class="card-block">
     <h4>code</h4>
@@ -323,7 +323,7 @@ SELECT * FROM countries ORDER BY countries.name;
 </div>
 
 <div class="card">
-  <h2 class="card-header">relation($model_name, $foreign_key = null, $value_key = null)): PgsqlEntity</h2>
+  <h2 class="card-header">relation($model_name, $foreign_key = null, $value_key = null)): PwEntity</h2>
   <div class="card-block">
     <h4>code</h4>
     <pre>
@@ -344,7 +344,7 @@ SELECT * FROM users WHERE country_id = '1' ORDER BY users.sort_order
 </div>
 
 <div class="card">
-  <h2 class="card-header">belongsTo($model_name, $foreign_key = null, $value_key = null)): PgsqlEntity</h2>
+  <h2 class="card-header">belongsTo($model_name, $foreign_key = null, $value_key = null)): PwEntity</h2>
   <div class="card-block">
     <h4>code</h4>
     <pre>
@@ -360,7 +360,7 @@ SELECT * FROM countries WHERE id = 3;
 </div>
 
 <div class="card">
-  <h2 class="card-header">bindBelongsTo($model_name, $foreign_key = null, $value_key = null)): PgsqlEntity</h2>
+  <h2 class="card-header">bindBelongsTo($model_name, $foreign_key = null, $value_key = null)): PwEntity</h2>
   <div class="card-block">
     <h4>code</h4>
     <pre>

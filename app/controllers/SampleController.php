@@ -12,7 +12,8 @@ class SampleController extends AppController {
     var $layout = 'sample';
 
     function index() {
-		$this->country = DB::table('Country')->fetch(1);
+		$this->country = DB::model('Country');
+		$this->country->fetch(1);
 	}
 	
 	/**
@@ -30,7 +31,7 @@ class SampleController extends AppController {
 	 * @return void
 	 */
 	function action_model() {
-		//$pgsql = new PgsqlEntity();
+		//$pgsql = new PwEntity();
 		//$results = $pgsql->createDatabase();
 		//var_export($results);
 

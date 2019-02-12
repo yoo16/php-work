@@ -12,11 +12,14 @@
       <li>vo fil is O/R mapping file on Database table.</li>
       <li>vo file path is 'app/models/vo/xxxx.php'.</li>
       <li>If you need use O/R mapping with DB, Model file must inherit vo file.</li>
-      <li>vo file must inherit 'PgsqlEntity.php'.</li>
+      <li>vo file must inherit 'PwEntity.php'.</li>
       <li>You need define the vo file with table's attributes.</li>
       <li>If you use 'DB' class library in php-work, you can control the model.</li>
     </ul>
   </div>
+</div>
+
+<div>
   <h2>Sample 1.</h2>
   <div>
     <dl>
@@ -32,7 +35,7 @@
     <pre>
     postgres$ createdb sample
     </pre>
-    </div>
+  </div>
   <h3>(2) Create setting file for access Database.</h3>
   <p>
     PostgreSQL setting file'name is same server hostname.
@@ -73,9 +76,9 @@
     </p>
     ex) app/models/vo/_Country.php
     <pre>
-    require_once 'PgsqlEntity.php';
+    require_once 'PwEntity.php';
 
-    class _Country extends PgsqlEntity {
+    class _Country extends PwEntity {
     
         public $id_column = 'id';         //primary id column *default id
         public $name = 'countries';       //default table name
@@ -109,7 +112,7 @@
       </ul>
     </p>
     <div>
-      
+
     </div>
   </div>
 
@@ -324,7 +327,7 @@
         <form action=\"<?= \$this->urlFor('country', 'update', \$this->country->value['id']) ?>\" method=\"post\">
         id : <?= \$this->country->value['id'] ?>
         <?= \$this->country->formInput('name') ?>
-        <?= FormHelper::submit(LABEL_SAVE) ?>
+        <?= PwForm::submit(LABEL_SAVE) ?>
         </form>
       </div>
     ") ?>
@@ -336,7 +339,7 @@
       id :
       <?= $this->country->value['id'] ?>
       <?= $this->country->formInput('name', ['class' => 'form-control']) ?>
-      <?= FormHelper::submit(LABEL_SAVE) ?>
+      <?= PwForm::submit(LABEL_SAVE) ?>
     </form>
   </div>
-  </div>
+</div>

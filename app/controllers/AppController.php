@@ -5,8 +5,6 @@
  * @author  Yohei Yoshikawa
  * @create  2012/10/03 
  */
-ApplicationLoader::autoloadModel();
-
 require_once 'Controller.php';
 
 class AppController extends Controller {

@@ -1,4 +1,4 @@
-<h2>FormHelper.php</h2>
+<h2>PwForm.php</h2>
 
 <div class="card">
   <div class="card-header">
@@ -7,10 +7,10 @@
 
   <div class="card-block">
 
-    <h4>FormHelper::select($this->forms['area'], 2)</h4>
+    <h4>PwForm::select($this->forms['area'], 2)</h4>
 
     <form action="" class="form-inline">
-      <?= FormHelper::select($this->forms['area'], 2); ?>
+      <?= PwForm::select($this->forms['area'], 2); ?>
     </form>
 
     <h5>$this->forms['area']</h5>
@@ -55,10 +55,10 @@
         <? endforeach ?>
     </table>
 
-    <h4>FormHelper::select(['csv' => 'prefecture'], 13);</h4>
+    <h4>PwForm::select(['csv' => 'prefecture'], 13);</h4>
 
     <form action="" class="form-inline">
-      <?= FormHelper::select(['csv' => 'prefecture'], 13); ?>
+      <?= PwForm::select(['csv' => 'prefecture'], 13); ?>
     </form>
 
   </div>
@@ -71,11 +71,11 @@
 
     <form action="" class="form-inline">
       <div class="form-group">
-        <?= FormHelper::multiCheckbox($this->forms['area_checkbox'], array(2, 3), 'id', 'name'); ?>
+        <?= PwForm::multiCheckbox($this->forms['area_checkbox'], array(2, 3), 'id', 'name'); ?>
       </div>
     </form>
 
-    <h4>FormHelper::multiCheckbox($this->forms['area_checkbox'], array(2, 3))</h4>
+    <h4>PwForm::multiCheckbox($this->forms['area_checkbox'], array(2, 3))</h4>
 
     <h5>$this->forms['area_checkbox']</h5>
     <table class="table">
@@ -127,10 +127,10 @@
 
   <div class="card-block">
     <form action="" class="form-inline">
-      <?= FormHelper::radio($this->forms['area_radio'], 2, 'id', 'name'); ?>
+      <?= PwForm::radio($this->forms['area_radio'], 2, 'id', 'name'); ?>
     </form>
 
-    <h4>FormHelper::radio($this->forms['area_radio'], 2, 'id', 'name')</h4>
+    <h4>PwForm::radio($this->forms['area_radio'], 2, 'id', 'name')</h4>
 
     <h5>$this->forms['area_radio']</h5>
     <table class="table">
@@ -181,10 +181,10 @@
   <div class="card-block">
 
     <form action="" class="form-inline">
-      <?= FormHelper::selectDate($this->forms['date']) ?>
+      <?= PwForm::selectDate($this->forms['date']) ?>
     </form>
 
-    <h4>FormHelper::selectDate($this->forms['date'])</h4>
+    <h4>PwForm::selectDate($this->forms['date'])</h4>
 
     <h5>$this->forms['date']</h5>
     <table class="table">
