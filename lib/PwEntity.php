@@ -5,19 +5,26 @@
  * Copyright (c) 2017 Yohei Yoshikawa (https://github.com/yoo16/)
  */
 
+//namespace Libs;
+
 class PwEntity {
-    public $is_cast = true;
     public $id_column = 'id';
-    public $columns = [];
-    public $conditions = [];
-    public $errors = [];
-    public $values = null;
-    public $value = null;
     public $id = null;
     public $id_index = false;
+    public $is_cast = true;
+    public $values = [];
+    public $value = [];
+    public $conditions = [];
+    public $or_wheres = [];
+    public $orders = [];
+    public $group_by_columns = [];
+    public $limit = null;
+    public $joins = [];
+    public $sql = null;
+    public $sqls = [];
+    public $errors = [];
     public $posts = null;
     public $session = null;
-    public $limit = null;
     public $values_index_column = null;
     public $values_index_column_type = null;
 
@@ -50,13 +57,14 @@ class PwEntity {
      * @return PwEntity
      */
     public function init() {
-        $this->conditions = null;
+        $this->id = null;
+        $this->id_index = false;
+        $this->conditions = [];
+        $this->or_conditions = [];
         $this->errors = null;
         $this->values = null;
         $this->value = null;
-        $this->id = null;
-        $this->id_index = false;
-        $this->pw_posts = null;
+        $this->pw_posts = [];
         $this->session = null;
         $this->limit = null;
         $this->values_index_column = null;
@@ -135,6 +143,26 @@ class PwEntity {
             return PwSession::getWithKey($session_key, $this->entity_name, null, $sid);
         } else {
             return PwSession::get($this->entity_name, null, $sid);
+        }
+    }
+
+    /**
+     * reload session
+     * 
+     * @param  string $sid
+     * @param  string $session_key
+     * @return PwEntity
+     */
+    public function reloadSession($sid = 0, $session_key = null) {
+        if ($this->id) {
+            $model = $this->fetch($this->id);
+            if ($model->value) {
+                if ($session_key) {
+                    PwSession::setWithKey($session_key, $this->entity_name, $model, $sid);
+                } else {
+                    PwSession::set($this->entity_name, $model, $sid);
+                }
+            }
         }
     }
 
@@ -323,6 +351,29 @@ class PwEntity {
     }
 
     /**
+     * set is sort order
+     * 
+     * @param  boolean $is_sort_order
+     * @return PwEntity
+     */
+    public function setIsSortOrder($is_sort_order) {
+        $this->is_sort_order = $is_sort_order;
+        return $this;
+    }
+
+    /**
+     * set is sort order column
+     * 
+     * @param  boolean $is_sort_order
+     * @return PwEntity
+     */
+    public function setIsSortOrderColumn($is_sort_order) {
+        $this->is_sort_order_column = $is_sort_order_column;
+        return $this;
+    }
+
+
+    /**
      * setValue By id
      * 
      * @param  integer $id
@@ -351,8 +402,6 @@ class PwEntity {
                 $column = $this->columns[$column_name];
                 $type = $column['type'];
                 $this->value[$column_name] = $this->cast($type, $values[$column_name]);
-                // if (!in_array($column_name, self::$except_columns)) {
-                // }
             }
         }
         return $this;
@@ -395,7 +444,7 @@ class PwEntity {
      * @return bool
      */
     public function hasChanges() {
-        if (isset($this->after_value)) {
+        if (isset($this->before_value)) {
             $changes = $this->changes();
             return count($changes) > 0;
         } else {
@@ -409,12 +458,12 @@ class PwEntity {
      * @return array
      */
     public function changes() {
-        if (isset($this->after_value)) {
+        if (isset($this->before_value)) {
             $changes = array();
-            foreach ($this->after_value as $column_name => $after_value) {
+            foreach ($this->value as $column_name => $value) {
                 if (!in_array($column_name, self::$except_columns)) {
-                    if ($after_value !== $this->before_value[$column_name]) {
-                        $changes[$column_name] = $this->after_value[$column_name];
+                    if ($value !== $this->before_value[$column_name]) {
+                        $changes[$column_name] = $this->value[$column_name];
                     }
                 }
             }
@@ -510,9 +559,7 @@ class PwEntity {
      * @return void
      */
     private function castNumber($value) {
-        if (is_numeric(strpos($value, ','))) {
-            $value = str_replace(',', '', $value);
-        }
+        if (is_numeric(strpos($value, ','))) $value = str_replace(',', '', $value);
         if (!is_numeric($value)) return;
         return $value;
     }
@@ -523,9 +570,9 @@ class PwEntity {
      * @param  object $value
      * @return string
      */
-    private function castArray($value) {
+    private function castArray($value, $is_array = true) {
         if (is_array($value)) return $value;
-        $val = json_decode($value, true);
+        $val = json_decode($value, $is_array);
         return $val;
     }
 
@@ -533,10 +580,31 @@ class PwEntity {
      * castJson
      * 
      * @param  object $value
-     * @return string
+     * @return array
      */
-    private function castJson($value) {
-        return json_decode($value);
+    private function castJson($value, $is_array = true) {
+        return json_decode($value, $is_array);
+    }
+
+    /**
+     * json to
+     * 
+     * @param  object $value
+     * @return array
+     */
+    public function jsonTo($column_name, $is_array = true) {
+        return json_decode($this->value[$column_name], $is_array);
+    }
+
+    /**
+     * json for key
+     * 
+     * @param  object $value
+     * @return mixed
+     */
+    public function jsonForKey($column_name, $key, $is_array = true) {
+        $values = $this->jsonTo($column_name, $is_array);
+        if ($values && $value = $values[$key]) return $value;
     }
 
     /**
@@ -932,10 +1000,21 @@ class PwEntity {
     */
     function recordValue($csv_name, $column, $params = null) {
         if (!isset($this->value[$column])) return;
-        $csv_records = PwSession::getWithKey('app', 'csv_options');
-        if ($records = $csv_records[$csv_name]) {
+        if ($records = $this->recordValues($csv_name, $params)) {
             return $records[$this->value[$column]];
         }
+    }
+
+   /**
+    * record values
+    *
+    * @param string $column
+    * @param array $params
+    * @return string
+    */
+    function recordValues($csv_name, $params = null) {
+        $csv_records = PwSession::getWithKey('app', 'csv_options');
+        return $csv_records[$csv_name];
     }
 
    /**
@@ -949,12 +1028,13 @@ class PwEntity {
         if (!$this->values) return $this;
 
         //TODO join SQL?
-        $model = DB::model($model_name)->idIndex()->all();
-        if (!$model->values) return $this;
-        if (!$value_key) $value_key = "{$model->entity_name}_id";
-
-        foreach ($this->values as $index => $value) {
-            if ($id = $value[$value_key]) $this->values[$index][$model->entity_name] = $model->values[$id];
+        if (class_exists($model_name)) {
+            $model = DB::model($model_name)->idIndex()->all();
+            if (!$model->values) return $this;
+            if (!$value_key) $value_key = "{$model->entity_name}_id";
+            foreach ($this->values as $index => $value) {
+                if ($id = $value[$value_key]) $this->values[$index][$model->entity_name] = $model->values[$id];
+            }
         }
         return $this;
     }
@@ -1237,6 +1317,7 @@ class PwEntity {
 
         if (!$this->auth_columns) exit('Not found auth columns in model');
         foreach ($this->auth_columns as $column => $options) {
+            dump($options);
             $value = $_POST[$column];
             if ($options['hash']) $value = $this->convertHash($value, $options['hash']);
             $this->where($column, $value);
@@ -1338,7 +1419,7 @@ class PwEntity {
      */
     function validtePassword($column, $min = 4, $max = 50) {
         if (!$this->value[$column]) return;
-        if (!PwForm::validtePassword($this->value[$column], $min, $max)) {
+        if (!PwHelper::validtePassword($this->value[$column], $min, $max)) {
             $this->addError($column, 'invalid');
         }
     }
@@ -1351,8 +1432,35 @@ class PwEntity {
      */
     function validteAlphanumeric($column) {
         if (!$this->value[$column]) return;
-        if (!PwForm::validteAlphanumeric($this->value[$column], $min, $max)) {
+        if (!PwHelper::validteAlphanumeric($this->value[$column], $min, $max)) {
             $this->addError($column, 'invalid');
         }
+    }
+
+    /**
+     * edit
+     *
+     * @return PwEntity
+     */
+    function new_page() {
+        $pw_posts = PwSession::get('pw_posts');
+        $this->init()->takeValues($pw_posts[$this->entity_name]);
+        return $this;
+    }
+
+    /**
+     * edit
+     *
+     * @param integer $id
+     * @return PwEntity
+     */
+    function edit_page($id = null) {
+        if (!$id) $id = PwSession::getWithKey('pw_gets', 'id');
+        if (!$id) exit('Not found id');
+        $this->fetch($id);
+        if ($this->entity_neme && $pw_posts = PwSession::get('pw_posts')) {
+            $this->takeValues($pw_posts[$this->entity_name]);
+        }
+        return $this;
     }
 }

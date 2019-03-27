@@ -1,6 +1,6 @@
 controller,action,label,ssl,is_image
 root,index,Top,0,0
-root,form_helper,PwForm,0,0
+root,form_ex,PwForm,0,0
 root,page4,FileManager,0,0
 root,page2,Scroll Bottom,0,0
 root,page3,Lazyload,0,0

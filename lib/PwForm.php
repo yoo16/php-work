@@ -29,6 +29,7 @@ class PwForm {
                               'unused_hidden',
                               'effective-digit',
                               'is_associative_array',
+                              'is_key_value_array',
                             ];
 
     //TODO refactoring
@@ -605,6 +606,8 @@ class PwForm {
 
     /**
      * input radio tag
+     * 
+     * TODO refectoring
      *
      * @param array $params
      * @param object $selected
@@ -629,6 +632,7 @@ class PwForm {
                 $label_params['label'] = self::convertLabel($value, $params);
                 if ($params['label_unit']) $label_params['label'].= $params['label_unit'];
             }
+            $label_params['class'] = 'radio inline';
             $tag.= PwForm::label($label_params);
         }
         return $tag;
@@ -636,12 +640,14 @@ class PwForm {
 
     /**
      * label tag
+     * 
+     * TODO attribute
      *
      * @param array $params
      * @return string
      */
     static function label($params) {
-        $tag.= "<label class=\"radio inline\" for=\"{$params['id']}\">{$params['label']}</label>&nbsp;\n";
+        $tag.= "<label class=\"{$params['class']}\" for=\"{$params['id']}\">{$params['label']}</label>&nbsp;\n";
         return $tag;
     }
 
@@ -652,7 +658,7 @@ class PwForm {
      * @param string $seleted
      * @return string
      */
-    static function genderRadio($params=null, $selected=null) {
+    static function genderRadio($params = null, $selected = null) {
         if (!$params['csv_name']) $params['csv_name'] = 'gender';
         if (!$params['name']) $params['name'] = 'gender';
         $values = PwCsv::formOptions($params);
@@ -675,17 +681,23 @@ class PwForm {
         }
         if (!isset($params['value'])) $params['value'] = 1;
 
-        $attributes['type'] = 'checkbox';
-        $attributes['name'] = $params['name'];
-        $attributes['value'] = $params['value'];
-        $attributes['checked'] = self::checkedTag($params['value'], $selected);
-        $attributes['id'] = $params['id'];
-        $attributes['class'] = $params['class'];
         if ($params['disable']) $attributes['disable'] = 'disable';
-
         if (!$params['unused_hidden']) $tag.= self::hidden($params['name'], 0);
-        $tag.= self::input($attributes);
-        $tag = self::labelTag($tag.$label);
+        $id = ($params['id']) ? "{$params['id']}_{$value}" : $params['value'];
+        $checkbox_attributes = [
+            'id' => $id,
+            'class' => $params['class'],
+            'name' => $params['name'],
+            'type' => 'checkbox',
+            'value' => $params['value']
+        ];
+        //$attributes['checked'] = self::checkedTag($params['value'], $selected);
+        if ($selected) $checkbox_attributes['checked'] = 'checked';
+        $tag.= self::input($checkbox_attributes);
+
+        $label_attributes['class'] = 'checkbox';
+        $label_attributes['for'] = $id;
+        $tag.= self::labelTag($label, $label_attributes);
         return $tag;
     }
 
@@ -694,30 +706,55 @@ class PwForm {
      *
      * @param array $params
      * @param object $seleted
+     * @param string $value_key
+     * @param string $label_key
+     * @param array $values
      * @return string
      */
     function multiCheckbox($params, $selected=null, $value_key=null, $label_key=null, $values=null) {
         $params = self::checkParams($params, $selected, $value_key, $label_key, $values);
 
-        $name = $params['name'];
-        $values = $params['values'];
         $value_key = $params['value'];
         $label_key = $params['label'];
 
-        $params['class'] = ' form-check-input';
         $attribute = self::selectAttribute($params);
-        $div_class = $params['div_class'];
-        if (is_array($values)) {
-            foreach ($values as $key => $option) {
-                $value = $option[$value_key];
-                $label = self::convertLabel($option, $params);
-                $id = "{$params['id']}_{$value}";
+        if (is_array($params['values'])) {
+            foreach ($params['values'] as $key => $option) {
+                if ($params['is_key_value']) {
+                    $value = $key;
+                    $label = $option;
+                } else {
+                    $value = $option[$value_key];
+                    $label = self::convertLabel($option, $params);
+                }
 
-                if ($option['class']) $class = " class=\"{$option['class']}\"";
-                if ($selected) $checked = (in_array($value, $selected))? ' checked="checked"' : '';
+                $id = ($params['id']) ? "{$params['id']}_{$value}" : $value;
 
-                $_tag = "&nbsp;<input id=\"{$id}\" type=\"checkbox\" value=\"{$value}\"{$checked}{$attribute}>\n";
-                $tag.= "<div class=\"{$div_class}\"><label for=\"{$id}\" class=\"form-check-label\">\n{$_tag}\n{$label}\n</label></div>\n";
+                if ($params['is_checkbox_hidden']) {
+                    $checkbox_class = "checkbox-hidden";
+                } else {
+                    $checkbox_class = "form-check-input {$params['class']}";
+                }
+                $checkbox_attributes = [
+                    'id' => $id,
+                    'class' => $checkbox_class,
+                    'name' => $params['name'],
+                    'type' => 'checkbox',
+                    'value' => $value
+                ];
+                if ($selected) $checkbox_attributes['checked'] = 'checked';
+                $checkbox = self::input($checkbox_attributes);
+
+                //TODO function
+                $label_class = ($params['label_class']) ? $params['label_class'] : 'checkbox form-check-label';
+                $label_tag = "<label for=\"{$id}\" class=\"{$label_class}\">\n{$label}\n</label>";
+
+                $checkbox_tag = "{$checkbox}\n{$label_tag}\n";
+                if ($params['is_return']) {
+                    $tag .= "<div class=\"{$params['div_class']}\">{$checkbox}</div>";
+                } else {
+                    $tag .= $checkbox_tag;
+                }
             }
         }
         return $tag;
@@ -1013,6 +1050,26 @@ class PwForm {
         }
         $href = Controller::url($params, $params['http_params']);
         $tag = "<a href=\"{$href}\">{$tag}</a>";
+        return $tag;
+    }
+
+    /**
+    * change label
+    *
+    * @param array $params
+    * @param boolean $is_active
+    * @param string $valid_label
+    * @param string $invalid_label
+    * @return string
+    */ 
+    static function changeActiveLabel($is_active, $params = null, $valid_label = LABEL_TRUE, $invalid_label = LABEL_FALSE) {
+        if ($is_active) {
+            $icon_tag = PwTag::iconTag('check');
+            $tag = "<span class=\"btn btn-sm btn-danger\">{$icon_tag}{$valid_label}</span>";
+        } else {
+            $icon_tag = PwTag::iconTag('times');
+            $tag = "<span class=\"btn btn-sm btn-outline-primary\">{$icon_tag}{$invalid_label}</span>";
+        }
         return $tag;
     }
 

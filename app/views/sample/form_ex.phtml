@@ -1,0 +1,223 @@
+<h2>PwForm.php</h2>
+
+<div class="card">
+  <div class="card-header">
+    <h4>select($params, $selected=null)</h4>
+  </div>
+
+  <div class="card-block">
+
+    <h4>PwForm::select($this->forms['area'], 2)</h4>
+
+    <form action="" class="form-inline">
+      <?= PwForm::select($this->forms['area'], 2); ?>
+    </form>
+
+    <h5>$this->forms['area']</h5>
+    <table class="table">
+      <? foreach ($this->forms['area'] as $key => $value): ?>
+
+      <tr>
+        <th>
+          <?= $key ?>
+        </th>
+        <td>
+          <? if (is_array($value)): ?>
+
+          <table class="table">
+
+            <? foreach ($value as $key2 => $value2): ?>
+            <tr>
+              <th>
+                <?= $key2 ?>
+              </th>
+              <td>
+                <? if (is_array($value2)): ?>
+                <? print_r($value2) ?>
+                <? else: ?>
+                <?= $value2 ?>
+                <? endif ?>
+              </td>
+            </tr>
+            <? endforeach ?>
+
+          </table>
+
+          <? else: ?>
+
+          <?= $value ?>
+
+          <? endif ?>
+        </td>
+
+      </tr>
+
+      <? endforeach ?>
+    </table>
+
+  </div>
+</div>
+
+<div class="card">
+  <h4 class="card-header">multiCheckbox($params, $selected=null)</h4>
+
+  <div class="card-block">
+
+    <form action="" class="form-inline">
+      <div class="form-group">
+        <?= PwForm::multiCheckbox($this->forms['area_checkbox'], [2, 3], 'id', 'name'); ?>
+      </div>
+    </form>
+
+    <h4>PwForm::multiCheckbox($this->forms['area_checkbox'], [2, 3])</h4>
+
+    <h5 class="h5">$this->forms['area_checkbox']</h5>
+    <table class="table table-auto">
+      <? foreach ($this->forms['area_checkbox'] as $key => $value): ?>
+
+      <tr>
+        <th>
+          <?= $key ?>
+        </th>
+        <td>
+          <? if (is_array($value)): ?>
+
+          <table class="table table-auto">
+
+            <? foreach ($value as $key2 => $value2): ?>
+            <tr>
+              <th>
+                <?= $key2 ?>
+              </th>
+              <td>
+                <? if (is_array($value2)): ?>
+                <? print_r($value2) ?>
+                <? else: ?>
+                <?= $value2 ?>
+                <? endif ?>
+              </td>
+            </tr>
+            <? endforeach ?>
+
+          </table>
+
+          <? else: ?>
+
+          <?= $value ?>
+
+          <? endif ?>
+        </td>
+
+      </tr>
+
+      <? endforeach ?>
+    </table>
+
+  </div>
+</div>
+
+<div class="card">
+  <h4 class="card-header">radio($params, $selected=null)</h4>
+
+  <div class="card-block">
+    <form action="" class="form-inline">
+      <?= PwForm::radio($this->forms['area_radio'], 2, 'id', 'name'); ?>
+    </form>
+
+    <h4>PwForm::radio($this->forms['area_radio'], 2, 'id', 'name')</h4>
+
+    <h5>$this->forms['area_radio']</h5>
+    <table class="table">
+      <? foreach ($this->forms['area_radio'] as $key => $value): ?>
+
+      <tr>
+        <th>
+          <?= $key ?>
+        </th>
+        <td>
+          <? if (is_array($value)): ?>
+
+          <table class="table">
+
+            <? foreach ($value as $key2 => $value2): ?>
+            <tr>
+              <th>
+                <?= $key2 ?>
+              </th>
+              <td>
+                <? if (is_array($value2)): ?>
+                <? print_r($value2) ?>
+                <? else: ?>
+                <?= $value2 ?>
+                <? endif ?>
+              </td>
+            </tr>
+            <? endforeach ?>
+
+          </table>
+          <? else: ?>
+
+          <?= $value ?>
+          <? endif ?>
+        </td>
+
+      </tr>
+
+      <? endforeach ?>
+    </table>
+
+  </div>
+</div>
+
+<div class="card">
+  <h4 class="card-header">selectDate($params, $selected=null) </h4>
+
+  <div class="card-block">
+
+    <form action="" class="form-inline">
+      <?= PwForm::selectDate($this->forms['date']) ?>
+    </form>
+
+    <h4>PwForm::selectDate($this->forms['date'])</h4>
+
+    <h5>$this->forms['date']</h5>
+    <table class="table">
+      <? foreach ($this->forms['date'] as $key => $value): ?>
+
+      <tr>
+        <th>
+          <?= $key ?>
+        </th>
+        <td>
+          <? if (is_array($value)): ?>
+
+          <table class="table">
+
+            <? foreach ($value as $key2 => $value2): ?>
+            <tr>
+              <th>
+                <?= $key2 ?>
+              </th>
+              <td>
+                <? if (is_array($value2)): ?>
+                <? print_r($value2) ?>
+                <? else: ?>
+                <?= $value2 ?>
+                <? endif ?>
+              </td>
+            </tr>
+            <? endforeach ?>
+
+          </table>
+
+          <? else: ?>
+
+          <?= $value ?>
+          <? endif ?>
+        </td>
+
+      </tr>
+
+      <? endforeach ?>
+    </table>
+  </div>

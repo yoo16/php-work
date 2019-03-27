@@ -4,33 +4,37 @@
  * Copyright (c) 2018 Yohei Yoshikawa (https://github.com/yoo16/)
  */
 
-var pw_sortable;
-$(document).ready(function(){
-    pw_sortable = new PwSortable();
-});
-
+//TODO remove jquery
 var PwSortable = function() {
     this.is_show_sortable = false;
     this.table_id = 'sortable-table';
     this.api_uri = '';
     this.selector = '';
     this.tr_selector = '';
-    this.sort_orders = {};
+    this.sort_orders;
     this.model_name = '';
-    this.before_rows;
+    this.before_rows = [];
     this.row_id_column = 'row-id';
     this.callback;
     this.is_use_loading = true;
 
-    this.init = function() {
+    this.init = function(node) {
         pw_sortable.is_show_sortable = true;
         sort_order = 1;
-        if ($(pw_sortable).attr('table-id')) pw_sortable.table_id = $(pw_sortable).attr('table-id');
+        if (node && node.attr('pw_sortable_table_id')) {
+            pw_sortable.table_id = node.attr('pw_sortable_table_id');
+        } else {
+            pw_sortable.table_id = 'sortable-table';
+        }
         pw_sortable.selector = '#' + pw_sortable.table_id + ' tbody';
         pw_sortable.sortable_table_tr_selector = pw_sortable.selector + ' tr';
-        pw_sortable.before_rows = $(pw_sortable.sortable_table_tr_selector);
-        $.each(pw_sortable.before_rows, function(index, row) {
-            $(row).attr('order', index);
+        pw_sortable.before_rows = [];
+        $.each($(pw_sortable.sortable_table_tr_selector), function(index, row) {
+            pw_sortable.before_rows.push(row);
+            row_node = PwNode.byElement(row);
+            if (row_node.attr('row-id')) {
+                $(row).attr('order', index);
+            }
         });
     }
     this.set = function(params) {
@@ -41,16 +45,22 @@ var PwSortable = function() {
             if (params.hasOwnProperty('is_use_loading')) pw_sortable.is_use_loading = params.is_use_loading;
         }
     }
-    this.reset = function(dom) {
-        if (pw_sortable.before_rows) {
-            $(pw_sortable.selector).html(pw_sortable.before_rows);
-        }
-        pw_sortable.close(dom);
+    this.reset = function(node) {
+        //TODO
+        // if (pw_sortable.before_rows) {
+            //$(pw_sortable.selector).html(pw_sortable.before_rows);
+        // }
+        pw_sortable.close(node);
     }
-    this.edit = function(dom) {
+    this.edit = function(node) {
+        if (node && node.attr('pw_sortable_table_id')) {
+            pw_sortable.table_id = node.attr('pw_sortable_table_id');
+        } else {
+            pw_sortable.table_id = 'sortable-table';
+        }
         if (pw_sortable.is_show_sortable) return;
 
-        this.init();
+        this.init(node);
 
         $('.pw-sortable-control').show();
 
@@ -68,9 +78,9 @@ var PwSortable = function() {
                 pw_sortable.sort_orders = $(pw_sortable.selector).sortable('toArray', { attribute: pw_sortable.row_id_column} );
             }
         });
-        pw_sortable.showControl(dom);
+        pw_sortable.showControl(node);
     }
-    this.showControl = function(dom) {
+    this.showControl = function(node) {
         table_id = pw_sortable.table_id;
         $('.sortable-control').show();
 
@@ -81,8 +91,10 @@ var PwSortable = function() {
 
         $(pw_sortable.sortable_table_tr_selector).map(function() {
             row_id = $(this).attr(pw_sortable.row_id_column);
-            var sortable_control_tag = '<td class="sortable-control" nowrap="nowrap" row-id="' + row_id + '"></td>';
-            $(this).prepend(sortable_control_tag);
+            if ($(this).attr('row-id')) {
+                var sortable_control_tag = '<td class="sortable-control" nowrap="nowrap" row-id="' + row_id + '"></td>';
+                $(this).prepend(sortable_control_tag);
+            }
         });
 
         var link_tag = '';
@@ -92,58 +104,57 @@ var PwSortable = function() {
         $('td.sortable-control').html(link_tag);
         $('.sortable-control').show();
     }
-    this.update_sort = function(dom) {
+    this.update_sort = function(node) {
+        console.log(node);
         if (!pw_sortable.sort_orders) return;
         
-        var params = {};
-        var sort_order = [];
-        $.each(pw_sortable.sort_orders, function(index, id) {
-            sort_order.push({id: id, order: index});
+        var orders = [];
+        var order = 0;
+        pw_sortable.sort_orders.forEach(function(id) {
+            if (id > 0) {
+                order++;
+                orders.push({id: id, order: order});
+            }
         });
-        params.sort_order = sort_order;
 
-        var table_id = '#' + pw_sortable.table_id;
-        if ($(table_id).attr('model-name')) {
-            params.model_name = $(table_id).attr('model-name');
-        }
-
-        if (pw_sortable.is_use_loading) $.LoadingOverlay("show");
-
-        if (pw_sortable.api_uri) {
-            pw_app.urlPost(pw_sortable.api_uri, params, callback);
-        } else {
-            pw_app.post(dom, params, callback);
-        }
+        pw_app.postJson(
+            {
+                controller: node.controller(),
+                action: node.action()
+            },
+            JSON.stringify(orders),
+            {callback: callback, is_show_loading: true}
+        );
     
         function callback(data) {
             pw_sortable.before_rows = null;
             pw_sortable.is_show_sortable = false;
-            pw_sortable.close(dom);
-
-            if (pw_sortable.is_use_loading) $.LoadingOverlay("hide");
+            pw_sortable.close(node);
 
             if (pw_sortable.callback) {
                 pw_sortable.callback(data);
             }
         }
     }
-    this.top = function(dom) {
+    //TODO
+    this.top = function(node) {
         var first_tr = $(pw_sortable.sortable_table_tr_selector).first();
         if (first_tr) {
-            var row = $(dom).closest('tr');
+            var row = $(node.element).closest('tr');
             row.insertBefore(first_tr);
             pw_sortable.sort_orders = $(pw_sortable.selector).sortable('toArray', { attribute: pw_sortable.row_id_column} );
         }
     }
-    this.bottom = function(dom) {
+    //TODO
+    this.bottom = function(node) {
         var last_tr = $(pw_sortable.sortable_table_tr_selector).last();
         if (last_tr) {
-            var row = $(dom).closest('tr');
+            var row = $(node.element).closest('tr');
             row.insertAfter(last_tr);
             pw_sortable.sort_orders = $(pw_sortable.selector).sortable('toArray', { attribute: pw_sortable.row_id_column} );
         }
     }
-    this.close = function(dom) {
+    this.close = function(node) {
         pw_sortable.is_show_sortable = false;
         $(pw_sortable.selector).sortable('disable');
         $('.pw-sortable-control').hide();
@@ -151,3 +162,7 @@ var PwSortable = function() {
         $('.sortable-control').remove();
     }
 }
+
+var pw_sortable = new PwSortable();
+document.addEventListener('DOMContentLoaded', function() {
+});

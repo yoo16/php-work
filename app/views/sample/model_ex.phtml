@@ -323,7 +323,7 @@ SELECT * FROM countries ORDER BY countries.name;
 </div>
 
 <div class="card">
-  <h2 class="card-header">relation($model_name, $foreign_key = null, $value_key = null)): PwEntity</h2>
+  <h2 class="card-header">relation($class_name, $foreign_key = null, $value_key = null): PwEntity</h2>
   <div class="card-block">
     <h4>code</h4>
     <pre>
@@ -332,7 +332,7 @@ $country = DB::model('Country')->fetch(1);
 //param1 only
 $user = $country->relation('User')->all();
 
-//add param2 & param3
+//input param2 & param3
 $user = $country->relation('User', 'country_id', 'id')->all();
     </pre>
     <h4>SQL</h4>
@@ -344,7 +344,7 @@ SELECT * FROM users WHERE country_id = '1' ORDER BY users.sort_order
 </div>
 
 <div class="card">
-  <h2 class="card-header">belongsTo($model_name, $foreign_key = null, $value_key = null)): PwEntity</h2>
+  <h2 class="card-header">belongsTo($class_name, $foreign_key = null, $value_key = null): PwEntity</h2>
   <div class="card-block">
     <h4>code</h4>
     <pre>
@@ -360,13 +360,13 @@ SELECT * FROM countries WHERE id = 3;
 </div>
 
 <div class="card">
-  <h2 class="card-header">bindBelongsTo($model_name, $foreign_key = null, $value_key = null)): PwEntity</h2>
+  <h2 class="card-header">bindBelongsTo($class_name, $foreign_key = null, $value_key = null): PwEntity</h2>
   <div class="card-block">
     <h4>code</h4>
     <pre>
 $user = DB::model('User')->fetch(5)->bindBelongsTo('Country');
 
-//bind
+//user bind country
 $user->country->value;
     </pre>
     <h4>SQL</h4>

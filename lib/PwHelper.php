@@ -1,14 +1,14 @@
 <?php
 
 /**
- * PwForms 
+ * PwHelpers 
  *
  * TODO class or global function
  *
  * Copyright (c) 2017 Yohei Yoshikawa (https://github.com/yoo16/)
  */
 
-class PwForm
+class PwHelper
 {
 
     /**
@@ -108,14 +108,29 @@ function urlLinkConvert($values)
     return $values;
 }
 
-
+/**
+ * json dump log
+ *
+ * @param mixed $object
+ * @param string $file
+ * @param string $line
+ * @return void
+ */
 function jsonDump($object, $file = null, $line = null)
 {
     $dump = json_encode($object);
     error_log("<DUMP> {$file}:{$line}\n{$dump}");
 }
 
-function dump(&$object, $file = null, $line = null)
+/**
+ * dump log
+ *
+ * @param mixed $object
+ * @param string $file
+ * @param string $line
+ * @return void
+ */
+function dump($object, $file = null, $line = null)
 {
     if (!$object) return;
     ob_start();

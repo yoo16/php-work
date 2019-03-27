@@ -21,7 +21,7 @@ class SampleController extends AppController {
 	 *
 	 * @return void
 	 */
-	function action_controller() {
+	function action_controller_ex() {
 
 	}
 	
@@ -30,7 +30,7 @@ class SampleController extends AppController {
 	 *
 	 * @return void
 	 */
-	function action_model() {
+	function action_model_ex() {
 		//$pgsql = new PwEntity();
 		//$results = $pgsql->createDatabase();
 		//var_export($results);
@@ -123,7 +123,7 @@ class SampleController extends AppController {
 	 *
 	 * @return void
 	 */
-    function action_form_helper() {
+    function action_form_ex() {
         $values = null;
         $values[] = array('id' => 1, 'name' => 'Tokyo', 'country' => 'Japan');
         $values[] = array('id' => 2, 'name' => 'Osaka', 'country' => 'Japan');
