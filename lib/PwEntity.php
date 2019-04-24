@@ -27,25 +27,10 @@ class PwEntity {
     public $session = null;
     public $values_index_column = null;
     public $values_index_column_type = null;
+    public $child_relations = [];
 
     public static $except_columns = ['id', 'created_at', 'updated_at'];
     public static $app_columns = ['id', 'created_at', 'updated_at', 'sort_order', 'old_db', 'old_host', 'old_id'];
-    public static $cast_functions = [
-                                    'int' => 'castInt',
-                                    'int2' => 'castInt',
-                                    'int4' => 'castInt',
-                                    'int8' => 'castInt',
-                                    'real' => 'castInt',
-                                    'float' => 'castFloat',
-                                    'float4' => 'castFloat',
-                                    'float8' => 'castFloat',
-                                    'double' => 'castFloat',
-                                    'double precision' => 'castFloat',
-                                    'bool' => 'castBool',
-                                    'varchar' => 'castString',
-                                    'text' => 'castString',
-                                    'timestamp' => 'castTimestamp',
-                                ];
 
     function __construct($params = null) {
 
@@ -347,6 +332,7 @@ class PwEntity {
      */
     public function setValue($value) {
         $this->value = $value;
+        if ($this->id_column) $this->id = $value[$this->id_column];
         return $this;
     }
 
@@ -397,13 +383,18 @@ class PwEntity {
      */
     public function takeValues($values) {
         if (!$values) return $this;
-        foreach ($this->columns as $column_name => $value) {
-            if (array_key_exists($column_name, $values)) {
-                $column = $this->columns[$column_name];
-                $type = $column['type'];
-                $this->value[$column_name] = $this->cast($type, $values[$column_name]);
+        foreach ($values as $column_name => $value) {
+            if (array_key_exists($column_name, $this->columns)) {
+                $this->value[$column_name] = $this->cast($this->columns[$column_name]['type'], $values[$column_name]);
             }
         }
+        // foreach ($this->columns as $column_name => $value) {
+        //     if (array_key_exists($column_name, $values)) {
+        //         $column = $this->columns[$column_name];
+        //         $type = $column['type'];
+        //         $this->value[$column_name] = $this->cast($type, $values[$column_name]);
+        //     }
+        // }
         return $this;
     }
 
@@ -446,6 +437,7 @@ class PwEntity {
     public function hasChanges() {
         if (isset($this->before_value)) {
             $changes = $this->changes();
+            if (!$changes) return;
             return count($changes) > 0;
         } else {
             return true;
@@ -521,6 +513,7 @@ class PwEntity {
      * @return int
      */
     private function castInt($value) {
+        if (is_null($value)) return;
         if (is_int($value)) return $value;
         $value = $this->castNumber($value);
         if (!is_numeric($value)) return;
@@ -534,6 +527,7 @@ class PwEntity {
      * @return float
      */
     private function castFloat($value) {
+        if (is_null($value)) return;
         if (is_float($value)) return $value;
         $value = $this->castNumber($value);
         if (!is_numeric($value)) return;
@@ -547,6 +541,7 @@ class PwEntity {
      * @return double
      */
     private function castDouble($value) {
+        if (is_null($value)) return;
         if (is_double($value)) return $value;
         $value = $this->castNumber($value);
         if (!is_numeric($value)) return;
@@ -559,6 +554,7 @@ class PwEntity {
      * @return void
      */
     private function castNumber($value) {
+        if (is_null($value)) return;
         if (is_numeric(strpos($value, ','))) $value = str_replace(',', '', $value);
         if (!is_numeric($value)) return;
         return $value;
@@ -817,8 +813,8 @@ class PwEntity {
         $params['action'] = 'edit';
         $params['id'] = $value['id'];
 
-        if (!$http_params['label']) $http_params['label'] = LABEL_EDIT;
-        if (!$http_params['class']) $http_params['class'] = 'btn btn-outline-primary';
+        if (!isset($http_params['label'])) $http_params['label'] = LABEL_EDIT;
+        if (!isset($http_params['class'])) $http_params['class'] = 'btn btn-outline-primary';
 
         $tag = $controller->linkTo($params, $http_params);
         return $tag;
@@ -902,7 +898,7 @@ class PwEntity {
     }
 
     /**
-     * selectタグ
+     * select date
      *
      * @param array $params
      * @param string $selected
@@ -917,7 +913,7 @@ class PwEntity {
     }
 
    /**
-    * formSelect
+    * form radio
     *
     * @param string $column
     * @param array $params
@@ -935,7 +931,7 @@ class PwEntity {
     }
 
    /**
-    * formCheckbox
+    * form checkbox
     *
     * @param string $column
     * @param array $params
@@ -951,7 +947,7 @@ class PwEntity {
     }
 
    /**
-    * formDelete
+    * form delete
     *
     * @param array $params
     * @return string
@@ -991,7 +987,7 @@ class PwEntity {
     }
 
    /**
-    * record value
+    * record value(csv)
     *
     * @param string $column
     * @param string $csv_name
@@ -1006,7 +1002,7 @@ class PwEntity {
     }
 
    /**
-    * record values
+    * record values(csv)
     *
     * @param string $column
     * @param array $params
@@ -1125,6 +1121,21 @@ class PwEntity {
     }
 
     /**
+     * value by key and column
+     *
+     * @param string $key
+     * @param string $column
+     * @return PwEntity
+     */
+    function valueBy($key, $column) {
+        if (!$key) return;
+        if (!$this->values) return $this;
+        if (isset($this->values[$key])) {
+            if (isset($this->values[$key][$column])) return $this->values[$key][$column];
+        }
+    }
+
+    /**
      * value From index values
      *
      * @param string $key
@@ -1214,7 +1225,7 @@ class PwEntity {
      */
     function convertCopyRows($rows, $columns) {
         foreach ($rows as $row) {
-            $values = null;
+            $values = [];
             foreach ($columns as $column => $meta) {
                 $value = $row[$column];
                 if (is_null($value)) {
@@ -1300,6 +1311,7 @@ class PwEntity {
                 if ($filter_values) $count = count($filter_values);
             }
         } else {
+            if (!$this->values) return 0;
             $count = count($this->values);
         }
         return $count;
@@ -1317,7 +1329,6 @@ class PwEntity {
 
         if (!$this->auth_columns) exit('Not found auth columns in model');
         foreach ($this->auth_columns as $column => $options) {
-            dump($options);
             $value = $_POST[$column];
             if ($options['hash']) $value = $this->convertHash($value, $options['hash']);
             $this->where($column, $value);
@@ -1329,6 +1340,8 @@ class PwEntity {
 
     /**
      * remember session pw_auth
+     * 
+     * TODO multi auth
      *
      * @param PwEntity $model
      * @return void
@@ -1337,6 +1350,8 @@ class PwEntity {
         if (!$this->entity_name) exit('Error remember auth : Not defined $entity_name');
         if (!$this->value) return;
 
+        $pw_auth = PwSession::get('pw_auth');
+        if (!$pw_auth) $pw_auth = [];
         $pw_auth[$this->entity_name] = $this;
         PwSession::set('pw_auth', $pw_auth);
     }

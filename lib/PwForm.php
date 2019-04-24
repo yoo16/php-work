@@ -2,8 +2,8 @@
 /**
  * PwForm
  *
- * @copyright 2017 copyright Yohei Yoshikawa (http://yoo-s.com)
- */
+ * Copyright (c) 2017 Yohei Yoshikawa (https://github.com/yoo16/)
+ **/
 
 class PwForm {
     //TODO refactoring
@@ -47,8 +47,6 @@ class PwForm {
         if (!isset($params['class'])) $params['class'] = 'form-control';
         $tag = self::selectOptions($params, $selected);
         if ($tag) $tag = self::selectTag($tag, $params);
-
-        $controller = $GLOBALS['controller'];
         return $tag;
     }
 
@@ -399,6 +397,8 @@ class PwForm {
                         $instance->where($params['where'][0], $params['where'][1], $params['where'][2]);
                     } else if (isset($params['where'][1])) {
                         $instance->where($params['where'][0], $params['where'][1]);
+                    } else {
+                        return;
                     }
                 } else {
                     $instance->where($params['where']);
@@ -413,7 +413,7 @@ class PwForm {
             $values = $params['values'];
         }
 
-        if ($values && is_array($params['filter_values']) && $params['value']) {
+        if (isset($params['filter_values']) && $values && is_array($params['filter_values']) && $params['value']) {
             foreach ($values as $index => $value) {
                 $_value = $value[$params['value']];
                 if (in_array($_value, $params['filter_values'])) {
@@ -432,23 +432,25 @@ class PwForm {
      * @return string
      */
     static function selectOptions($params, $selected = null) {
+        $label = '';
         $values = self::values($params);
         if (!is_array($values)) return;
 
         $value_key = isset($params['value']) ? $params['value'] : 'value';
 
         $tag = self::unselectOption($params);
-
         foreach ($values as $key => $value) {
-            if ($params['is_key_value_array']) {
+            if (isset($params['is_key_value_array']) && $params['is_key_value_array']) {
                 $attributes['value'] = $key;
                 $label = $value;
             } else {
                 $attributes['value'] = $value[$value_key];
                 $label = self::convertLabel($value, $params);
             }
-            $attributes['selected'] = self::selectedTag($attributes['value'], $selected);
-            if ($params['label_unit']) $label.= $params['label_unit'];
+            $selected_string = self::selectedTag($attributes['value'], $selected);
+            unset($attributes['selected']);
+            if ($selected_string) $attributes['selected'] = $selected_string;
+            if (isset($params['label_unit'])) $label.= $params['label_unit'];
             $tag.= self::optionTag($label, $attributes);
         }
         return $tag;
@@ -458,11 +460,12 @@ class PwForm {
      * date option
      *
      * @param array $params
-     * @param string $selected
+     * @param mixed $selected
      * @param string $label_formatter
      * @return string
      */
-    static function dateOptions($params, $selected=null, $label_formatter='%02d') {
+    static function dateOptions($params, $selected = null, $label_formatter='%02d') {
+        $tag = '';
         $tag.= self::unselectOption($params);
         $values = $params['values'];
         if (!($values)) return;
@@ -567,7 +570,7 @@ class PwForm {
             foreach ($label_keys as $label_key) {
                 $labels[] = $values[$label_key];
             }
-            $label_separate = ($params['label_separate']) ? $params['label_separate'] : ' ';
+            $label_separate = (isset($params['label_separate'])) ? $params['label_separate'] : ' ';
             $label = implode($label_separate, $labels);
         } else {
             $label = $values[$label_keys];
@@ -619,9 +622,12 @@ class PwForm {
         if (isset($params['selected'])) $selected = $params['selected'];
 
         $value_key = isset($params['value']) ? $params['value'] : 'value';
+        $tag = '';
         foreach ($values as $value) {
             $params['value'] = $index = $value[$value_key];
-            $params['checked'] = self::checkedTag($params['value'], $selected);
+            unset($params['checked']);
+            $checked = self::checkedTag($params['value'], $selected);
+            if ($checked) $params['checked'] = $checked;
             $params['id'] = "{$params['name']}_{$params['value']}";
             $tag.= self::radioTag($params, $value);
 
@@ -681,9 +687,9 @@ class PwForm {
         }
         if (!isset($params['value'])) $params['value'] = 1;
 
-        if ($params['disable']) $attributes['disable'] = 'disable';
+        $tag = '';
         if (!$params['unused_hidden']) $tag.= self::hidden($params['name'], 0);
-        $id = ($params['id']) ? "{$params['id']}_{$value}" : $params['value'];
+        $id = ($params['id']) ? "{$params['id']}_{$params['value']}" : $params['value'];
         $checkbox_attributes = [
             'id' => $id,
             'class' => $params['class'],
@@ -691,8 +697,9 @@ class PwForm {
             'type' => 'checkbox',
             'value' => $params['value']
         ];
-        //$attributes['checked'] = self::checkedTag($params['value'], $selected);
+        if ($params['disable']) $checkbox_attributes['class'].= ' d-none';
         if ($selected) $checkbox_attributes['checked'] = 'checked';
+        $tag = '';
         $tag.= self::input($checkbox_attributes);
 
         $label_attributes['class'] = 'checkbox';
@@ -711,7 +718,7 @@ class PwForm {
      * @param array $values
      * @return string
      */
-    function multiCheckbox($params, $selected=null, $value_key=null, $label_key=null, $values=null) {
+    static function multiCheckbox($params, $selected=null, $value_key=null, $label_key=null, $values=null) {
         $params = self::checkParams($params, $selected, $value_key, $label_key, $values);
 
         $value_key = $params['value'];
@@ -784,6 +791,7 @@ class PwForm {
         if (!$params) return;
         foreach ($params as $key => $param) {
             if (is_array($param)) $param = implode(' ', $param);
+            $param = trim($param);
             if (isset($param)) $attributes[] = "{$key}=\"{$param}\"";
         }
         if ($attributes) $attribute = implode(' ', $attributes);
@@ -1112,6 +1120,7 @@ class PwForm {
      * @return string
      */
     static function linkActive($key, $selected = null) {
+        $tag = '';
         if (!$selected) $selected = $GLOBALS['controller']->name;
         if ($key == $selected) $tag.=' active';
         return $tag;
