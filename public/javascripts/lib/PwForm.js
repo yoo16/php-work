@@ -5,12 +5,6 @@
  */
 
 'use strict';
-var pw_form;
-
-document.addEventListener('DOMContentLoaded', function() {
-    pw_form = new PwForm();
-});
-
 var PwForm = function () {
     this.value = {}
 
@@ -29,6 +23,16 @@ var PwForm = function () {
         }
         return values;
     }
+    this.submit = function(node) {
+        pw_app.showLoading();
+        let selector_id = node.attr('data-target');
+        if (selector_id) {
+            PwNode.id(selector_id).submit();
+        } else {
+            let form = node.element.closest('form');
+            if (form) form.submit();
+        }
+    }
     this.init = function(selector_id) {
         this.initInput(selector_id)
         this.initSelect(selector_id)
@@ -36,43 +40,52 @@ var PwForm = function () {
     }
     this.initInput = function(selector_id) {
         var selector = selector_id + ' input';
-        $(selector).each(function() {
-            var type = $(this).attr('type');
-            var name = $(this).attr('name');
-            var default_value = $(this).attr('default_value');
+        let elements = PwNode.byQuery(selector).elements;
+        if (!elements) return;
+        [].forEach.call(elements, function(element) {
+            var node = PwNode.byElement(element);
+            var type = node.attr('type');
+            var name = node.attr('name');
+            var default_value = node.attr('default_value');
             if (name) {
                 if (type == 'checkbox') {
-                    $(this).val('');
-                    if (default_value) $(this).val(default_value);
+                    node.setValue('');
+                    if (default_value) node.setValue(default_value);
                 } else if (type == 'radio') {
-                    $(this).val('');
-                    if (default_value) $(this).val(default_value);
+                    node.setValue('');
+                    if (default_value) node.setValue(default_value);
                 } else {
-                    $(this).val('');
-                    if (default_value) $(this).val(default_value);
+                    node.setValue('');
+                    if (default_value) node.setValue(default_value);
                 }
             }
         });
     }
     this.initSelect = function(selector_id) {
         var selector = selector_id + ' select option';
-        $(selector).each(function() {
-            var name = $(this).parent().attr('name');
-            var default_value = $(this).attr('default_value');
+        let elements = PwNode.byQuery(selector).elements;
+        if (!elements) return;
+        [].forEach.call(elements, function(element) {
+            var node = PwNode.byElement(element);
+            var name = node.parent().attr('name');
+            var default_value = element.attr('default_value');
             if (name) {
-                $(this).parent().val('');
-                if (default_value) $(this).parent().val(default_value);
+                node.parent().setValue('');
+                if (default_value) node.parent().setValue(default_value);
             }
         });
     }
     this.initTextarea = function(selector_id) {
         var selector = selector_id + ' textarea';
-        $(selector).each(function() {
-            var name = $(this).attr('name');
-            var default_value = $(this).attr('default_value');
+        let elements = PwNode.byQuery(selector).elements;
+        if (!elements) return;
+        [].forEach.call(elements, function(element) {
+            var node = PwNode.byElement(element);
+            var name = node.attr('name');
+            var default_value = node.attr('default_value');
             if (name) {
-                $(this).val('');
-                if (default_value) $(this).val(default_value);
+                node.setValue('');
+                if (default_value) node.setValue(default_value);
             }
         });
     }
@@ -84,42 +97,46 @@ var PwForm = function () {
     }
     this.bindInput = function(selector_id, values) {
         var selector = selector_id + ' input';
-        $(selector).each(function() {
-            var type = $(this).attr('type');
-            var name = $(this).attr('name');
+        let elements = PwNode.byQuery(selector).elements;
+        if (!elements) return;
+        [].forEach.call(elements, function(element) {
+            var node = PwNode.byElement(element);
+            var type = node.attr('type');
+            var name = node.attr('name');
             name = checkName(name);
             if (name && values[name]) {
                 var value = values[name];
                 if (type == 'checkbox') {
 
                 } else if (type == 'radio') {
-                    $(this).val(value);
+                    //TODO
+                    node.setValue(value);
                 } else {
-                    $(this).val(value);
+                    node.setValue(value);
                 }
             }
         });
     }
     this.bindSelect = function(selector_id, values) {
         var selector = selector_id + ' select option';
-        $(selector).each(function() {
-            var name = $(this).parent().attr('name');
+        let elements = PwNode.byQuery(selector).elements;
+        if (!elements) return;
+        [].forEach.call(elements, function(element) {
+            var node = PwNode.byElement(element);
+            var name = node.parent().attr('name');
             name = checkName(name);
-            if (name && values[name]) {
-                var value = values[name];
-                $(this).parent().val(value);
-            }
+            if (name && values[name]) { node.parent().setValue(values[name]); }
         });
     }
     this.bindTextarea = function(selector_id, values) {
         var selector = selector_id + ' textarea';
-        $(selector).each(function() {
-            var name = $(this).attr('name');
+        let elements = PwNode.byQuery(selector).elements;
+        if (!elements) return;
+        [].forEach.call(elements, function(element) {
+            var node = PwNode.byElement(element);
+            var name = node.attr('name');
             name = checkName(name);
-            if (name && values[name]) {
-                var value = values[name];
-                $(this).val(value);
-            }
+            if (name && values[name]) { node.setValue(values[name]); }
         });
     }
     this.loadForm = function(selector_id) {
@@ -129,34 +146,42 @@ var PwForm = function () {
     }
     this.loadInput = function(selector_id) {
         var selector = selector_id + ' input';
-        $(selector).each(function() {
-            var type = $(this).attr('type');
-            var name = $(this).attr('name');
-
+        let elements = PwNode.byQuery(selector).elements;
+        if (!elements) return;
+        [].forEach.call(elements, function(element) {
+            var node = PwNode.byElement(element);
+            var type = node.attr('type');
+            var name = node.attr('name');
             if (name) {
                 if (type == 'checkbox') {
                     pw_form.value[name] = checkboxValues(name);
                 } else if (type == 'radio') {
-                    var checked = $(this).prop('checked');
-                    if (checked) pw_form.value[name] = $(this).val();
+                    var checked = node.checked();
+                    if (checked) pw_form.value[name] = node.value();
                 } else {
-                    pw_form.value[name] = $(this).val();
+                    pw_form.value[name] = node.value();
                 }
             }
         });
     }
     this.loadSelect = function(selector_id) {
         var selector = selector_id + ' select option';
-        $(selector).each(function() {
-            var name = $(this).parent().attr('name');
-            if (name) pw_form.value[name] = $(this).val();
+        let elements = PwNode.byQuery(selector).elements;
+        if (!elements) return;
+        [].forEach.call(elements, function(element) {
+            var node = PwNode.byElement(element);
+            var name = node.parent().attr('name');
+            if (name) pw_form.value[name] = node.value();
         });
     }
     this.loadTextarea = function(selector_id) {
         var selector = selector_id + ' textarea';
-        $(selector).each(function() {
-            var name = $(this).attr('name');
-            if (name) pw_form.value[name] = $(this).val();
+        let elements = PwNode.byQuery(selector).elements;
+        if (!elements) return;
+        [].forEach.call(elements, function(element) {
+            var node = PwNode.byElement(element);
+            var name = node.attr('name');
+            if (name) pw_form.value[name] = node.value();
         });
     }
     /**
@@ -185,15 +210,37 @@ var PwForm = function () {
      * @return string
      */
     function checkboxValues(name) {
-        var column = '[name="' + name + '"]:checked';
+        var selector = '[name="' + name + '"]:checked';
+        let elements = PwNode.byQuery(selector).elements;
+        if (!elements) return;
         var checks = [];
-        $(column).each(function() {
-            var checked = $(this).prop('checked');
+        [].forEach.call(elements, function(element) {
+            var node = PwNode.byElement(element);
+            var checked = node.checked();
             if (checked) {
-                checks.push($(this).val());
+                checks.push(node.value());
             }
         });
         return checks;
     }
 
+    /** 
+     * clear
+     */
+    this.clearHandler = function(event) {
+        let target = this.getAttribute('data-target');
+        document.getElementById(target).value = '';
+    }
+    this.reloadEvents = function() {
+        //IE dosen't work elements.forEach()
+        let clear_elements = document.getElementsByClassName('pw-clear');
+        [].forEach.call(clear_elements, function(element) {
+            element.removeEventListener('click', pw_form.clearHandler);
+            element.addEventListener('click', pw_form.clearHandler, false);
+        });
+    }
 }
+var pw_form = new PwForm();
+document.addEventListener('DOMContentLoaded', function() {
+    pw_form.reloadEvents();
+});

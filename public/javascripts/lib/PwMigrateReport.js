@@ -13,14 +13,19 @@ var PwMigrateReport = function () {
     this.show_errors = function(node) {
         var params = {};
         params.migrate_report_id = node.attr('migrate_report_id');
-        pw_app.controllerPost('migrate_report', 'api_error', params, callback);
-
+        pw_app.postHtml(
+            {controller: 'migrate_report', action: 'api_error'},
+            params,
+            {callback: callback, is_show_loading: true}
+        );
+        //remove jquery
         function callback(json) {
             if (!json) return;
             var errors = JSON.parse(json);
             var html = '';
             if (errors) {
                 if (errors.sql) {
+                    //TODO remove jquery
                     $.each(errors.sql, function(key, sql_error) {
                         html+= '<div>' + sql_error + '</div>';
                     });
@@ -47,7 +52,7 @@ var PwMigrateReport = function () {
                     }
                 }
                 log_contents.html(html);
-                $('#migrate_error_modal').modal('show');
+                pw_ui.showModal('migrate_error_modal');
             }
         }
     }

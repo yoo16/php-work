@@ -8,9 +8,16 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 var PwDate = function() {
-    this.from_at_selector = '#from-at';
-    this.to_at_selector = '#to-at';
+    var _this = this;
+    this.from_selector = 'from-at';
+    this.to_selector = 'to-at';
 
+    this.setFromSelector = function(from_selector) {
+        this.from_selector = from_selector;
+    }
+    this.setToAtSelector = function(to_selector) {
+        this.to_selector = to_selector;
+    }
     this.unixToString = function(time) {
         var date = new Date(time);
         var year  = date.getFullYear();
@@ -36,24 +43,24 @@ var PwDate = function() {
 
         var date = new Date(value)
         date.setDate(date.getDate() + 1);
-        var value = this.string(date);
+        var value = _this.string(date);
         return value;
     }  
     this.prevDate = function(value) {
         var date = new Date(value)
         date.setDate(date.getDate() - 1);
-        var value = this.string(date);
+        var value = _this.string(date);
         return value;
     }
     this.replaceAllHyphen = function(value) {
-        if (!value) return;
         value = value.toString();
         value = value.replace(/-/g, "/");
         return value;
     }
     this.string = function(value) {
         if (!value) return;
-        value = this.replaceAllHyphen(value);
+        //TODO IE bug: string replace
+        //value = _this.replaceAllHyphen(value);
 
         var year = 0;
         var month = 0;
@@ -117,12 +124,10 @@ var PwDate = function() {
     }
     this.updateFromToComponent = function(value) {
         if (value.from_at) {
-            var from_at = this.string(value.from_at);
-            $(this.from_at_selector).val(from_at);
+            PwNode.id(this.from_selector).setValue(this.string(value.from_at));
         }
         if (value.to_at) {
-            var to_at = this.string(value.to_at);
-            $(this.to_at_selector).val(to_at);
+            PwNode.id(this.to_selector).setValue(this.string(value.to_at));
         }
     }
     this.convertGraphDate = function(value) {

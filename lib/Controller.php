@@ -519,6 +519,7 @@ class Controller extends RuntimeException {
             $url = $this->urlFor($params, $url_params);
         }
         header("Location: {$url}");
+        exit;
     }
 
     /**
