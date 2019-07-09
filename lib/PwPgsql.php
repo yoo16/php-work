@@ -145,7 +145,7 @@ class PwPgsql extends PwEntity
 
     /**
      * show database
-     *
+     * 
      * @return void
      */
     public function showDatabase()
@@ -221,9 +221,9 @@ class PwPgsql extends PwEntity
      * @param mixed $column_name
      * @return string
      */
-    function createPgIndex($table_name, $column_name)
+    function createIndex($table_name, $column_name)
     {
-        $sql = self::createPgIndexSql($table_name, $column_name);
+        $sql = self::createIndexSql($table_name, $column_name);
         return $this->query($sql);
     }
 
@@ -234,7 +234,7 @@ class PwPgsql extends PwEntity
      * @param  mixed $column_name
      * @return string
      */
-    static function createPgIndexSql($table_name, $column_name) {
+    static function createIndexSql($table_name, $column_name) {
         if (!$table_name) return;
         if (!$column_name) return;
         if (is_array($column_name)) {
@@ -527,13 +527,13 @@ class PwPgsql extends PwEntity
                 $option = self::columnOptionSql($column);
 
                 $column_sql = "{$column_name} {$type}";
-                if ($option) $column_sql .= " {$option}";
+                if ($option) $column_sql.= " {$option}";
                 $column_sqls[] = $column_sql;
             }
         }
         $column_sql = implode("\n, ", $column_sqls);
         $sql = "CREATE TABLE IF NOT EXISTS \"{$model->name}\" (\n{$column_sql}\n);" . PHP_EOL;
-        $sql .= PHP_EOL;
+        $sql.= PHP_EOL;
         return $sql;
     }
 
@@ -554,7 +554,6 @@ class PwPgsql extends PwEntity
      * create constraint SQL
      * 
      * @param PwPgsql $model
-     * @param array $cascades
      * @return string
      */
     public function constraintSql($model)
@@ -583,6 +582,30 @@ class PwPgsql extends PwEntity
                 $sql .= "      ADD CONSTRAINT {$conname}" . PHP_EOL;
                 $sql .= "      UNIQUE ({$unique_column});" . PHP_EOL;
                 $sql .= PHP_EOL;
+            }
+        }
+        return $sql;
+    }
+
+
+    /**
+     * create constraint SQL
+     * 
+     * @param PwPgsql $model
+     * @return string
+     */
+    public function dropConstraintSql($model)
+    {
+        if (!$model) return;
+        $sql = '';
+        if ($model->foreign) {
+            foreach ($model->foreign as $conname => $foreign) {
+                $sql.= "ALTER TABLE {$model->name} DROP CONSTRAINT IF EXISTS {$conname};" . PHP_EOL;
+            }
+        }
+        if ($model->unique) {
+            foreach ($model->unique as $conname => $uniques) {
+                $sql.= "ALTER TABLE {$model->name} DROP CONSTRAINT IF EXISTS {$conname};" . PHP_EOL;
             }
         }
         return $sql;
@@ -621,6 +644,18 @@ class PwPgsql extends PwEntity
     {
         $vo_path = BASE_DIR . "app/models/vo/";
         $this->createTablesSQLForPath($vo_path, 'php');
+        return $this->sql_files;
+    }
+
+    /**
+     * drop constraint for project
+     * 
+     * @return array
+     */
+    function constraintSQLForProject()
+    {
+        $vo_path = BASE_DIR . "app/models/vo/";
+        $this->constraintSQLForPath($vo_path, 'php');
         return $this->sql_files;
     }
 
@@ -680,7 +715,40 @@ class PwPgsql extends PwEntity
             }
         }
         foreach ($this->sql_files as $db_name => $sql) {
-            if ($indexes_sql[$db_name]) $this->sql_files[$db_name].= $indexes_sql[$db_name];
+            if ($index_sql = $indexes_sql[$db_name]) {
+                $this->sql_files[$db_name].= $indexes_sql[$db_name];
+            }
+        }
+    }
+
+    /**
+     * create table SQL
+     * 
+     * @param string $vo_path
+     * @param string $ext
+     * @return void
+     */
+    function constraintSQLForPath($vo_path, $ext = 'php')
+    {
+        if (!file_exists($vo_path)) return;
+        $vo_files_path = "{$vo_path}*.{$ext}";
+        foreach (glob($vo_files_path) as $file_path) {
+            if (is_file($file_path)) {
+                $file = pathinfo($file_path);
+                $class_name = $file['filename'];
+                $class_name = substr($class_name, 1);
+                $model_path = BASE_DIR."app/models/{$class_name}.php";
+                if (is_file($model_path)) {
+                    require_once $model_path;
+                    $model = new $class_name();
+                    if (!$model->is_not_auto_migrate_table) {
+                        if ($db_name = $model->dbname) {
+                            $this->sql_files[$db_name]['add'].= $this->constraintSql($model);
+                            $this->sql_files[$db_name]['drop'].= $this->dropConstraintSql($model);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -1350,17 +1418,22 @@ class PwPgsql extends PwEntity
      */
     public function one($use_limit = true)
     {
-        //if ($use_limit && $this->conditions) $this->limit(1);
         if ($use_limit) $this->limit(1);
-
-        $sql = $this->selectSql();
-
-        $this->fetchRow($sql);
-
-        $this->id = $this->value[$this->id_column];
-        $this->before_value = $this->value;
-        $this->values = null;
+        $this->fetchRow($this->selectSql());
+        $this->bindValue();
         return $this;
+    }
+
+
+    /**
+     * find
+     * 
+     * @param  int $id
+     * @return PwPgsql
+     */
+    public function find($id)
+    {
+        return $this->fetch($id);
     }
 
     /**
@@ -1376,16 +1449,23 @@ class PwPgsql extends PwEntity
         $this->group_by_columns = null;
         if (!$id) return $this;
 
+        $this->initWhere();
         $this->where($this->id_column, $id);
+        $this->fetchRow($this->selectSql());
+        $this->bindValue();
+        return $this;
+    }
 
-        $sql = $this->selectSql();
-
-        $this->fetchRow($sql);
-
+    /**
+     * bind value
+     *
+     * @return void
+     */
+    private function bindValue()
+    {
         $this->id = $this->value[$this->id_column];
         $this->before_value = $this->value;
         $this->values = null;
-        return $this;
     }
 
     /**
@@ -1427,17 +1507,6 @@ class PwPgsql extends PwEntity
     }
 
     /**
-     * find
-     * 
-     * @param  int $id
-     * @return PwPgsql
-     */
-    public function find($id)
-    {
-        return $this->fetch($id);
-    }
-
-    /**
      * first
      * 
      * @param  int $id
@@ -1458,6 +1527,18 @@ class PwPgsql extends PwEntity
     {
         $this->is_bulk_select = true;
         return $this;
+    }
+
+
+    /**
+     * select all (get)
+     * 
+     * @param  array $params
+     * @return array
+     */
+    public function get()
+    {
+        return $this->all();
     }
 
     /**
@@ -1488,9 +1569,8 @@ class PwPgsql extends PwEntity
         }
     }
 
-
     /**
-     * select all
+     * select values by index of column
      * 
      * @return PwPgsql
      */
@@ -1561,17 +1641,6 @@ class PwPgsql extends PwEntity
     }
 
     /**
-     * select all (get)
-     * 
-     * @param  array $params
-     * @return array
-     */
-    public function get()
-    {
-        return $this->all();
-    }
-
-    /**
      * select all values
      * 
      * @return array
@@ -1628,7 +1697,7 @@ class PwPgsql extends PwEntity
         if ($this->id = $this->fetchResult($sql)) {
             $this->value[$this->id_column] = $this->id;
         } else {
-            $this->addError('save', 'error');
+            $this->addError('pw_error', 'save_error');
         }
         if (!$this->errors) PwSession::clear('pw_posts');
         return $this;
@@ -1650,17 +1719,15 @@ class PwPgsql extends PwEntity
         if (!$id) $id = $this->id;
         if ($id > 0) $this->fetch($id);
         if (!$this->id) return $this;
-        if ($posts[$this->id_column]) unset($posts[$this->id_column]);
+        if (isset($posts[$this->id_column])) unset($posts[$this->id_column]);
         if ($posts) $this->takeValues($posts);
 
         $this->validate();
-        //TODO function
         if ($this->errors) return $this;
         $sql = $this->updateSql();
-        $result = $this->query($sql);
-        if ($result === false) $this->addError('save', 'error');
+        if ($sql) $result = $this->query($sql);
+        if ($result === false) $this->addError('pw_error', 'save_error');
         if (!$this->errors) PwSession::clear('pw_posts');
-
         return $this;
     }
 
@@ -1690,7 +1757,7 @@ class PwPgsql extends PwEntity
     {
         $sql = $this->updateAllSql($posts);
         $result = $this->query($sql);
-        if ($result === false) $this->addError('save', 'error');
+        if ($result === false) $this->addError('pw_error', 'save_error');
         if (!$this->errors) PwSession::clear('pw_posts');
         return $this;
     }
@@ -1704,7 +1771,7 @@ class PwPgsql extends PwEntity
     {
         $sql = $this->updateByWhereSql($posts);
         $result = $this->query($sql);
-        if ($result === false) $this->addError('save', 'error');
+        if ($result === false) $this->addError('pw_error', 'save_error');
         return $this;
     }
 
@@ -1722,7 +1789,7 @@ class PwPgsql extends PwEntity
     {
         $sql = $this->updateSqlById($id, $posts);
         $result = $this->query($sql);
-        if ($result === false) $this->addError('save', 'error');
+        if ($result === false) $this->addError('pw_error', 'save_error');
         return $this;
     }
 
@@ -1740,7 +1807,7 @@ class PwPgsql extends PwEntity
         $this->takeValues($posts);
         $sql = $this->upsertSql();
         $result = $this->query($sql);
-        if ($result === false) $this->addError('save', 'error');
+        if ($result === false) $this->addError('pw_error', 'save_error');
         return $this;
     }
 
@@ -1755,7 +1822,7 @@ class PwPgsql extends PwEntity
         if (!$posts) return;
         $sql = $this->updatesSql($posts);
         $result = $this->query($sql);
-        if ($result === false) $this->addError('save', 'error');
+        if ($result === false) $this->addError('pw_error', 'save_error');
         return $this;
     }
 
@@ -1921,7 +1988,7 @@ class PwPgsql extends PwEntity
 
         $values = $this->valuesFromOldTable($old_pgsql);
         if (!$values) {
-            $this->addError('save', 'error');
+            $this->addError('pw_error', 'save_error');
         } else {
             $this->_value = $this->value;
         }
@@ -2277,12 +2344,13 @@ class PwPgsql extends PwEntity
      */
     static function whereInConditionSQL($column, $values)
     {
-        if (is_array($values)) {
+        $value = '';
+        if ($values) {
             foreach ($values as $value) {
                 $_values[] = self::sqlValue($value);
             }
+            $value = implode(', ', $_values);
         }
-        $value = implode(', ', $_values);
         $condition = "{$column} IN ({$value})";
         return $condition;
     }
@@ -3059,7 +3127,6 @@ class PwPgsql extends PwEntity
         $sql = '';
         $changes = $this->changes();
         if (!$changes) return;
-
         foreach ($changes as $key => $org_value) {
             $value = self::sqlValue($this->value[$key]);
             $set_values[] = "{$key} = {$value}";
@@ -3218,8 +3285,27 @@ class PwPgsql extends PwEntity
     }
 
     /**
+     * sql set value
+     *
+     * @return void
+     */
+    private function sqlSetValue($key, $value)
+    {
+        if (!$key) return;
+        $set_value = '';
+        if (is_bool($value)) {
+            $value = ($value === true) ? 'TRUE' : 'FALSE';
+            $set_value = "{$key} = {$value}";
+        } else {
+            $set_value = "{$key} = '{$value}'";
+        }
+        return $set_value;
+    }
+
+    /**
      * updates Sql
      * 
+     * @param array $values
      * @return string
      */
     private function updatesSql($values)
@@ -3227,22 +3313,10 @@ class PwPgsql extends PwEntity
         if (!$values) return;
         if (!$this->conditions) return;
         foreach ($values as $key => $value) {
-            if ($key) {
-                if (is_bool($value)) {
-                    if ($value === true) {
-                        $value = 'TRUE';
-                    } else {
-                        $value = 'FALSE';
-                    }
-                    $set_values[] = "{$key} = {$value}";
-                } else {
-                    $set_values[] = "{$key} = '{$value}'";
-                }
-            }
+            if ($sql_set_value = $this->sqlSetValue($key, $value)) $set_values[] = $sql_set_value;
         }
         if (isset($this->columns['updated_at'])) $set_values[] = "updated_at = current_timestamp";
         if ($set_values) $set_value = implode(', ', $set_values);
-
         if ($set_value) {
             $condition = $this->sqlConditions($this->conditions);
             $sql = "UPDATE {$this->table_name} SET {$set_value} WHERE {$condition};";
@@ -3356,7 +3430,7 @@ class PwPgsql extends PwEntity
     /**
      * sql group by
      * 
-     * @param array $conditions
+     * @param array $group_by_columns
      * @return string
      **/
     function sqlGroupBy($group_by_columns)
@@ -3382,7 +3456,6 @@ class PwPgsql extends PwEntity
     /**
      * postgres table attributes info
      *
-     * @param string $table_name
      * @return string
      **/
     public function pgDBname()
@@ -3395,14 +3468,18 @@ class PwPgsql extends PwEntity
     /**
      * pg_class array with attribute
      *
+     * @param string $pg_class
+     * @param array $pg_constraints
      * @return array
      **/
     public function pgClassArrayByConstraints($pg_class, $pg_constraints)
     {
         $relids[$pg_class['pg_class_id']] = $pg_class['pg_class_id'];
-        foreach ($pg_constraints as $contype => $_pg_constraints) {
-            foreach ($_pg_constraints as $pg_constraint) {
-                if ($pg_constraint['confrelid'] > 0) $relids[$pg_constraint['confrelid']] = $pg_constraint['confrelid'];
+        if ($pg_constraints) {
+            foreach ($pg_constraints as $contype => $_pg_constraints) {
+                foreach ($_pg_constraints as $pg_constraint) {
+                    if ($pg_constraint['confrelid'] > 0) $relids[$pg_constraint['confrelid']] = $pg_constraint['confrelid'];
+                }
             }
         }
         return $this->pgClassesArray($relids);
@@ -3419,7 +3496,6 @@ class PwPgsql extends PwEntity
         $pg_classes = $this->pgClasses($pg_class_ids);
         if (!$pg_classes) return;
         $table_comments = $this->tableCommentsArray();
-
         foreach ($pg_classes as $pg_class) {
             $table_name = $pg_class['relname'];
             $is_numbering = self::isNumberingName($table_name);
@@ -3429,8 +3505,6 @@ class PwPgsql extends PwEntity
                 if ($pg_attributes) {
                     $attributes = null;
                     $column_comments = $this->columnCommentArray($table_name);
-
-                    $names = null;
                     foreach ($pg_attributes as $pg_attribute) {
                         if ($pg_attribute['attnum'] > 0) {
                             $pg_attribute['comment'] = $column_comments[$pg_attribute['attname']];
@@ -3468,8 +3542,6 @@ class PwPgsql extends PwEntity
         if ($pg_attributes) {
             $attributes = null;
             $column_comments = $this->columnCommentArray($pg_class['relname']);
-
-            $names = null;
             foreach ($pg_attributes as $pg_attribute) {
                 if ($pg_attribute['attnum'] > 0) {
                     $pg_attribute['comment'] = $column_comments[$pg_attribute['attname']];
@@ -3494,14 +3566,12 @@ class PwPgsql extends PwEntity
     public function tableArray()
     {
         $pg_classes = $this->pgClasses();
+        if (!$pg_classes) return;
         $comments = $this->tableCommentsArray();
-
-        if ($pg_classes) {
-            foreach ($pg_classes as $pg_class) {
-                if ($pg_class['pg_class_id']) {
-                    $pg_class['comment'] = $comments[$pg_class['relname']];
-                    $values[$pg_class['relname']] = $pg_class;
-                }
+        foreach ($pg_classes as $pg_class) {
+            if ($pg_class['pg_class_id']) {
+                $pg_class['comment'] = $comments[$pg_class['relname']];
+                $values[$pg_class['relname']] = $pg_class;
             }
         }
         return $values;
@@ -3523,12 +3593,11 @@ class PwPgsql extends PwEntity
         $column_comments = $this->columnCommentArray($table_name);
 
         $pg_attributes = $this->pgAttributes($table_name);
-        if ($pg_attributes) {
-            foreach ($pg_attributes as $pg_attribute) {
-                if ($pg_attribute['attnum'] > 0) {
-                    $pg_attribute['comment'] = $column_comments[$pg_attribute['attname']];
-                    $values[$pg_attribute['attnum']] = $pg_attribute;
-                }
+        if (!$pg_attributes) return;
+        foreach ($pg_attributes as $pg_attribute) {
+            if ($pg_attribute['attnum'] > 0) {
+                $pg_attribute['comment'] = $column_comments[$pg_attribute['attname']];
+                $values[$pg_attribute['attnum']] = $pg_attribute;
             }
         }
         return $values;
@@ -3740,6 +3809,8 @@ class PwPgsql extends PwEntity
      **/
     function pgAttributeByColumn($table_name, $column_name)
     {
+        if (!$table_name) return;
+        if (!$column_name) return;
         $sql = "SELECT pg_class.oid AS pg_class_id, * FROM pg_class 
                 LEFT JOIN pg_attribute ON pg_class.oid = pg_attribute.attrelid
                 LEFT JOIN information_schema.columns ON information_schema.columns.table_name = pg_class.relname
@@ -3762,10 +3833,7 @@ class PwPgsql extends PwEntity
     {
         if (!$pg_class_id) return;
         if (!$attnum) return;
-        $sql = "SELECT * FROM pg_attribute
-        WHERE attnum > 0
-        AND attnum = '{$attnum}'
-        AND attrelid = '{$pg_class_id}';";
+        $sql = "SELECT * FROM pg_attribute WHERE attnum > 0 AND attnum = '{$attnum}' AND attrelid = '{$pg_class_id}';";
         return $this->fetchRow($sql);
     }
 
@@ -3822,7 +3890,7 @@ class PwPgsql extends PwEntity
      *
      * @param  string $table_name
      * @param  string $comment
-     * @return array
+     * @return resource
      */
     function updateTableComment($table_name, $comment)
     {
@@ -3838,7 +3906,7 @@ class PwPgsql extends PwEntity
      * @param  string $table_name
      * @param  string $column_name
      * @param  string $comment
-     * @return array
+     * @return resource
      */
     function updateColumnComment($table_name, $column_name, $comment)
     {
@@ -3926,6 +3994,7 @@ class PwPgsql extends PwEntity
      */
     function pgColumnComment($table_name)
     {
+        if (!$table_name) return;
         $sql = "SELECT psat.relname, pa.attname, pd.description
                 FROM pg_stat_all_tables psat ,pg_description pd ,pg_attribute pa
                 WHERE psat.schemaname = (SELECT schemaname FROM pg_stat_user_tables WHERE relname = '{$table_name}')
@@ -4131,7 +4200,7 @@ class PwPgsql extends PwEntity
     /**
      * pg constraint by pg_class
      *
-     * @param  string $table_name
+     * @param  string $pg_class_id
      * @return array
      */
     function pgConstraintsByPgClassID($pg_class_id)
@@ -4157,7 +4226,7 @@ class PwPgsql extends PwEntity
      *
      * @param  string $table_name
      * @param  array $columns
-     * @return void
+     * @return boolean
      */
     function addPgPrimaryKey($table_name, $column_name)
     {
@@ -4170,8 +4239,9 @@ class PwPgsql extends PwEntity
      * rename constraint name
      *
      * @param  string $table_name
-     * @param  array $columns
-     * @return void
+     * @param  string $constraint_name
+     * @param  string $new_constraint_name
+     * @return boolean
      */
     function renamePgConstraint($table_name, $constraint_name, $new_constraint_name)
     {
@@ -4203,7 +4273,10 @@ class PwPgsql extends PwEntity
      * @param  string $foreign_column
      * @param  string $reference_table_name
      * @param  string $reference_column
-     * @return void
+     * @param  string $update
+     * @param  string $delete
+     * @param  boolean $is_not_deferrable
+     * @return resource
      */
     function addPgForeignKey(
         $table_name,
@@ -4239,7 +4312,8 @@ class PwPgsql extends PwEntity
      * remove pg constraint
      *
      * @param  string $table_name
-     * @return boolean
+     * @param  string $constraint_name
+     * @return resource
      */
     function removePgConstraint($table_name, $constraint_name)
     {
@@ -4254,7 +4328,8 @@ class PwPgsql extends PwEntity
      * remove pg constraints
      *
      * @param  string $table_name
-     * @return void
+     * @param  string $type
+     * @return array
      */
     function removePgConstraints($table_name, $type = null)
     {
@@ -4265,9 +4340,9 @@ class PwPgsql extends PwEntity
 
         foreach ($constraints as $constraint) {
             $sql = "ALTER TABLE {$table_name} DROP CONSTRAINT {$constraint['conname']};";
-            $results = $this->query($sql);
+            $results[] = $this->query($sql);
         }
-        return;
+        return $results;
     }
 
     /**
@@ -4302,6 +4377,7 @@ class PwPgsql extends PwEntity
      *
      * @param  string $table_name
      * @param  string $column_name
+     * @param  boolean $is_required
      * @return array
      */
     public function changeNotNull($table_name, $column_name, $is_required = true)
@@ -4505,6 +4581,8 @@ class PwPgsql extends PwEntity
     /**
      * old db info by old host
      * 
+     * @param string $old_host
+     * @param string $old_db
      * @return string
      */
     static function oldDbInfoByOldHost($old_host, $old_db)
@@ -4523,17 +4601,18 @@ class PwPgsql extends PwEntity
     /**
      * delete records and reset sequence
      *
+     * @param boolean $is_drop_primary
      * @return 
      */
     function deleteRecords($is_drop_primary = false) {
         $this->deletes();
 
         if ($this->sql_error) {
-            dump($this->sql_error);
+            exit($this->sql_error);
             return;
         }
         if ($this->errors) {
-            dump($this->errors);
+            exit($this->errors);
             return;
         }
 

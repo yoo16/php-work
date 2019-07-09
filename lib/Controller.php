@@ -20,6 +20,7 @@ class Controller extends RuntimeException {
     public $pw_project_name = '';
     public $pw_controller = '';
     public $pw_action = '';
+    public $pw_id = '';
     public $pw_method = '';
     public $session_request_columns;
     public $csv_options;
@@ -45,6 +46,7 @@ class Controller extends RuntimeException {
         'PwCsv',
         'PwMigration',
         'PwDate',
+        'PwAuth',
         'PwFile',
         'PwFtp',
         'PwForm',
@@ -61,14 +63,15 @@ class Controller extends RuntimeException {
         ];
 
     function __construct($name = null) {
-        $class_name = strtolower(get_class($this));
-        if ($class_name !== 'controller') {
-            if (is_null($this->name)) $this->name = substr($class_name, 0, strpos($class_name, 'controller'));
-        } else if(isset($name)) {
-            $this->name = $name;
+        if (!$this->name) {
+            $my_class_name = $this->myClassName();
+            if ($my_class_name !== 'Controller') {
+                $this->name = substr($my_class_name, 0, strpos($my_class_name, 'controller'));
+            }
         }
+        if(isset($name)) $this->name = $name;
         $this->session_name = "{$this->name}_controller";
-        if (isset($_REQUEST['pw_multi_sid'])) $this->pw_multi_sid = $_REQUEST['pw_multi_sid'];
+        if ($this->is_use_multi_sid && isset($_REQUEST['pw_multi_sid'])) $this->pw_multi_sid = $_REQUEST['pw_multi_sid'];
     }
 
     // function __isset($name) {
@@ -129,6 +132,16 @@ class Controller extends RuntimeException {
     static function className($name) {
         $controller = str_replace(" ", "", ucwords(str_replace("_", " ", $name))) . "Controller";
         return $controller;
+    }
+
+    /**
+     * controller name
+     *
+     * @return void
+     */
+    public function myClassName()
+    {
+        return get_class($this);
     }
 
     /**
@@ -214,11 +227,11 @@ class Controller extends RuntimeException {
                 $errors = Controller::throwErrors($t);
                 $controller->renderError($errors);
             } catch (Error $e) {
-                var_dump($e);
+                $errors = Controller::throwErrors($e);
+                $controller->renderError($errors);
             } catch (Exception $e) {
-                var_dump($e);
-            // } finally {
-
+                $errors = Controller::throwErrors($e);
+                $controller->renderError($errors);
             }
         } else {
             //TODO try catch
@@ -239,21 +252,12 @@ class Controller extends RuntimeException {
      * @param  array  $params
      * @return void
      */
-    private function run($params = array()) {
+    private function run($params = []) {
         $GLOBALS['controller'] = $this;
-
-        if ($_GET) $this->pw_params = $_GET;
-        if (isset($params['controller'])) $this->pw_params['controller'] = $params['controller'];
-        if (isset($params['action'])) $this->pw_params['action'] = $params['action'];
-        if (isset($params['id'])) $this->pw_params['id'] = $params['id'];
-        $this->pw_gets = $this->pw_params;
-        PwSession::set('pw_gets', $this->pw_gets);
-
+        $this->loadPwGets($params);
         $this->loadPwPosts();
-        $this->errors = $this->getErrors();
-        $this->flushErrors();
-        //$this->loadDefaultCsvOptions($this->lang, true);
-        $this->csv_options = PwLocalize::loadCsvOptions($this->lang);
+        $this->loadPwErrors();
+        $this->loadDefaultCsvOptions($this->lang);
 
         try {
             $this->_invoke();
@@ -261,11 +265,11 @@ class Controller extends RuntimeException {
             $errors = Controller::throwErrors($t);
             $this->renderError($errors);
         } catch (Error $e) {
-            var_dump($e);
+            $errors = Controller::throwErrors($e);
+            $this->renderError($errors);
         } catch (Exception $e) {
-            var_dump($e);
-        // } finally {
-
+            $errors = Controller::throwErrors($e);
+            $this->renderError($errors);
         }
     }
 
@@ -359,11 +363,11 @@ class Controller extends RuntimeException {
                 $errors = Controller::throwErrors($t);
                 $this->renderError($errors);
             } catch (Error $e) {
-                var_dump($e);
+                $errors = Controller::throwErrors($e);
+                $this->renderError($errors);
             } catch (Exception $e) {
-                var_dump($e);
-            // } finally {
-                
+                $errors = Controller::throwErrors($e);
+                $this->renderError($errors);
             }
             include $layout_file;
         } else {
@@ -376,15 +380,15 @@ class Controller extends RuntimeException {
     /**
      * throwErrors
      *
-     * @param  Throwable $t
+     * @param  Throwable $error
      * @return array
      */
-    static function throwErrors($t) {
-        $errors['code'] = $t->getCode();
-        $errors['file'] = $t->getFile();
-        $errors['line'] = $t->getLine();
-        $errors['message'] = $t->getMessage();
-        $errors['trace'] = nl2br($t->getTraceAsString());
+    static function throwErrors($error) {
+        $errors['code'] = $error->getCode();
+        $errors['file'] = $error->getFile();
+        $errors['line'] = $error->getLine();
+        $errors['message'] = $error->getMessage();
+        $errors['trace'] = nl2br($error->getTraceAsString());
         return $errors;
     }
 
@@ -485,6 +489,7 @@ class Controller extends RuntimeException {
         } else {
             trigger_error("File Not Found: {$file}", E_USER_NOTICE);
         }
+        exit;
     }
 
     /**
@@ -517,22 +522,12 @@ class Controller extends RuntimeException {
         } else if (is_array($params)) {
             if (empty($params['controller'])) $params['controller'] = $this->name;
             $url = $this->urlFor($params, $url_params);
+        } else {
+            $params['controller'] = $this->name;
+            $url = $this->urlFor($params, $url_params);
         }
         header("Location: {$url}");
         exit;
-    }
-
-    /**
-     * link tag for pw-click
-     *
-     * @param  array $params
-     * @return string
-     */
-    function linkJs($params = null) {
-        if ($params['is_use_selected'] && $params['controller']) $params['class'].= PwForm::linkActive($params['controller'], $this->name);
-        unset($params['is_use_selected']);
-        $tag = PwTag::a($params);
-        return $tag;
     }
 
     /**
@@ -542,9 +537,9 @@ class Controller extends RuntimeException {
      * @return string
      */
     function uploadFileJs($params) {
+        $upload_tag = $this->linkJs($params);
         include('views/components/lib/file_upload.phtml');
-        $tag = $this->linkJs($params);
-        return $tag;
+        return $upload_tag;
     }
 
     /**
@@ -558,6 +553,19 @@ class Controller extends RuntimeException {
         $html_params['is_selected'] = $this->checkLinkActive($params, $html_params);
         $html_params['href'] = $this->urlFor($params, $html_params['http_params']);
         $tag = PwTag::a($html_params);
+        return $tag;
+    }
+
+    /**
+     * link tag for pw-click
+     *
+     * @param  array $params
+     * @return string
+     */
+    function linkJs($params = null) {
+        if ($params['is_use_selected'] && $params['controller']) $params['class'].= PwForm::linkActive($params['controller'], $this->name);
+        unset($params['is_use_selected']);
+        $tag = PwTag::a($params);
         return $tag;
     }
 
@@ -614,9 +622,11 @@ class Controller extends RuntimeException {
         if (is_string($params)) {
             $url.= $params;
         } else {
-            if ($params['controller']) $elements[] = $params['controller'];
-            if ($params['action']) $elements[] = $params['action'];
-            if ($params['id']) $elements[] = $params['id'];
+            if ($params) {
+                if ($params['controller']) $elements[] = $params['controller'];
+                if ($params['action']) $elements[] = $params['action'];
+                if ($params['id']) $elements[] = $params['id'];
+            }
             if (count($elements) == 1) {
                 $url.= "{$elements[0]}/";
             } else {
@@ -752,6 +762,19 @@ class Controller extends RuntimeException {
     }
 
     /**
+     * pw id
+     *
+     * @return integer
+     */
+    private function pwID() {
+        if (!$this->pw_gets) return;
+        if ($this->pw_gets['id']) {
+            $this->pw_id = $this->pw_gets['id'];
+        }
+        return $this->pw_id;
+    }
+
+    /**
      * pw method
      * 
      * @param string $action
@@ -785,12 +808,13 @@ class Controller extends RuntimeException {
             error_log("IP: {$_SERVER['REMOTE_ADDR']}");
         }
 
-        //$this->pw_prev_request_uri = PwSession::get('pw_prev_request_uri', null, $this->pw_multi_sid);
+        //$this->pw_prev_request_uri = PwSession::get('pw_prev_request_uri', $this->pw_multi_sid);
         $this->base = $this->baseUrl();
         $this->relativeBaseURL();
 
         $this->pwController();
         $this->pwAction();
+        $this->pwID();
         $this->pwProjectName();
         $this->class_name = get_class($this);
 
@@ -804,9 +828,11 @@ class Controller extends RuntimeException {
                 $errors = Controller::throwErrors($t);
                 $this->renderError($errors);
             } catch (Error $e) {
-                var_dump($e);
+                $errors = Controller::throwErrors($e);
+                $this->renderError($errors);
             } catch (Exception $e) {
-                var_dump($e);
+                $errors = Controller::throwErrors($e);
+                $this->renderError($errors);
             }
 
             $this->before_invocation($this->pw_action);
@@ -829,9 +855,33 @@ class Controller extends RuntimeException {
      *
      * @return void
      */
+    function loadPwGets($params) {
+        if ($_GET) $this->pw_params = $_GET;
+        if (isset($params['controller'])) $this->pw_params['controller'] = $params['controller'];
+        if (isset($params['action'])) $this->pw_params['action'] = $params['action'];
+        if (isset($params['id'])) $this->pw_params['id'] = $params['id'];
+        $this->pw_gets = $this->pw_params;
+        if ($this->pw_gets) PwSession::set('pw_gets', $this->pw_gets);
+    }
+
+    /**
+     * load $_POST
+     *
+     * @return void
+     */
     function loadPwPosts() {
         if ($_POST) PwSession::set('pw_posts', $_POST);
         $this->pw_posts = PwSession::get('pw_posts');
+    }
+
+    /**
+     * load error
+     *
+     * @return void
+     */
+    function loadPwErrors() {
+        $this->errors = $this->getErrors();
+        $this->flushErrors();
     }
 
     /**
@@ -859,10 +909,9 @@ class Controller extends RuntimeException {
      * model
      *
      * @param string $model_name
-     * @param string $session_name
      * @return void
      */
-    function model($model_name, $session_name = null) {
+    function model($model_name) {
         if (!class_exists($model_name)) {
             $errors['query'] = $_SERVER['QUERY_STRING'];
             $errors['request'] = $_SERVER['REQUEST_URI'];
@@ -872,7 +921,7 @@ class Controller extends RuntimeException {
             exit;
         }
         if ($this->is_use_multi_sid && is_numeric($this->pw_multi_sid)) {
-            return DB::model($model_name)->requestSession($this->pw_multi_sid, $session_name);
+            return DB::model($model_name)->requestSession($this->pw_multi_sid);
         } else {
             return DB::model($model_name)->requestSession();
         }
@@ -882,10 +931,9 @@ class Controller extends RuntimeException {
      * clear model
      *
      * @param string $model_name
-     * @param string $session_name
      * @return void
      */
-    function clearModel($model_name, $session_name = null) {
+    function clearModel($model_name) {
         if (!class_exists($model_name)) {
             $errors['query'] = $_SERVER['QUERY_STRING'];
             $errors['request'] = $_SERVER['REQUEST_URI'];
@@ -894,7 +942,11 @@ class Controller extends RuntimeException {
             $this->renderError($errors);
             exit;
         }
-        return DB::model($model_name)->clearSession($this->pw_multi_sid);
+        if ($this->is_use_multi_sid && is_numeric($this->pw_multi_sid)) {
+            return DB::model($model_name)->clearSession($this->pw_multi_sid);
+        } else {
+            return DB::model($model_name)->clearSession();
+        }
     }
 
     /**
@@ -1077,58 +1129,65 @@ class Controller extends RuntimeException {
      *
      * @param  string $key
      * @param  array $value
+     * @param  integer $sid
      * @return void
      */
-    function setSession($key, $value) {
+    function setSession($key, $value, $sid = 0) {
         if (!$this->session_name) return;
-        if (isset($value)) PwSession::setWithKey($this->session_name, $key, $value);
+        if (isset($value)) PwSession::setWithKey($this->session_name, $key, $value, $sid);
     }
 
     /**
      * get session by key value
      *
      * @param  string $key
-     * @param  array $value
+     * @param  integer $sid
      * @return mixed
      */
-    function getSession($key) {
+    function getSession($key, $sid = 0) {
         if (!$this->session_name) return;
-        return $this->$key = PwSession::getWithKey($this->session_name, $key); 
+        return $this->$key = PwSession::getWithKey($this->session_name, $key, $sid); 
     }
 
     /**
      * get sessions
      *
-     * @param  string $key
+     * @param  integer $sid
      * @return string
      */
-    function getSessions($key) {
+    function getSessions($sid = 0) {
         if (!$this->session_name) return;
-        return PwSession::get($this->session_name); 
+        return PwSession::get($this->session_name, $sid); 
     }
 
     /**
      * set sessions
      *
      * @param  array $values
+     * @param integer $sid
      * @return void
      */
-    function setSessions($values) {
+    function setSessions($values, $sid = 0) {
         if (!$this->session_name) return;
         if (!is_array($values)) return;
         foreach ($values as $key => $value) {
-            PwSession::setWithKey($this->session_name, $key, $value); 
+            PwSession::setWithKey($this->session_name, $key, $value, $sid); 
         }
     }
 
     /**
      * clear sessions
      *
+     * @param integer $sid
      * @return void
      */
-    function clearSessions() {
+    function clearSessions($sid = 0) {
         if (!$this->session_name) return;
-        PwSession::clear($this->session_name); 
+        PwSession::clear($this->session_name, $sid); 
+
+        //othoer functioin?
+        $this->clearRequestSession();
+        $this->clearPwPosts();
     }
 
     /**
@@ -1136,9 +1195,9 @@ class Controller extends RuntimeException {
      *
      * @return void
      */
-    function flushSessions() {
+    function flushSessions($sid = 0) {
         if (!$this->session_name) return;
-        PwSession::flushWithKey($this->session_name);
+        PwSession::flushWithKey($this->session_name, $sid);
     }
 
     /**
@@ -1279,14 +1338,14 @@ class Controller extends RuntimeException {
      * bind pw posts
      * 
      * @param array $values
-     * @param string $key
+     * @param string $entity_name
      * @return void
      */
-    function bindPwPosts($values, $key = null) {
+    function bindPwPosts($values, $entity_name = null) {
         if (!$values) return;
-        if (!$key) $key = $this->name;
+        if (!$entity_name) $entity_name = $this->name;
         foreach ($values as $column => $value) {
-            $this->pw_posts[$key][$column] =  $value;
+            $this->pw_posts[$entity_name][$column] =  $value;
         }
     }
 
@@ -1452,10 +1511,11 @@ class Controller extends RuntimeException {
     * update sort order
     *
     * @param string $model_name
-    * @param boolean $is_json
+    * @param array $conditions
+    * @param string $model_name
     * @return void
     */
-    function updateSort($model_name = null, $is_json = true) {
+    function updateSort($model_name = null, $conditions = [], $is_json = true) {
         if (!$model_name) exit('Not found model_name');
 
         $posts = file_get_contents("php://input");
@@ -1465,7 +1525,7 @@ class Controller extends RuntimeException {
         if (!$values) exit('Not found sort_order');
         
         if (class_exists($model_name)) {
-            DB::model($model_name)->updateSortOrder($values);
+            DB::model($model_name)->wheres($conditions)->updateSortOrder($values);
             if ($is_json) $results['is_success'] = true;
         }
         if ($is_json) {
@@ -1571,16 +1631,6 @@ class Controller extends RuntimeException {
     }
 
     /**
-     * public action login
-     *
-     * @return void
-     */
-    function login() {
-        $this->redirectLogin();
-        exit;
-    }
-
-    /**
      * check auth
      * 
      * @param  string $action
@@ -1609,8 +1659,7 @@ class Controller extends RuntimeException {
         }
         $this->pw_admin = PwSession::get('pw_admin');
         if (!$this->pw_admin) {
-            $uri = "{$this->pw_admin_controller}/login";
-            $this->redirectTo($uri);
+            $this->redirectTo(['controller' => $this->pw_admin_controller, 'action' => 'login']);
             exit;
         }
     }
@@ -1673,8 +1722,9 @@ class Controller extends RuntimeException {
      * @return void
      */
     function redirectLogin($uri = null) {
-        if (!$uri) $uri = $this->pw_login_controller.'/';
-        $this->redirectTo($uri);
+        if (!$uri) $params['controller'] = $this->pw_login_controller;
+        if (!$params['controller']) exit;
+        $this->redirectTo($params);
         exit;
     }
 
@@ -1819,10 +1869,11 @@ class Controller extends RuntimeException {
             return true;
         }
     }
+
 }
 
 PwSetting::load();
 Controller::loadLib();
-if (isset($lang)) PwLocalize::loadLocalizeFile($lang);
+if (!$_REQUEST) PwLocalize::loadLocalizeFile($lang);
 PwLoader::autoloadModel();
 PwSetting::loadApplication();

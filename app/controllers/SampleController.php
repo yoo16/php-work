@@ -9,7 +9,8 @@ require_once 'AppController.php';
 
 class SampleController extends AppController {
 
-    var $layout = 'sample';
+	var $layout = 'sample';
+	var $name = 'sample';
 
     function index() {
 		$this->country = DB::model('Country');
@@ -21,8 +22,7 @@ class SampleController extends AppController {
 	 *
 	 * @return void
 	 */
-	function action_controller_ex() {
-
+	function controller_ex() {
 	}
 	
 	/**
