@@ -131,12 +131,7 @@ class PwPgsql extends PwEntity
                     if (!$pg_database) {
                         $results = $this->createDatabase();
                         $sql = file_get_contents($sql_file_path);
-                        if ($sql) {
-                            $this->query($sql);
-                            dump($sql_file_path);
-                            dump($this->host);
-                            dump($this->dbname);
-                        }
+                        if ($sql) $this->query($sql);
                     }
                 }
             }
@@ -1113,14 +1108,14 @@ class PwPgsql extends PwEntity
         $amount = ceil($count / $limit);
 
         if ($amount == 0) return;
-        if ($amount == 1) return $this->all();
+        if ($amount == 1) return $this->get();
 
         $values = [];
         $this->limit = $limit;
         for ($i = 1; $i <= $amount; $i++) {
             $this->offset = $i * $limit;
             if ($this->offset <= $count) {
-                $_values = $this->all();
+                $_values = $this->get();
                 if ($values) {
                     $values = array($values, $_values);
                 } else {
@@ -1181,7 +1176,7 @@ class PwPgsql extends PwEntity
         $relation = DB::model($model_name);
 
         $column_name = $relation->entity_name;
-        $relation = $this->relation(get_class($relation), $foreign_key, $value_key)->all();
+        $relation = $this->relation(get_class($relation), $foreign_key, $value_key)->get();
         $this->$column_name = $relation;
         return $this;
     }
@@ -1195,6 +1190,25 @@ class PwPgsql extends PwEntity
      * @return PwPgsql
      */
     public function bindBelongsTo($model_name, $foreign_key = null, $value_key = null)
+    {
+        if (!is_string($model_name)) exit('bindBelongsTo: $model_name is not string');
+        $relation = DB::model($model_name);
+
+        $column_name = $relation->entity_name;
+        $relation = $this->belongsTo(get_class($relation), $foreign_key, $value_key);
+        $this->$column_name = $relation;
+        return $this;
+    }
+
+    /**
+     * many to one
+     * 
+     * @param  string $model_name
+     * @param  string $foreign_key
+     * @param  string $value_key
+     * @return PwPgsql
+     */
+    public function bindBelongsOne($model_name, $foreign_key = null, $value_key = null)
     {
         if (!is_string($model_name)) exit('bindBelongsTo: $model_name is not string');
         $relation = DB::model($model_name);
@@ -1239,7 +1253,7 @@ class PwPgsql extends PwEntity
      */
     public function hasMany($class_name, $foreign_key = null, $value_key = null)
     {
-        return $this->relation($class_name, $foreign_key, $value_key)->all();
+        return $this->relation($class_name, $foreign_key, $value_key)->get();
     }
 
     /**
@@ -1320,21 +1334,52 @@ class PwPgsql extends PwEntity
         $this->join($through_class_name, $through_left_column, 'id');
         $this->join($through_class_name, $through_right_column, 'id', $class_name);
 
-        return $relation->all();
+        return $relation->get();
     }
 
     /**
      * relation by model
      * 
-     * @param  string $class_name
+     * TODO: must use use belongsOne()
+     *       this method is only define
+     *       re-define as Laravel
+     *       
+     *       
+     * 
+     * @param  string $relation_class_name
      * @param  string $foreign_key
      * @param  string $value_key
      * @return PwPgsql
      */
-    public function belongsTo($class_name, $foreign_key = null, $value_key = null)
+    public function belongsTo($relation_class_name, $foreign_key = null, $value_key = null)
     {
-        if (!class_exists($class_name)) exit('relation class_name: not found '.$class_name);
-        $relation = DB::model($class_name);
+        //if $this->values => foreach bind
+        if (!class_exists($relation_class_name)) exit('relation class_name: not found '.$relation_class_name);
+        $relation = DB::model($relation_class_name);
+
+        if (!$foreign_key) $foreign_key = $relation->id_column;
+        if (!$value_key) $value_key = "{$relation->entity_name}_id";
+        if (is_null($this->value)) return $relation;
+
+        $value = $this->value[$value_key];
+        if (is_null($value)) return $relation;
+
+        $condition = "{$relation->id_column} = {$value}";
+        return $relation->where($condition)->one();
+    }
+
+    /**
+     * fetch relation model (many to one)
+     * 
+     * @param  string $relation_class_name
+     * @param  string $foreign_key
+     * @param  string $value_key
+     * @return PwPgsql
+     */
+    public function belongsOne($relation_class_name, $foreign_key = null, $value_key = null)
+    {
+        if (!class_exists($relation_class_name)) exit('relation class_name: not found '.$relation_class_name);
+        $relation = DB::model($relation_class_name);
 
         if (!$foreign_key) $foreign_key = $relation->id_column;
         if (!$value_key) $value_key = "{$relation->entity_name}_id";
@@ -1363,7 +1408,7 @@ class PwPgsql extends PwEntity
         if ($ids = array_column($this->values, $foreign_key)) {
             $relation->whereIn($relation->id_column, $ids);
             if ($is_id_index) $relation->idIndex();
-            $relation->all();
+            $relation->get();
         }
         return $relation;
     }
@@ -1529,26 +1574,14 @@ class PwPgsql extends PwEntity
         return $this;
     }
 
-
     /**
      * select all (get)
      * 
-     * @param  array $params
+     * @param  boolean $is_id_index
+     * @param  string $index_column
      * @return array
      */
-    public function get()
-    {
-        return $this->all();
-    }
-
-    /**
-     * select all
-     * 
-     * @param $is_id_index
-     * @param $index_column
-     * @return PwPgsql
-     */
-    public function all($is_id_index = false, $index_column = null)
+    public function get($is_id_index = false, $index_column = null)
     {
         if ($is_id_index) $this->idIndex();
         if ($index_column) $this->setValuesIndexColumn($index_column);
@@ -1565,8 +1598,22 @@ class PwPgsql extends PwEntity
             }
             $sql = $this->selectSql();
             $this->values = $this->fetchRows($sql);
-            return $this;
         }
+        return $this;
+    }
+
+    /**
+     * select all
+     * 
+     * TODO all only?
+     * 
+     * @param $is_id_index
+     * @param $index_column
+     * @return PwPgsql
+     */
+    public function all($is_id_index = false, $index_column = null)
+    {
+        return $this->get($is_id_index, $index_column);
     }
 
     /**
@@ -1579,7 +1626,7 @@ class PwPgsql extends PwEntity
         $columns = array_keys($this->columns);
         if (!in_array($column, $columns)) exit("Not found column: {$column}");
         $this->values_index_column = $column;
-        $this->all();
+        $this->get();
         return $this;
     }
 
@@ -1647,7 +1694,7 @@ class PwPgsql extends PwEntity
      */
     public function allValues()
     {
-        return $this->all()->values;
+        return $this->get()->values;
     }
 
     /**
@@ -1928,7 +1975,7 @@ class PwPgsql extends PwEntity
     function updateSortOrder($sort_orders)
     {
         if (!is_array($sort_orders)) return $this;
-        $this->select([$this->id_column, 'sort_order'])->all(true);
+        $this->select([$this->id_column, 'sort_order'])->get(true);
         $class_name = get_class($this);
         foreach ($sort_orders as $sort_order) {
             $id = $sort_order['id'];
@@ -4644,7 +4691,7 @@ class PwPgsql extends PwEntity
      */
     function updatesEmptySortOrder() {
         if (!array_key_exists('sort_order', $this->columns)) return $this;
-        $this->select([$this->id_column, 'sort_order'])->where('sort_order IS NULL')->all();
+        $this->select([$this->id_column, 'sort_order'])->where('sort_order IS NULL')->get();
         if (!$this->values) return $this;
 
         $sql = "UPDATE {$this->table_name} SET sort_order = {$this->id_column} WHERE sort_order IS NULL;";

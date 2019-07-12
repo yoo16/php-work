@@ -967,14 +967,14 @@ class PwMysql extends PwEntity
         $amount = ceil($count / $limit);
 
         if ($amount == 0) return;
-        if ($amount == 1) return $this->all();
+        if ($amount == 1) return $this->get();
 
         $values = [];
         $this->limit = $limit;
         for ($i = 1; $i <= $amount; $i++) {
             $this->offset = $i * $limit;
             if ($this->offset <= $count) {
-                $_values = $this->all();
+                $_values = $this->get();
                 if ($values) {
                     $values = array($values, $_values);
                 } else {
@@ -1035,7 +1035,7 @@ class PwMysql extends PwEntity
         $relation = DB::model($model_name);
 
         $column_name = $relation->entity_name;
-        $relation = $this->relation(get_class($relation), $foreign_key, $value_key)->all();
+        $relation = $this->relation(get_class($relation), $foreign_key, $value_key)->get();
         $this->$column_name = $relation;
         return $this;
     }
@@ -1093,7 +1093,7 @@ class PwMysql extends PwEntity
      */
     public function hasMany($class_name, $foreign_key = null, $value_key = null)
     {
-        return $this->relation($class_name, $foreign_key, $value_key)->all();
+        return $this->relation($class_name, $foreign_key, $value_key)->get();
     }
 
     /**
@@ -1174,7 +1174,7 @@ class PwMysql extends PwEntity
         $this->join($through_class_name, $through_left_column, 'id');
         $this->join($through_class_name, $through_right_column, 'id', $class_name);
 
-        return $relation->all();
+        return $relation->get();
     }
 
     /**
@@ -1217,7 +1217,7 @@ class PwMysql extends PwEntity
         if ($ids = array_column($this->values, $foreign_key)) {
             $relation->whereIn($relation->id_column, $ids);
             if ($is_id_index) $relation->idIndex();
-            $relation->all();
+            $relation->get();
         }
         return $relation;
     }
@@ -1376,11 +1376,12 @@ class PwMysql extends PwEntity
     }
 
     /**
-     * select all
+     * select all (get)
      * 
-     * @return PwPgsql
+     * @param  array $params
+     * @return array
      */
-    public function all($is_id_index = false)
+    public function get($is_id_index = false)
     {
         if ($is_id_index) $this->idIndex();
         $this->values = null;
@@ -1397,8 +1398,18 @@ class PwMysql extends PwEntity
             }
             $sql = $this->selectSql();
             $this->values = $this->fetchRows($sql);
-            return $this;
         }
+        return $this;
+    }
+
+    /**
+     * select all
+     * 
+     * @return PwPgsql
+     */
+    public function all($is_id_index = false)
+    {
+        return $this->get($is_id_index);
     }
 
 
@@ -1415,7 +1426,7 @@ class PwMysql extends PwEntity
             exit("Not found column: {$column}");
         }
         $this->values_index_column = $column;
-        $this->all();
+        $this->get();
         return $this;
     }
 
@@ -1479,24 +1490,13 @@ class PwMysql extends PwEntity
     }
 
     /**
-     * select all (get)
-     * 
-     * @param  array $params
-     * @return array
-     */
-    public function get()
-    {
-        return $this->all();
-    }
-
-    /**
      * select all values
      * 
      * @return array
      */
     public function allValues()
     {
-        return $this->all()->values;
+        return $this->get()->values;
     }
 
     /**
@@ -1770,7 +1770,7 @@ class PwMysql extends PwEntity
     function updateSortOrder($sort_orders)
     {
         if (!is_array($sort_orders)) return $this;
-        $this->select([$this->id_column, 'sort_order'])->all(true);
+        $this->select([$this->id_column, 'sort_order'])->get(true);
         $class_name = get_class($this);
         foreach ($sort_orders as $sort_order) {
             $id = $sort_order['id'];
@@ -4419,7 +4419,7 @@ class PwMysql extends PwEntity
      */
     function updatesEmptySortOrder() {
         if (!array_key_exists('sort_order', $this->columns)) return $this;
-        $this->select([$this->id_column, 'sort_order'])->where('sort_order IS NULL')->all();
+        $this->select([$this->id_column, 'sort_order'])->where('sort_order IS NULL')->get();
         if (!$this->values) return $this;
 
         $sql = "UPDATE {$this->table_name} SET sort_order = {$this->id_column} WHERE sort_order IS NULL;";

@@ -14,9 +14,10 @@ class Controller extends RuntimeException {
     public $name;
     public $with_layout = true;
     public $pw_layout = null;
+    public $pw_layout_file = null;
     public $headers = [];
     public $performed_render = false;
-    public $relative_base = '';
+    public $pw_relative_base = '';
     public $pw_project_name = '';
     public $pw_controller = '';
     public $pw_action = '';
@@ -60,6 +61,7 @@ class Controller extends RuntimeException {
         'PwError',
         'PwColor',
         'PwPython',
+        'PwModel',
         ];
 
     function __construct($name = null) {
@@ -178,7 +180,7 @@ class Controller extends RuntimeException {
      * bind pw request params
      *
      * @param array $params
-     * @return void
+     * @return array
      */
     static function bindPwRequestParams($params) {
         $request_url = parse_url($_SERVER['REQUEST_URI']);
@@ -293,6 +295,7 @@ class Controller extends RuntimeException {
      * pw template
      *
      * @param string $action
+     * @param string $template
      * @return void
      */
     private function pwTemplate($action, $template = null) {
@@ -353,10 +356,10 @@ class Controller extends RuntimeException {
 
         if ($this->with_layout) {
             $layout = $this->pwLayout();
-            if ($layout) $layout_file = BASE_DIR."app/views/layouts/{$layout}.phtml";
+            if ($layout) $this->pw_layout_file = BASE_DIR."app/views/layouts/{$layout}.phtml";
         }
         $this->loadPwHeaders();
-        if ($this->with_layout && file_exists($layout_file)) {
+        if ($this->with_layout && file_exists($this->pw_layout_file)) {
             try {
                 $this->loadPwTemplate();
             } catch (Throwable $t) {
@@ -369,7 +372,7 @@ class Controller extends RuntimeException {
                 $errors = Controller::throwErrors($e);
                 $this->renderError($errors);
             }
-            include $layout_file;
+            include $this->pw_layout_file;
         } else {
             $this->loadPwTemplate();
             echo($this->content_for_layout);
@@ -399,7 +402,7 @@ class Controller extends RuntimeException {
      * @return void
      */
     function renderError($errors, $is_continue = true) {
-        if (is_null($GLOBALS['controller'])) $GLOBALS['controller']['relative_base'] = Controller::relativeBaseURLForStatic();
+        if (is_null($GLOBALS['controller'])) $GLOBALS['controller']['pw_relative_base'] = Controller::relativeBaseURLForStatic();
         if (!$errors) return;
         $error_layout = BASE_DIR."app/views/layouts/error.phtml";
         if (file_exists($error_layout)) include $error_layout;
@@ -689,12 +692,8 @@ class Controller extends RuntimeException {
      * @return string
      */
     private function relativeBaseURL() {
-        $query = str_replace('?', '', $_SERVER['QUERY_STRING']);
-        $count = substr_count($query, '/');
-        for ($i = 0; $i < $count; $i++) {
-            $this->relative_base .= '../';
-        }
-        return $this->relative_base;
+        $this->pw_relative_base = self::relativeBaseURLForStatic();
+        return $this->pw_relative_base;
     }
 
     /**
@@ -703,13 +702,13 @@ class Controller extends RuntimeException {
      * @return string
      */
     static function relativeBaseURLForStatic() {
-        $relative_base = '';
+        $pw_relative_base = '';
         $query = str_replace('?', '', $_SERVER['QUERY_STRING']);
         $count = substr_count($query, '/');
         for ($i = 0; $i < $count; $i++) {
-            $relative_base .= '../';
+            $pw_relative_base .= '../';
         }
-        return $relative_base;
+        return $pw_relative_base;
     }
 
     /**
@@ -909,7 +908,7 @@ class Controller extends RuntimeException {
      * model
      *
      * @param string $model_name
-     * @return void
+     * @return PgEntity
      */
     function model($model_name) {
         if (!class_exists($model_name)) {
@@ -955,30 +954,44 @@ class Controller extends RuntimeException {
      * @return void
      */
     function loadModelSession() {
-        if (is_array($this->session_by_models)) {
-            foreach ($this->session_by_models as $class_name) {
-                if (class_exists($class_name)) {
-                    $model = PwSession::getWithKey('app', $class_name);
-                    if (!$model->entity_name) {
-                        $model = DB::model($class_name)->all(true);
-                        $entity_name = $model->entity_name;
-                        //IS_MODEL_SECURE_SESSION: remove important infomations from session.
-                        //but It may not be working properly in model functions!
-                        if (defined('IS_MODEL_SECURE_SESSION') && IS_MODEL_SECURE_SESSION) {
-                            $model->sql = '';
-                            $model->pg_info = '';
-                            $model->pg_info_array = [];
-                            $model->sqls = [];
-                        }
-                        PwSession::setWithKey('app', $class_name, $model);
+        if (!is_array($this->session_by_models)) return;
+        foreach ($this->session_by_models as $class_name) {
+            if (class_exists($class_name)) {
+                $model = PwSession::getWithKey('app', $class_name);
+                if (!$model->entity_name) {
+                    $model = DB::model($class_name)->get(true);
+                    $entity_name = $model->entity_name;
+                    //IS_MODEL_SECURE_SESSION: remove important infomations from session.
+                    //but It may not be working properly in model functions!
+                    if (defined('IS_MODEL_SECURE_SESSION') && IS_MODEL_SECURE_SESSION) {
+                        $model->sql = '';
+                        $model->pg_info = '';
+                        $model->pg_info_array = [];
+                        $model->sqls = [];
                     }
-                    if ($model->entity_name) {
-                        $entity_name = $model->entity_name;
-                        $this->$entity_name = $model;
-                    }
+                    PwSession::setWithKey('app', $class_name, $model);
+                }
+                if ($model->entity_name) {
+                    $entity_name = $model->entity_name;
+                    $this->$entity_name = $model;
                 }
             }
         }
+    }
+
+    /**
+     * reload session by Model
+     *
+     * @return void
+     */
+    function reloadModelSession() {
+        if (!is_array($this->session_by_models)) return;
+        foreach ($this->session_by_models as $class_name) {
+            if (class_exists($class_name)) {
+                PwSession::clearWithKey('app', $class_name);
+            }
+        }
+        $this->loadModelSession();
     }
 
     /**
@@ -1016,7 +1029,7 @@ class Controller extends RuntimeException {
         $model = DB::model($model_name);
         $model->values = PwSession::getWithKey('app', $model->entity_name);
         if (!$model->values) {
-            $model->wheres($conditions)->all(true);
+            $model->wheres($conditions)->get(true);
             PwSession::setWithKey('app', $model->entity_name, $model->values);
         }
         return $model;
@@ -1430,7 +1443,7 @@ class Controller extends RuntimeException {
                 if ($this->session_name) {
                     $this->$session_request_column = PwSession::loadWithKey($this->session_name, $session_request_column, $this->pw_multi_sid);
                 } else {
-                    $this->$session_request_column = PwSession::load($session_request_column, null, $this->pw_multi_sid);
+                    $this->$session_request_column = PwSession::loadWithKey($session_request_column, null, $this->pw_multi_sid);
                 }
                 $this->pw_session_params[$session_request_column] = $this->$session_request_column;
             }

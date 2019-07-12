@@ -185,7 +185,7 @@ class PwMigration {
 
         $old_model = DB::model($class_name)->setDBInfo($old_db_info)->useOldTable();
         if ($conditions) $old_model->wheres($conditions);
-        $old_model->all();
+        $old_model->get();
         if (!$old_model->values) return;
 
         //old DB foreign table
@@ -294,7 +294,7 @@ class PwMigration {
             $pgsql = new PwPgsql($db_info);
             $from_model = $pgsql
                         ->table($model->old_name)
-                        ->all();
+                        ->get();
 
             foreach ($from_model->values as $value) {
                 $id = $value[$model->old_id_column];
@@ -472,7 +472,7 @@ class PwMigration {
      */
     function createMasterTable($model_names) {
         foreach ($model_names as $model_name) {
-            $model = DB::model($model_name)->all();
+            $model = DB::model($model_name)->get();
             if ($model->values) {
                 echo("{$model_name} data exists.").PHP_EOL;
             } else {
@@ -513,7 +513,7 @@ class PwMigration {
             $fk_model = DB::model($fk_class_name)->setDBInfo($this->pgsql->pg_info_array);
             $fk_model->from($fk_model->old_name)
                      ->select($fk_model->old_id_column)
-                     ->all();
+                     ->get();
 
             $values = null;
             foreach ($fk_model->values as $value) {
@@ -547,7 +547,7 @@ class PwMigration {
             $name = PwFile::pluralToSingular($foreign['foreign_table']);
             $fk_class_name = PwFile::phpClassName($name);
             if (class_exists($fk_class_name)) {
-                $fk_model = DB::model($fk_class_name)->all();
+                $fk_model = DB::model($fk_class_name)->get();
                 foreach ($fk_model->values as $fk_value) {
                     if ($fk_value['old_id']) {
                         $old_fk_model = $old_fk_models[$foreign['column']];

@@ -247,7 +247,7 @@ class PwEntity {
     }
 
     /**
-     * reload
+     * post
      * 
      * @param
      * @return PwEntity
@@ -1058,7 +1058,7 @@ class PwEntity {
 
         //TODO join SQL?
         if (class_exists($model_name)) {
-            $model = DB::model($model_name)->all(true);
+            $model = DB::model($model_name)->get(true);
             if (!$model->values) return $this;
             if (!$value_key) $value_key = "{$model->entity_name}_id";
             foreach ($this->values as $index => $value) {
@@ -1300,7 +1300,7 @@ class PwEntity {
      * @return array
      */
     function ids($key_column, $value_column) {
-        return $this->all()->idsForOldId($key_column, $value_column);
+        return $this->get()->idsForOldId($key_column, $value_column);
     }
 
     /**
@@ -1523,20 +1523,16 @@ class PwEntity {
     }
 
     /**
-     * export stream csv
+     * download csv
      *
+     * @param array $options
      * @return void
      */
-    public function streamCsv($file_name)
+    public function downloadCsv($options = null)
     {
         if (!$this->values) return;
-        header("Content-Type: application/octet-stream");
-        header("Content-Disposition: attachment; filename={$file_name}.csv");
-        $fp = fopen('php://output', 'w');
-        foreach ($this->values as $value) {
-            fputcsv($fp, $value, ',', '”');
-        }
-        fclose($fp);
+        $file_name = "{$this->name}.csv";
+        PwCSv::streamDownload($file_name, $this->values, $options);
     }
 
 }

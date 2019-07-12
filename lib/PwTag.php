@@ -20,10 +20,10 @@ class PwTag {
         $url = '';
         if (isset($GLOBALS['controller'])) {
             $controller = $GLOBALS['controller'];
-            if (isset($controller->relative_base)) {
-                $url = $controller->relative_base;
+            if (isset($controller->pw_relative_base)) {
+                $url = $controller->pw_relative_base;
             } else if (is_array($controller)) {
-                $url = $controller['relative_base'];
+                $url = $controller['pw_relative_base'];
             }
         }
         return $url;
@@ -106,7 +106,7 @@ class PwTag {
      */
     static function base() {
         $controller = $GLOBALS['controller'];
-        if (is_null($controller->relative_base)) {
+        if (is_null($controller->pw_relative_base)) {
             return "<base href=\"{$controller->base}\">\n";
         }
     }
@@ -147,12 +147,12 @@ class PwTag {
      * stylesheet controller tag
      * 
      * @param  string $name
-     * @param  array $attributes
      * @param  string $dir_name
+     * @param  array $attributes
      * @param  string $ext
      * @return string
      */
-    static function stylesheet($name, $attributes = null, $stylesheet_dir = null, $ext = 'css') {
+    static function stylesheet($name, $stylesheet_dir = 'stylesheets', $attributes = null, $ext = 'css') {
         if (!$name) return;
         if (!$stylesheet_dir) $stylesheet_dir = PwTag::$stylesheet_dir;
         $attributes['href'] = PwTag::fileUrl($stylesheet_dir, $name, $ext);
@@ -165,12 +165,12 @@ class PwTag {
      * print stylesheet controller tag
      * 
      * @param  string $name
-     * @param  array $attributes
      * @param  string $dir_name
+     * @param  array $attributes
      * @param  string $ext
      * @return string
      */
-    static function stylesheetPrint($name, $attributes = null, $stylesheet_dir = null, $ext = 'css') {
+    static function stylesheetPrint($name, $stylesheet_dir = null, $attributes = null, $ext = 'css') {
         if (!$name) return;
         if (!$stylesheet_dir) $stylesheet_dir = PwTag::$stylesheet_dir;
         $attributes['href'] = PwTag::fileUrl($stylesheet_dir, $name, $ext);

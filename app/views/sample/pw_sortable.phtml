@@ -1,18 +1,9 @@
-<h1>PwSortable.js</h1>
-
-<p class="text-danger">required jQuery jquery.tablednd.js</p>
-<div>
-  <a href="https://github.com/isocra/TableDnD" target="_blank">https://github.com/isocra/TableDnD</a>
-</div>
+<h1>PwTableDND.js</h1>
 
 <h2>Sample</h2>
-<a href="#" class="btn btn-outline-primary pw-lib" pw-lib="PwSortable" pw-action="edit">
-  <?= PwTag::iconTag('sort') ?>Order</a>
-<a href="#" class="btn btn-primary pw-lib pw-sortable-control" pw-lib="PwSortable" pw-controller="<?= $this->name ?>" pw-action='update_sort'
-  style="display: none">
-  <?= PwTag::iconTag('save') ?>Save</a>
-<a href="#" class="btn btn-outline-primary pw-lib pw-sortable-control" pw-lib="PwSortable" pw-action="reset" style="display: none">
-  <?= PwTag::iconTag('times') ?>Reset</a>
+  <a class="pw_table_dnd btn btn-outline-primary" event="click" action="edit">Edit</a>
+  <a class="pw_table_dnd pw-tablednd-menu btn btn-outline-primary" event="click" action="update_sort" style="display: none">Update</a>
+  <a class="pw_table_dnd pw-tablednd-menu btn btn-outline-primary" event="click" action="reset" style="display: none">Close</a>
 
 <table id="sortable-table" class="table">
   <thead>
@@ -45,42 +36,34 @@
 </div>
 
 <h2></h2>
-<h3>(1) import jQuery Library</h3>
+<h3>(1) load PwTableDND.js</h3>
 <div>
   <ul>
-    <li>jquery-1.11.1.min.js</li>
-    <li>jquery-ui.min.js</li>
-    <li>jquery.tablednd.js</li>
-    <li>loadingoverlay.min.js</li>
+    <li>javascripts/lib/PwNode.js</li>
+    <li>javascripts/lib/PwTableDND.js</li>
   </ul>
 </div>
-<h3>(2) import php-work javascript Library</h3>
-<div>
-  <ul>
-    <li>javascripts/lib/PwController.js</li>
-    <li>javascripts/lib/PwSortable.js</li>
-  </ul>
-</div>
-<h3>(3) set params for PwSortable.js</h3>
+<h3>(2) set params for PwTableDND.js</h3>
 <div>
   <pre>
-$(document).ready(function () {
-  var params = {};
-  params.is_use_loading = true; //use loadingoverlay
-  params.table_id = 'sortable-table'; //talbe id (default: sortable-table)
-  params.row_id_column = 'row-id'; //talbe id (default: row-id)
-  params.api_uri = 'https://my-domain/php-work/sample/update_sort'; //API URI
-
-  //callback function
-  params.callback = function(data) {
-    $('#result').html(data);
-  }
-  pw_sortable.set(params);
-});
+      pw_table_dnd = new PwTableDND(
+        {
+          url: '',
+          table_id: 'sortable-table',
+          row_id_column: 'row-id',
+          is_show_up: true,
+          is_show_down: true,
+          drag_label: '[=]',
+          top_label: '[T]',
+          bottom_label: '[B]',
+          is_font_awesome: false
+        }
+      );
+      pw_table_dnd.edit();
   </pre>
 </div>
 
-<h3>(4) Set id on table.(default: sortable-table)</h3>
+<h3>(3) table tag: Set id on table.(default: sortable-table) & tr attribute is 'row-id="number"'</h3>
 <div>
   <pre>
 <?= htmlspecialchars('
@@ -91,36 +74,27 @@ $(document).ready(function () {
       <th>City</th>
     </tr>
   </thead>
+  <tr row-id="1">
+    <td>1</td>
+    <td>Tokyo</td>
+  </tr>
+  <tr row-id="2">
+    <td>2</td>
+    <td>New York</td>
+  </tr>
 </table>
 ')
 ?>
   </pre>
 </div>
 
-<h3>(5) Set row-id on tr tag.(default: row-id) row-id is id for saving DB</h3>
+<h3>(5) As control HTML tag, Write class="pw_table_dnd".</h3>
 <div>
   <pre>
 <?= htmlspecialchars('
-<tr row-id="1">
-  <td>1</td>
-  <td>Tokyo</td>
-</tr>
-<tr row-id="2">
-  <td>2</td>
-  <td>New York</td>
-</tr>
-')
-?>
-  </pre>
-</div>
-
-<h3>(6) Write control tag for PwSortable.js on HTML</h3>
-<div>
-  <pre>
-<?= htmlspecialchars('
-<a href="#" class="btn btn-outline-primary pw-lib" pw-lib="PwSortable" pw-action="edit">Order</a>
-<a href="#" class="btn btn-primary pw-lib pw-sortable-control" pw-lib="PwSortable" pw-controller="sample" pw-action="update_sort" style="display: none">Save</a>
-<a href="#" class="btn btn-outline-primary pw-lib pw-sortable-control" pw-lib="PwSortable" pw-action="reset" style="display: none">Reset</a>
+<a class="pw_table_dnd" event="click" action="edit">Edit</a>
+<a class="pw_table_dnd pw-tablednd-menu" event="click" action="update_sort">Update</a>
+<a class="pw_table_dnd pw-tablednd-menu" event="click" action="reset">Close</a>
 ')
 ?>
   </pre>
@@ -155,11 +129,8 @@ $(document).ready(function () {
 <h2>HTML Source</h2>
 <pre>
 <?= htmlspecialchars('
-<script type="text/javascript" src="../../javascripts/jquery/jquery-1.11.1.min.js"></script>
-<script type="text/javascript" src="../../javascripts/jquery/jquery-ui.min.js"></script>
-<script type="text/javascript" src="../../javascripts/jquery/jquery.tablednd.js"></script>
-<script type="text/javascript" src="../../javascripts/jquery/loadingoverlay.min.js"></script>
 <script type="text/javascript" src="../../javascripts/lib/PwController.js"></script>
+<script type="text/javascript" src="../../javascripts/lib/PwNode.js"></script>
 <script type="text/javascript" src="../../javascripts/lib/PwSortable.js"></script>
 
 <a href="#" class="btn btn-outline-primary pw-lib" pw-lib="PwSortable" pw-action="edit"><i class="fa fa-sort"></i>Order</a>
@@ -197,26 +168,35 @@ $(document).ready(function () {
 
 <h2>JavaScript Source</h2>
 <pre>
-$(document).ready(function () {
-  var params = {};
-  params.table_id = 'sortable-table';
-  params.api_uri = 'https://my-domain/php-work/sample/update_sort';
-  params.callback = function(data) {
-    $('#result').html(data);
-  }
-  pw_sortable.set(params);
-});
+  pw_table_dnd = new PwTableDND(
+    {
+      url: '',
+      table_id: 'sortable-table',
+      row_id_column: 'row-id',
+      is_show_up: true,
+      is_show_down: true,
+      drag_label: '[=]',
+      top_label: '[T]',
+      bottom_label: '[B]',
+      is_font_awesome: false
+    }
+  );
+  pw_table_dnd.edit();
 </pre>
 
 <script>
-$(document).ready(function () {
-  var params = {};
-  params.is_use_loading = true;
-  params.table_id = 'sortable-table';
-  params.api_uri = 'https://debian9/php-work/sample/update_sort';
-  params.callback = function (data) {
-    $('#result').html(data);
-  }
-  pw_sortable.set(params);
-});
+  pw_table_dnd = new PwTableDND(
+    {
+      url: '',
+      table_id: 'sortable-table',
+      row_id_column: 'row-id',
+      is_show_up: true,
+      is_show_down: true,
+      drag_label: '[=]',
+      top_label: '[T]',
+      bottom_label: '[B]',
+      is_font_awesome: false
+    }
+  );
+  pw_table_dnd.edit();
 </script>

@@ -32,6 +32,11 @@ class RootController extends AppController {
         $this->debug_traces = debug_backtrace(true);
     }
 
+    /**
+     * defined
+     *
+     * @return void
+     */
     function defined() {
         $defined_constants = get_defined_constants(true);
         $this->defined_constants = $defined_constants['user'];
