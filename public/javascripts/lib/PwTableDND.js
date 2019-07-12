@@ -179,7 +179,6 @@ function PwTableDND(options) {
     }
     this.update_sort = function() {
         if (!_this.sort_orders) return;
-        console.log(_this.sort_orders);
         let json = JSON.stringify(_this.getOrders());
         if (typeof pw_app === "undefined") {
             if (!_this.url) {
