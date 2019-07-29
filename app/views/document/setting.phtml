@@ -1,0 +1,212 @@
+<? include('menu.phtml') ?>
+
+<h1 class="h1">Setting</h1>
+<h1 class="h1">起動時必要項目</h1>
+<table class="table">
+  <tr>
+    <th>Dispatcher</th>
+    <td>public/dispatch.php</td>
+    <td></td>
+    <td>
+      <ul>
+        <li>.htaccess で Apache mod_rewrite の設定が必要</li>
+        <li>public/ をWebRootにする設定</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>WebRoot設定用 .htaccess</th>
+    <td>.htaccess</td>
+    <td></td>
+    <td>
+      <ul>
+        <li>.htaccess で Apache mod_rewrite の設定が必要</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>Dispather用 .htaccess</th>
+    <td>public/.htaccess</td>
+    <td></td>
+    <td>
+      <ul>
+        <li>Index処理の設定</li>
+        <li>本システムでは,index.html, index.php dispatch.php の優先順位で初期起動</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>Base Dir</th>
+    <td>BASE_DIR</td>
+    <td><?= BASE_DIR ?></td>
+    <td>
+      <ul>
+        <li>dispatch.php 起動後に自動設定</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>hostname</th>
+    <td>PwSetting::hostname()</td>
+    <td><?= PwSetting::hostname() ?></td>
+    <td>
+      <ul>
+        <li>基本的にこの関数を利用することはない</li>
+        <li>Linuxコマンド hostname() を実行</li>
+        <li>dispatch.php 起動後に自動読み込み</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>setting file</th>
+    <td>PwSetting::hostSettingFilePath()</td>
+    <td><?= PwSetting::hostSettingFilePath() ?></td>
+    <td>
+      <ul>
+        <li>基本的にこの関数を利用することはない</li>
+        <li>サーバ毎の設定ファイル*必須</li>
+        <li>Linux hostname() 動作環境必須</li>
+        <li>dispatch.php 起動後に自動読み込み</li>
+        <li>明示的に <?= BASE_DIR ?>HOSTNAME ファイルにホスト名を記述して利用することも可能</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>project name</th>
+    <td>$this->pw_project_name</td>
+    <td><?= $this->pw_project_name ?></td>
+    <td>
+      <ul>
+        <li>http://WebRoot/プロジェクト名/ の形式時</li>
+        <li>dispatch.php 起動後に自動取得</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
+<h2 class="h2">.htaccess</h2>
+<pre class="line-numbers">
+  <code class="language-shell">
+  Options -MultiViews
+  <IfModule mod_rewrite.c>
+      RewriteEngine on
+      RewriteRule (.*) public/$1 [L]
+  </IfModule>
+  </code>
+</pre>
+
+<h2 class="h2">public/.htaccess</h2>
+<pre class="line-numbers">
+  <code class="language-shell">
+  DirectoryIndex index.html index.php dispatch.php
+  <IfModule mod_rewrite.c>
+      RewriteEngine On
+      RewriteCond %{HTTPS} off
+      RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [R,L]
+  </IfModule>
+
+  ### rerwite
+  <IfModule mod_rewrite.c>
+      RewriteEngine On
+      RewriteCond %{REQUEST_FILENAME} !-d
+      RewriteCond %{REQUEST_FILENAME} !-f
+      RewriteRule ^(.*)$ dispatch.php?$1 [QSA,L]
+  </IfModule>
+  </code>
+</pre>
+
+<h3 class="h3">アプリケーション設定（ホスト毎）: app/settings/{hostname}.php</h3>
+<pre class="line-numbers">
+  <code class="language-php">
+      #ini_set('memory_limit', -1);
+      ini_set('memory_limit', '4096M');
+      ini_set('max_execution_time', 0);
+      ini_set('session.gc_probability', 1);
+      ini_set('session.gc_divisor', 1);
+      ini_set('session.gc_maxlifetime', 86400);
+      
+      error_reporting(E_ALL & ~E_NOTICE);                       //推奨
+      
+      define('LOG_DIR', BASE_DIR.'log/');                       //フレームワーク用ログディレクトリ
+      
+      ini_set('error_log', LOG_DIR.date('Ymd').'.log');         //PHP標準ログファイル
+      ini_set('display_errors', false);
+      ini_set('log_errors', true);
+      
+      define('TMP_DIR', BASE_DIR . 'tmp/');                     //テンポラリーディレクトリ
+      define('DB_DIR', BASE_DIR.'db/');                         //dbディレクトリ(csv, sqlなど格納)
+      
+      define('DEBUG', true);                                    //プログラム用デバッグルフラグ
+      define('SQL_LOG', true);                                  //PwPgsql.php 用のSQLログ出力
+      
+      define('MAIL_SETTING_FILE', DB_DIR.'mail/default.csv');   //プログラム用メール設定ファイルパス
+      
+      //pw admin
+      define('PW_ADMIN_LOGIN_NAME', 'admin');                   //フレームワーク用　Admin ID
+      //hash password is display, script/echo_hashpassword.php
+      define('PW_ADMIN_PASSWORD', '$2y$12$jmSJpEMfktwHwzwUsFvO7.vQEjladXMXrA/kV4OYOAAjzskJ1sTq6');    //フレームワーク用　Admin パスワード *password_hash() 利用
+      
+      //shell
+      define('COMAND_PHP_PATH', '/usr/bin/php');                      //PHPコマンド用パス
+  </code>
+</pre>
+
+<h3 class="h3">PostgreSQL設定: app/settings/pgsql/{hostname}.php</h3>
+<pre class="line-numbers">
+  <code class="language-php">
+      //基本DB設定
+      define('DB_NAME', 'sample');
+      define('DB_HOST', 'sample.com');
+      define('DB_USER', 'postgres');
+      define('DB_PORT', '5432');
+      
+      //カスタムDB設定
+      define('DB_CUSTOM_NAME', 'custom');
+      define('DB_CUSTOM_HOST', 'custom.com');
+      define('DB_CUSTOM_USER', 'postgres');
+      define('DB_CUSTOM_PORT', '5432');
+  </code>
+</pre>
+
+<h3 class="h3">アプリケーション設定: app/application_setting.php</h3>
+<pre class="line-numbers">
+  <code class="language-php">
+      define('APP_NAME', 'Sample');                 //application name *必須: $_SESSION[APP_NAME] を利用
+      define('HTML_TITLE', 'Sample Project');       //HTMLタイトル
+      define('VERSION', '0.1.0');                   //バージョン
+      define('APP_MEMORY_LIMIT', 2000);             //Controller::isMemoryFlow() 用メモリ制限
+      define('LOCALE', 'ja');                       //デフォルトロケール
+      define('IS_USE_PW_SID', true);                //マルチセッション
+      define('IS_MODEL_SECURE_SESSION', false);     //ModelのDB情報隠蔽化
+      
+      define('EXT_PHP', '.php');                    //PHP拡張子
+      define('EXT_HTML', '.html');                  //HTML拡張子
+      define('EXT_TEMPLATE', '.phtml');             //viewファイル拡張子
+  </code>
+</pre>
+
+<h3 class="h3">アプリケーション設定: app/application_db_setting.php</h3></code></code>
+app/settings/pgsql/{hostname}.php 設定の配列化
+<pre class="line-numbers">
+  <code class="language-php">
+      define('DB_INFO',
+          [
+            'dbname' => DB_NAME,
+            'host' => DB_HOST,
+            'user' => DB_USER,
+            'port' => DB_PORT,
+            'password' => DB_PASS
+          ]
+      );
+
+      define('DB_CUSTOM_INFO',
+          [
+            'dbname' => DB_CUSTOM_NAME,
+            'host' => DB_CUSTOM_HOST,
+            'user' => DB_CUSTOM_USER,
+            'port' => DB_CUSTOM_PORT,
+            'password' => DB_CUSTOM_PASSWORD
+          ]
+      );
+</code>
+</pre>

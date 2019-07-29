@@ -1,0 +1,90 @@
+<? include('menu.phtml') ?>
+
+<h1 class="h1">Model</h1>
+<table class="table">
+  <tr>
+    <td>(array) fetchRow($sql)</td>
+    <td>行を連想配列として取得</td>
+    <td>
+      <ul>
+        <li>Model定義に従いバインド</li>
+        <li>SQL直接入力のため、SQLインジェクション処理は行わない</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>(array) fetchRows($sql)</td>
+    <td>取得されたすべての行を配列として取得</td>
+    <td>
+      <ul>
+        <li>Model定義に従いバインド</li>
+        <li>SQL直接入力のため、SQLインジェクション処理は行わない</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>(resource) query($sql)</td>
+    <td>SQLを実行</td>
+    <td>
+      <ul>
+        <li>SQL直接入力のため、SQLインジェクション処理は行わない</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+<h2 class="h2">SELECT</h2>
+PHP
+<pre class="line-numbers">
+  <code class="language-php">
+      //SELECT * FROM users WHERE id = 1;
+      $this->user = new User();
+      $this->user->value = $this->user->fetchRow('SELECT * FROM users WHERE id = 1');
+
+      $this->item = new Item();
+      $this->item->values = $this->item->fetchRows("SELECT * FROM items WHERE user_id = '{$this->user->value['id']}' LIMIT 10");
+
+      //SQL実行のみ
+      //SELECT * FROM rainfall_areas LIMIT 1;
+      $this->rainfall_area = new RainfallArea();
+      $this->user->query('SELECT * FROM rainfall_areas LIMIT 1'); //SQL直接入力のため、SQLインジェクション処理は行わない
+  </code>
+</pre>
+
+<?= $this->user->sql ?>
+<table class="table">
+  <tr>
+    <th>code</th>
+    <th>name</th>
+    <th>is_active</th>
+  </tr>
+  <tr>
+    <td><?= $this->user->value['code'] ?></td>
+    <td><?= $this->user->value['name'] ?></td>
+    <td><?= $this->user->value['is_active'] ?></td>
+  </tr>
+</table>
+
+<?= $this->item->sql ?>
+<? if ($this->item->values): ?>
+<table class="table">
+  <tr>
+    <th>id</th>
+    <th>code</th>
+    <th>name</th>
+    <th>is_opened</th>
+    <th>is_active</th>
+  </tr>
+  <? foreach ($this->item->values as $value): ?>
+  <tr>
+    <td><?= $value['id'] ?></td>
+    <td><?= $value['code'] ?></td>
+    <td><?= $value['name'] ?></td>
+    <td><?= $value['is_opened'] ?></td>
+    <td><?= $value['is_active'] ?></td>
+  </tr>
+  <? endforeach ?>
+</table>
+<? endif ?>
+
+<h2 class="h2">Instrument SQL</h2>
+<?= $this->instrument->sql ?>

@@ -1,0 +1,270 @@
+<? include('menu.phtml') ?>
+
+<h1 class="h1">ItemController</h1>
+
+<h2 class="h2">before_action</h2>
+<pre class="line-numbers">
+  <code class="language-php">
+    //before
+    function before_action($action) {
+        parent::before_action($action);
+
+        //ユーザ($this->user)の取得チェック
+        //UserController->checkUser()
+        $this->checkUser();
+    }
+
+    //after
+    function before_action($action) {
+        parent::before_action($action);
+
+        //$_GET['user_id'] から users SQL取得 もしくは user セッション取得
+        $this->user = $this->model('User');
+
+        //$this->user->value がなければ user/index にリダイレクト
+        if (!$this->user->value['id']) {
+            $this->redirectTo(['controller' => 'user']);
+        }
+    }
+
+    //after 2
+    function before_action($action) {
+        parent::before_action($action);
+
+        //$_REQUEST['user_id'] から users SQL取得 もしくは user セッション取得
+        if (isset($_REQUEST['user_id'])) {
+            $user = new User();
+            //SELECT * FROM items WHERE id = $_REQUEST['user_id'];
+            $user->fetch($_REQUEST['user_id']);
+
+            //user セッション登録
+            $_SESSION[APP_NAME][0]['user'] = $user;
+        }
+        //user セッション取得
+        $user = $_SESSION[APP_NAME][0]['user'];
+
+        if (!$this->user->value['id']) {
+            $this->redirectTo(['controller' => 'user']);
+        }
+    }
+  </code>
+</pre>
+
+<h2 class="h2">index</h2>
+<pre class="line-numbers">
+  <code class="language-php">
+      public $session_request_columns = ['item_group_id', 'interval', 'average_type'];
+
+      //before
+      function index() {
+          $this->clearSessions();
+          $this->clearModel('User');
+          $this->redirectTo(['action' => 'list']);
+      }
+
+      //after
+      function index() {
+          //Controller名 セッション削除
+          unset($_SESSION[APP_NAME][0][$this->session_name]); // $this->session_name = 'item_controller';
+
+          //$_POST のセッション削除
+          unset($_SESSION[APP_NAME][0]['pw_posts']);
+
+          //$this->session_request_columns で設定されたセッション削除
+          if ($this->session_request_columns) {
+              foreach ($this->session_request_columns as $session_request_column) {
+                  unset($_SESSION[APP_NAME][0][$session_request_column]);
+                  unset($this->$session_request_column);
+              }
+          }
+          
+
+          //モデルセッション削除
+          unset($_SESSION[APP_NAME][0]['user']);
+          unset($_SESSION[APP_NAME][0]['item_group']);
+
+          //list() にリダイレクト
+          $this->redirectTo(['action' => 'list']);
+      }
+  </code>
+</pre>
+
+
+<h2 class="h2">list</h2>
+<pre class="line-numbers">
+  <code class="language-php">
+      function action_list() {
+          //$this->item_group_id があれば item_groups 取得
+          if ($this->item_group_id) {
+              $this->item_group = DB::model('ItemGroup')->fetch($this->item_group_id);
+              $item_ids = $this->item_group->itemIds();
+          }
+
+          //ユーザから items の関連レコード取得
+          //WHERE user_id = $this->user->value['id']
+          $this->item = $this->user->relation('user');
+
+          //WHERE id in (....)
+          if ($item_ids) $this->item->whereIn('id', $item_ids);
+
+          //WHERE interval = '$this->interval'
+          if ($this->interval > 0) $this->item->where('interval', $this->interval);
+
+          //WHERE average_type = '$this->average_type'
+          if ($this->average_type) $this->item->where('average_type', $this->average_type);
+
+          //SELECT * FROM items WHERE ....;
+          $this->item->get();
+      }
+  </code>
+</pre>
+
+<h2 class="h2">new</h2>
+<pre class="line-numbers">
+  <code class="language-php">
+      //before
+      function action_new() {
+          $this->item = DB::model('user')->newPage();
+      }
+
+      //after
+      function action_new() {
+          $this->item = new Item();
+
+          //初期化 & $this->item->value にデフォルト値バインド
+          $this->item->init();
+
+          //$this->pw_posts['user'] = 前回の $_POST['user'] があれば $this->item->value にデータバインド
+          $this->item->takeValues($this->pw_posts['user']);
+      }
+  </code>
+</pre>
+
+<h2 class="h2">add</h2>
+<pre class="line-numbers">
+  <code class="language-php">
+      //before
+      function action_add() {
+            $this->pw_posts['user']['user_id'] = $this->user->value['id'];
+            $item = $this->insertByModel('User');
+            $this->redirectForAdd($item);
+      }
+
+      //after
+      function action_add() {
+          $item = new Item();
+
+          //更新データの任意設定
+          //input type="hidden" で $_POST['user_id'] に設定しておけば省略可能
+          $this->pw_posts['user']['user_id'] = $this->user->value['id'];
+
+          //初期化 & $this->item->value にデフォルト値バインド
+          $item->init();
+
+          //INSERT INTO items VALUES ...;
+          $item->insert($this->pw_posts);
+
+          //insert() 成功時 $_POST のセッションクリア
+          if (!$item->errors) {
+              unset($_SESSION[APP_NAME][0]['pw_posts']);
+
+              //sort_order を id で更新
+              //UPDATE items SET sort_order = id WHERE id = $item->value['id'];
+              $item->initSort();
+          }
+
+          //リダイレクト
+          if ($item->errors) {
+              //エラー時
+              $this->addErrorByModel($item); //モデルエラーセッション登録
+              $this->redirectTo(['action' => 'new']);
+          } else {
+              //成功時
+              $this->redirectTo(['action' => 'list']);
+          };
+      }
+  </code>
+</pre>
+
+
+<h2 class="h2">edit</h2>
+<pre class="line-numbers">
+  <code class="language-php">
+      //before
+      function action_edit() {
+          $this->item = DB::model('user')->editPage();
+      }
+
+      //after
+      function action_edit() {
+          $this->item = new Item();
+
+          //SELECT * FROM items WHERE id = $this->pw_gets['id'];
+          //$this->item->value にデータバインド
+          $this->item->fetch($this->pw_gets['id']);
+
+          //$this->pw_posts['user'] = 前回の $_POST['user'] があれば $this->item->value にデータバインド
+          $this->item->takeValues($this->pw_posts['user']);
+      }
+  </code>
+</pre>
+
+<h2 class="h2">update</h2>
+<pre class="line-numbers">
+  <code class="language-php">
+      //before
+      function action_update() {
+          $this->redirectForUpdate($this->updateByModel('user'));
+      }
+
+      //after
+      function action_update() {
+          $item = new Item();
+
+          //UPDATE items SET .... WHERE id = $this->pw_gets['id'];
+          $item->fetch($this->pw_gets['id']);
+          $item->update($this->pw_posts['user'], $this->pw_gets['id']);
+
+          //update() 成功時 $_POST のセッションクリア
+          if (!$item->errors) unset($_SESSION[APP_NAME][0]['pw_posts']);
+
+          //リダイレクト
+          if ($item->errors) {
+              //エラー時
+              $this->addErrorByModel($item); //モデルエラーセッション登録
+              $this->redirectTo(['action' => 'edit', 'id' => $this->pw_gets['id']]);
+          } else {
+              //成功時
+              $this->redirectTo(['action' => 'edit', 'id' => $this->pw_gets['id']]);
+          }
+      }
+  </code>
+</pre>
+
+<h2 class="h2">delete</h2>
+<pre class="line-numbers">
+  <code class="language-php">
+
+      //before
+      function action_delete() {
+          $this->redirectForDelete($this->deleteByModel('user'));
+      }
+      
+      //after
+      function action_delete() {
+          $this->item = new Item();
+
+          //DELETE FROM items WHERE id = $this->pw_gets['id'];
+          $this->item->delete($this->pw_gets['id']);
+
+          //リダイレクト
+          if ($this->item->errors) {
+              //エラー時
+              $this->redirectTo(['action' => 'edit', 'id' => $this->pw_gets['id']]);
+          } else {
+              //成功時
+              $this->redirectTo(['action' => 'list']);
+          }
+      }
+  </code>
+</pre>

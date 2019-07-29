@@ -1,0 +1,418 @@
+<? include('menu.phtml') ?>
+
+<h1 class="h1">Controller</h1>
+<div>
+  URL取得した controller に基づいて Controllerクラスを起動
+</div>
+<pre class="line-numbers">
+  <code class="language-php">
+      require_once 'AuthController.php';
+      
+      //https://hostname/sample/ex_controller/3 -> SampleController 起動
+      class SampleController extends AuthController
+      {
+            //Viewディレクトリ: app/views/sample/
+            public $name = 'sample';     
+      
+            //Layoutファイル: app/views/layouts/sample.phtml
+            public $layout = 'sample';
+      
+            //事前処理
+            function before_action($action)
+            {
+                //AuthController::before_action() を実行
+                parent::before_action($action);
+            }
+        
+            //action = index or action未指定
+            function index()
+            {
+                //app/views/sample/index.phtml を render
+
+                //明示的に Viewファイルを指定する場合
+                //1) $this->render('index');
+                //2) $this->render('', 'views/sample/index.phtml');
+            }
+      
+            //action = ex_controller
+            function ex_controller()
+            {
+                //コントローラーのインスタンスは view で使用できる。
+                $this->test_value = 'hoge';
+
+                //app/views/sample/ex_controller.phtml を render
+            }
+      
+      }
+  </code>
+</pre>
+
+<h2>Controllerファイル概要</h2>
+<table class="table">
+  <tr>
+    <th>URL</th>
+    <td>https://hostname/sample/ex_controller/3</td>
+    <td></td>
+  </tr>
+  <tr>
+    <th>継承</th>
+    <td colspan="2">SampleController < AuthController < AppController < Controller</td> </tr> <tr>
+    <th>Lib コントローラークラス</th>
+    <td>lib/Controller.php</td>
+    <td></td>
+  </tr>
+  <tr>
+    <th>アプリケーションコントローラー</th>
+    <td>app/controllers/AppController.php</td>
+    <td>
+      <ul>
+        <li>原則 AppController 継承が必要</li>
+        <li>AppController では全ての アクションを呼び出される *override の場合は実行されない</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>Staff認証クラス</th>
+    <td>app/controllers/AuthController.php</td>
+    <td>
+      <ul>
+        <li>AuthController 継承することで Staff 認証をチェック</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>Controller Name</th>
+    <td>public $name = 'sample'</td>
+    <td>
+      <ul>
+        <li>Controllerルーティング *必須</li>
+        <li>Viewディレクトリ: app/views/sample/</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>Layout</th>
+    <td>public $layout = 'sample'</td>
+    <td>
+      <ul>
+        <li>app/views/layouts/sample.phtml</li>
+        <li>アクションView表示のために $this->content_for_layout の記述が必要 *Laravel の yield に類似だが事前にHTMLは作成されている</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>アクション（クラスメソッド）</th>
+    <td>
+      function {アクション名}()
+      <br>
+      OR
+      <br>
+      function action_{アクション名}()
+    </td>
+    <td>
+      <ul>
+        <li>URLアクションに基づいてクラスメソッドが実行</li>
+        <li>アクション未設定の場合、action=index で index() を実行</li>
+        <li>クラスメソッド実行後、関数名に対応した viewファイル(アクション名.phtml)を表示 *初期動作</li>
+        <li>index(): app/views/sample/index.phtml</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>RootController</th>
+    <td>
+      app/controllers/RootController.php
+    </td>
+    <td>
+      <ul>
+        <li>Webルート</li>
+        <li>URLに controller がない場合、RootController が起動</li>
+        <li>ex) <?= $this->base ?></li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
+<h2>主要パラメーター</h2>
+<table class="table">
+  <tr>
+    <th>Base Dir</th>
+    <td>BASE_DIR</td>
+    <td><?= BASE_DIR ?></td>
+    <td>
+      <ul>
+        <li>dispatch.php 起動後に自動設定</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>setting file</th>
+    <td>PwSetting::hostSettingFilePath()</td>
+    <td><?= PwSetting::hostSettingFilePath() ?></td>
+    <td>
+      <ul>
+        <li>サーバ毎の設定ファイル</li>
+        <li>Linuxコマンド hostname() を実行して設定ファイル判別</li>
+        <li>dispatch.php 起動後に自動読み込み</li>
+        <li>基本的にこの関数を利用することはない</li>
+        <li>明示的に HOSTNAME ファイルを設定して利用することも可能</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>Base URL</th>
+    <td>$this->base</td>
+    <td><?= $this->base ?></td>
+    <td>
+      <ul>
+        <li>絶対パスを利用したい場合に利用</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>Controller</th>
+    <td>$this->name</td>
+    <td><?= $this->name ?></td>
+    <td>
+      <ul>
+        <li>Controller に明示的に指定した値</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th></th>
+    <td>$this->pw_controller</td>
+    <td><?= $this->pw_controller ?></td>
+    <td>
+      <ul>
+        <li>controller/action/id の controller</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>Action</th>
+    <td>$this->pw_action</td>
+    <td><?= $this->pw_action ?></td>
+    <td>
+      <ul>
+        <li>controller/action/id の action</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>ID</th>
+    <td>$this->pw_id</td>
+    <td><?= $this->pw_id ?></td>
+    <td>
+      <ul>
+        <li>controller/action/id の id</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>メソッド名</th>
+    <td>$this->pw_method</td>
+    <td><?= $this->pw_method ?></td>
+    <td>
+    </td>
+  </tr>
+  <tr>
+    <th></th>
+    <td>$this->pw_gets['id']</td>
+    <td><?= $this->pw_gets['id'] ?></td>
+    <td>
+      <ul>
+        <li>controller/action/id の id</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>インスタンス</th>
+    <td>$this->test_value</td>
+    <td><?= $this->test_value ?></td>
+    <td>
+      <ul>
+        <li>Controller->action() 内で生成されたインスタンスは view(xxxx.phtml) 内で利用可能</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>layout path</th>
+    <td>$this->pw_layout_file</td>
+    <td><?= $this->pw_layout_file ?></td>
+    <td></td>
+  </tr>
+  <tr>
+    <th>view template path</th>
+    <td>$this->pw_template</td>
+    <td><?= $this->pw_template ?></td>
+    <td></td>
+  </tr>
+  <tr>
+    <th>相対パス</th>
+    <td>$this->pw_relative_base</td>
+    <td><?= $this->pw_relative_base ?></td>
+    <td>
+      <ul>
+        <li>viewからURLリンク時に利用</li>
+        <li>現状、ライブラリ関数を利用しているので利用することはほぼないが、直接 HTMLタグ記述する場合に利用</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>カスタム view ディレクトリ</th>
+    <td>$this->view_dir</td>
+    <td><?= $this->view_dir ?></td>
+    <td>
+      <ul>
+        <li>レンダー前に $this->view_dir 指定で、そのディレクトリ名を参照</li>
+        <li>ex) $this->view_dir = 'custom' : views/custom/xxxx.phtml</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>http host</th>
+    <td>$this->pw_http_host</td>
+    <td><?= $this->pw_http_host ?></td>
+    <td>
+    </td>
+  </tr>
+  <tr>
+    <th>http protocol</th>
+    <td>$this->pw_http_protocol</td>
+    <td><?= $this->pw_http_protocol ?></td>
+    <td>
+    </td>
+  </tr>
+  <tr>
+    <th>session name</th>
+    <td>$this->session_name</td>
+    <td><?= $this->session_name ?></td>
+    <td>
+      <ul>
+        <li>現コントローラー用セッション名</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>lang</th>
+    <td>$this->lang</td>
+    <td><?= $this->lang ?></td>
+    <td>
+    </td>
+  </tr>
+</table>
+
+<h2>主要関数</h2>
+<h3 class="h3">before_action($action)</h3>
+<ul>
+  <li>コントローラー内で、最初に実行される</li>
+  <li>__construct とは異なる</li>
+</ul>
+<pre class="line-numbers">
+    <code class="language-php">
+    function before_action($action)
+    {
+        //AuthController::before_action() を実行
+        parent::before_action($action);
+    }
+    </code>
+</pre>
+
+<h3 class="h3">リダイレクト: $this->redirectTo($params, $http_params)</h3>
+<pre class="line-numbers">
+  <code class="language-php">$this->redirectTo(['controller' => コントローラー, 'action' => アクション, 'id' => ID], $http_params = null)</code>
+</pre>
+<pre class="line-numbers">
+  <code class="language-php">
+    //SampleController の index() にアクセス
+    $this->redirectTo(['controller' => 'sample']);
+
+    //SampleController の list() にアクセス
+    //$_GET['user_id'] = 1
+    $this->redirectTo(['controller' => 'sample', 'action' => 'list'], ['user_id' => 1]);
+
+    //現コントローラーの index() にアクセス
+    $this->redirectTo();
+  </code>
+</pre>
+
+<h3 class="h3">URLパス</h3>
+<pre class="line-numbers">
+        <code class="language-php">$this->urlFor(['controller' => コントローラー, 'action' => アクション, 'id' => ID], (array) $http_params)</code>
+      </pre>
+<div>
+  ex) <?= $this->urlFor(['controller' => 'item_displace_type', 'action' => 'list'], ['item_id' => 10]); ?>
+  <pre class="line-numbers">
+    <code class="language-php">
+      //controller: item_displace_type
+      //action: list
+      //id: 未設定
+      //http_params: item_id = 10
+      $this->urlFor(['controller' => 'item_displace_type', 'action' => 'list'], ['item_id' => 10]);
+    </code>
+  </pre>
+</div>
+<div>
+  ex) <?= $this->urlFor(['action' => 'edit', 'id' => 3], ['item_id' => 10]); ?>
+  <pre class="line-numbers">
+    <code class="language-php">
+      //controller: 未設定
+      //action: edit
+      //id: 3
+      //http_params: item_id = 10
+      $this->urlFor(['action' => 'edit', 'id' => 3], ['item_id' => 10]);
+    </code>
+  </pre>
+</div>
+<div>
+  ex) <?= $this->urlFor(['action' => 'index']); ?>
+  <pre class="line-numbers">
+    <code class="language-php">
+      //action = index
+      $this->urlFor(['action' => 'index']);
+    </code>
+  </pre>
+  <br>
+</div>
+<div>
+  ex) <?= $this->urlFor(['controller' => 'user']); ?>
+  <pre class="line-numbers">
+    <code class="language-php">
+      //action 未設定
+      $this->urlFor(['controller' => 'user']);
+    </code>
+  </pre>
+  <br>
+  *action=indexは省略される
+</div>
+
+<div>
+  ex) <?= $this->urlFor(''); ?>
+  <pre class="line-numbers">
+    <code class="language-php">
+      //WebRootアクセス
+      $this->urlFor('');
+    </code>
+  </pre>
+</div>
+
+<div>
+  ex) <?= $this->urlFor(['controller' => 'root']); ?>
+  <pre class="line-numbers">
+    <code class="language-php">
+      //WebRootアクセス
+      $this->urlFor(['controller' => 'root']);
+    </code>
+  </pre>
+</div>
+
+<h3 class="h3">Image URL</h3>
+<div>
+  ex) <?= $this->image('signal_1.png'); ?>
+  <pre class="line-numbers">
+    <code class="language-php">
+      $this->image('signal_1.png');
+    </code>
+  </pre>
+</div>

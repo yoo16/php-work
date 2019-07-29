@@ -4,6 +4,8 @@
   <? include('components/stylesheet.phtml') ?>
   <? include('components/javascript.phtml') ?>
   <?= PwTag::stylesheet('fontawesome/fontawesome-all.min') ?>
+  <?=PwTag::stylesheet('prism') ?>
+  <?=PwTag::javascript('prism') ?>
 </head>
 <body>
 
@@ -14,10 +16,8 @@
       </div>
       <nav class="nav nav-pills flex-column flex-sm-row">
         <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlFor(['action' => 'index']) ?>">Index</a>
-        <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlFor(['action' => 'controller_ex']) ?>">Controller</a>
-        <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlFor(['action' => 'model_ex']) ?>">PwEntity(Model)</a>
-        <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlFor(['action' => 'form_ex']) ?>">PwForm</a>
-        <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlFor(['action' => 'pw_sortable']) ?>">Sortable</a>
+        <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlFor(['action' => 'ex_controller']) ?>">Controller</a>
+        <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlFor(['action' => 'ex_model']) ?>">PwEntity(Model)</a>
       </nav>
     </div>
   </div>

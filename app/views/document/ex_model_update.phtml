@@ -1,0 +1,120 @@
+<? include('menu.phtml') ?>
+
+<h1 class="h1">Model</h1>
+<h2 class="h2">主要Method</h2>
+<table class="table">
+  <tr>
+    <td>insert($values)</td>
+    <td>INSERT処理</td>
+    <td>
+      <ul>
+        <li>Model定義に従いバインド</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>update($values, $id = null)</td>
+    <td>UPDATE処理（１行）</td>
+    <td>
+      <ul>
+        <li>idがバインド済みの場合は、引数 id 省略可能</li>
+        <li>Model定義に従いバインド</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>delete($id = null)</td>
+    <td>DELETE処理（１行）</td>
+    <td>
+      <ul>
+        <li>idがバインド済みの場合は、引数 id 省略可能</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>inserts($rows)</td>
+    <td>INSERT処理（複数行）</td>
+    <td>
+      <ul>
+        <li>Model定義に従いバインド</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>updates($rows)</td>
+    <td>UPDATE処理（複数行）</td>
+    <td>
+      <ul>
+        <li>Model定義に従いバインド</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>deletes()</td>
+    <td>DELETE処理（複数行）</td>
+    <td>
+    </td>
+  </tr>
+  <tr>
+    <td>upsert($values)</td>
+    <td>INSERT & UPDATE処理（1行）</td>
+    <td>
+      <ul>
+        <li>PostgreSQL 9.5 ></li>
+        <li>upsert_constraint に UPSERT 用の PostgreSQL制約名の設定が必要</li>
+        <li>Model定義に従いバインド</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+<h2 class="h2">INSERT</h2>
+PHP
+<pre class="line-numbers">
+  <code class="language-php">
+      //INERT INTO users (...) WHERE id = 3;
+      $this->user = new User();
+      $this->user->insert($_POST['user']);
+      
+      //別記述
+      //$this->user->insert($this->pw_posts['user']);
+      //$this->user = DB::model('User')->insert($_POST['user']);
+
+      //リダイレクト
+      $this->redirectTo(['controller' => 'user', 'action' => 'index']);
+  </code>
+</pre>
+
+HTML
+<pre class="line-numbers">
+  <code class="language-html">
+    &ltform action="https://hostname/user/add" method="post"&gt;
+      &ltinput type="text" name="user[name]" value="ユーザ名" &gt;
+    &ltform&gt;
+  </code>
+</pre>
+
+<h2 class="h2">UPDATE</h2>
+PHP
+<pre class="line-numbers">
+  <code class="language-php">
+      //UPDATE users SET ... WHERE id = 3;
+      $this->user = new User();
+      $this->user->update($_POST['user'], $this->pw_gets['id']);
+      
+      //別記述
+      //$this->user->update($this->pw_posts['user'], $this->pw_gets['id']);
+      //$this->user = DB::model('User')->update($_POST['user'], $this->pw_gets['id']);
+
+      //リダイレクト
+      $this->redirectTo(['controller' => 'user', 'action' => 'edit', 'id' => $this->user->value['id']]);
+  </code>
+</pre>
+
+HTML
+<pre class="line-numbers">
+  <code class="language-html">
+    &ltform action="https://hostname/user/update/3" method="post"&gt;
+      &ltinput type="text" name="user[name]" value="ユーザ名" &gt;
+    &ltform&gt;
+  </code>
+</pre>

@@ -1,0 +1,135 @@
+<? include('menu.phtml') ?>
+<h2 class="h2">$this->model('モデル名')</h2>
+<div>
+  <ul>
+    <li>URLパラメータ検出で Modelデータを取得＆セッション保持</li>
+    <li>これを利用しなくても、URLパラメータから モデル取得や $_SESSION 管理すれば良い</li>
+  </ul>
+</div>
+<pre class="line-numbers">
+  <code class="language-php">
+      function ex_model_session()
+      {
+          $this->rainfall_area = $this->model('RainfallArea');
+          //$_GET['rainfall_area_id'] を検出すると SQL実行 & Modelクラスをセッション登録
+          //SELECT * FROM rainfall_areas WHERE id = 1;
+          //セッション: $_SESSION[APP_NAME][0]['rainfall_area']
+          //以後、$_GET['rainfall_area_id'] がなくても $this->model('RainfallArea') でセッションから取得可能
+      }
+
+      function ex_clear_model_session()
+      {
+          //セッションクリア
+          $this->clearModel('RainfallArea');
+
+          //リダイレクト処理
+          $this->redirectTo(['action' => 'ex_model_session']);
+      }
+  </code>
+</pre>
+
+<h2 class="h2">Sample: RainfallArea</h2>
+<table class="table">
+<tr>
+  <th>ロード</th>
+  <td nowrap="nowrap">
+    <div>
+      <?= $this->urlFor(['action' => 'ex_model_session'], ['rainfall_area_id' => 1]) ?>
+    </div>
+  </td>
+  <td>
+    <a class="btn btn-secondary" href="<?= $this->urlFor(['action' => 'ex_model_session'], ['rainfall_area_id' => 1]) ?>">Load</a>
+  </td>
+</tr>
+<tr>
+  <th>リロード</th>
+  <td nowrap="nowrap">
+    <div>
+      <?= $this->urlFor(['action' => 'ex_model_session']) ?>
+    </div>
+  </td>
+  <td>
+    <a class="btn btn-secondary" href="<?= $this->urlFor(['action' => 'ex_model_session']) ?>">Reload</a>
+    *セッション登録後は、rainfall_area_id を指定しなくても保持
+  </td>
+</tr>
+<tr>
+  <th>クリア</th>
+  <td nowrap="nowrap">
+    <div>
+      <?= $this->urlFor(['action' => 'ex_clear_model_session']) ?>
+    </div>
+  </td>
+  <td>
+    <a class="btn btn-secondary" href="<?= $this->urlFor(['action' => 'ex_clear_model_session']) ?>">Clear</a>
+  </td>
+</tr>
+</table>
+
+<table class="table table-auto">
+  <tr>
+    <th>controller</th>
+    <td><?= $this->pw_controller ?></td>
+    <td></td>
+  </tr>
+  <tr>
+    <th>action</th>
+    <td><?= $this->pw_action ?></td>
+    <td>
+    </td>
+  </tr>
+  <tr>
+    <th>$this->pw_gets['rainfall_area_id']</th>
+    <td><?= $this->pw_gets['rainfall_area_id'] ?></td>
+    <td>
+    </td>
+  </tr>
+  <tr>
+    <th>$_GET['rainfall_area_id']</th>
+    <td><?= $_GET['rainfall_area_id'] ?></td>
+    <td>
+    </td>
+  </tr>
+  <tr>
+    <th>$this->rainfall_area->name</th>
+    <td><?= $this->rainfall_area->name ?></td>
+    <td>
+    </td>
+  </tr>
+  <tr>
+    <th>$this->rainfall_area->entity_name</th>
+    <td><?= $this->rainfall_area->entity_name ?></td>
+    <td>
+    </td>
+  </tr>
+  <tr>
+    <th>$this->rainfall_area->table_name</th>
+    <td><?= $this->rainfall_area->table_name ?></td>
+    <td>
+    </td>
+  </tr>
+  <tr>
+    <th>$this->rainfall_area->sql</th>
+    <td><?= $this->rainfall_area->sql ?></td>
+    <td>
+    </td>
+  </tr>
+  <tr>
+    <th nowrap="nowrap">
+      $this->rainfall_area->value
+    </th>
+    <td>
+      <? var_export($this->rainfall_area->value) ?>
+    </td>
+    <td></td>
+  </tr>
+  <tr>
+    <th nowrap="nowrap">
+      $_SESSION[APP_NAME][0]['rainfall_area']->value
+    </th>
+    <td>
+      <? var_export($_SESSION[APP_NAME][0]['rainfall_area']->value) ?>
+    </td>
+    <td></td>
+  </tr>
+</table>

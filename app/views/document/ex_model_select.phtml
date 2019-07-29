@@ -1,0 +1,225 @@
+<? include('menu.phtml') ?>
+
+<h1 class="h1">Model</h1>
+<h2 class="h2">主要Method</h2>
+<table class="table">
+  <tr>
+    <td nowrap="nowrap">get($is_id_index = false, $index_column = null)</td>
+    <td>SELECT処理</td>
+    <td>
+      <ul>
+        <li>取得した行を $values にバインド</li>
+        <li>$is_id_index = true: 配列の index を id の値で返す</li>
+        <li>$index_column = {column_name}: $is_id_index = true 時に 配列の index を column_name の値で返す</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>all($is_id_index = false, $index_column = null)</td>
+    <td>SELECT処理</td>
+    <td>
+      <ul>
+        <li>get() エイリアス</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>fetch($id)</td>
+    <td>SELECT処理（１行）</td>
+    <td>
+      <ul>
+        <li>指定idの行を $value にバインド</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>find($id)</td>
+    <td>SELECT処理（１行）</td>
+    <td>
+      <ul>
+        <li>fetch() のエイリアス</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>one($use_limit = true)</td>
+    <td>WHERE句を利用した SELECT処理（１行）</td>
+    <td>
+      <ul>
+        <li>$use_limit = true : LIMIT 1 で取得</li>
+        <li>$use_limit = false : 全ての行から１行取得</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>first()</td>
+    <td>WHERE句を利用した id 昇順ソート(ASC)で SELECT処理（１行）</td>
+    <td>
+      <ul>
+        <li>LIMIT 1 で取得</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>select($columns = null, $as_columns = null)</td>
+    <td>SELECT カラム明示指定</td>
+    <td>
+      <ul>
+        <li>$columns: カラム名の配列</li>
+        <li>$as_columns: AS カラム名の配列</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>from($name)</td>
+    <td>テーブル名設定</td>
+    <td>
+      <ul>
+        <li>$table_name にバインド</li>
+        <li>デフォルト $name が設定される</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>where($condition, $value = null, $eq = '=')</td>
+    <td>WHERE句</td>
+    <td>
+      <ul>
+        <li>AND処理</li>
+        <li>$condition にそのまま条件を指定しても良い</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>wheres($conditions)</td>
+    <td>WHERE句（複数）</td>
+    <td>
+      <ul>
+        <li>$conditions: where() の引数 $condition を配列化したものを設定</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>whereIn($column, $values)</td>
+    <td>WHERE IN句</td>
+    <td>
+      <ul>
+        <li>$column IN ($values[0], $values[1]...)</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>whereTrue($column)</td>
+    <td>WHERE句</td>
+    <td>
+      <ul>
+        <li>$column = TRUE</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>whereFalse($column)</td>
+    <td>WHERE句</td>
+    <td>
+      <ul>
+        <li>$column = FALS</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>limit($limit)</td>
+    <td>LIMIT句</td>
+    <td>
+      <ul>
+        <li>LIMIT $limit</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>offset($offset)</td>
+    <td>OFFSET句</td>
+    <td>
+      <ul>
+        <li>OFFSET $offset</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>その他</td>
+    <td>
+      lib/PwPgsql.php
+      lib/PwEntity.php
+      参照
+    </td>
+    <td>
+      <ul>
+        <li>正常動作しないものもあるので注意</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
+<h2 class="h2">SELECT</h2>
+PHP
+<pre class="line-numbers">
+  <code class="language-php">
+      //SELECT * FROM users WHERE id = '1';;
+      $this->user = new User();
+      $this->user->fetch(1);
+      //$this->user->value に配列がバインド
+
+      //別記述
+      //$this->user->fetch(1);
+      //$this->user = DB::model('User')->fetch(1);
+
+      //SELECT * FROM items WHERE user_id = '1' AND is_opened = 'TRUE' ORDER BY items.sort_order, items.id LIMIT 5;
+      $this->item = new Item();
+      $this->item->where('user_id', $this->user->value['id']);
+      $this->item->whereTrue('is_opened');
+      $this->item->limit(5);
+      $this->item->get();
+
+      //$this->item->values に配列がバインド
+
+      //別記述
+      // $this->item->relation('User')
+      //              ->where('user_id', $this->user->value['id'])
+      //              ->whereTrue('is_opened')
+      //              ->limit(5)
+      //              ->get();
+  </code>
+</pre>
+
+<table class="table">
+  <tr>
+    <th>code</th>
+    <th>name</th>
+    <th>is_active</th>
+  </tr>
+  <tr>
+    <td><?= $this->user->value['code'] ?></td>
+    <td><?= $this->user->value['name'] ?></td>
+    <td><?= $this->user->value['is_active'] ?></td>
+  </tr>
+</table>
+
+<? if ($this->item->values): ?>
+<table class="table">
+  <tr>
+    <th>id</th>
+    <th>code</th>
+    <th>name</th>
+    <th>is_opened</th>
+    <th>is_active</th>
+  </tr>
+  <? foreach ($this->item->values as $value): ?>
+  <tr>
+    <td><?= $value['id'] ?></td>
+    <td><?= $value['code'] ?></td>
+    <td><?= $value['name'] ?></td>
+    <td><?= $value['is_opened'] ?></td>
+    <td><?= $value['is_active'] ?></td>
+  </tr>
+  <? endforeach ?>
+</table>
+<? endif ?>

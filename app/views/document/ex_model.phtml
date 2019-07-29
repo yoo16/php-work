@@ -1,0 +1,393 @@
+<? include('menu.phtml') ?>
+
+<h1 class="h1">Model</h1>
+<h2 class="h2">読み込み</h2>
+<div>
+  <table class="table">
+    <tr>
+      <th>構成</th>
+      <td>app/models/モデルクラス名.php</td>
+      <td></td>
+    </tr>
+    <tr>
+      <th>DB定義モデル</th>
+      <td>app/models/vo/_モデルクラス名.php</td>
+      <td>
+        <ul>
+          <li>テーブル名、カラムなどを定義</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <th>PostgreSQL クラス</th>
+      <td>lib/PwPgsql.php</td>
+      <td>
+        <ul>
+          <li>PostgreSQL ORM</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <th>Entity クラス</th>
+      <td>lib/PwEntity.php</td>
+      <td>
+        <ul>
+          <li>SQL ORM</li>
+        </ul>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<h2 class="h2">models/user.php</h2>
+<pre class="line-numbers">
+  <code class="language-php">
+      require_once 'models/vo/_User.php';
+
+      class User extends _User {
+          function validate() {
+              parent::validate();
+          }
+      }
+  </code>
+</pre>
+
+<h2 class="h2">models/vo/_User.php</h2>
+<pre class="line-numbers">
+  <code class="language-php">
+      //PostgreSQLを利用する場合: lib/PwPgsql.php クラスを継承
+      require_once 'PwPgsql.php';
+      
+      class _User extends PwPgsql {
+      
+          //Primary key (id) 定義
+          public $id_column = 'id';
+
+          //名称（事実上のテーブル名） *必須 複数形推奨
+          public $name = 'users';
+
+          //エンティティ名 *必須 単数系推奨
+          public $entity_name = 'user';
+      
+          //DBカラム定義
+          //原則必須カラム * 指定しない場合は「生値」で返る
+          //Modelメソッドが利用できないものがある
+
+          //id, created_at, updated_at, sort_order
+          //type: 型 (varchar, int4...)
+          //length: 型 (varchar などの長さ)
+          //old_name: データ移行用
+          //is_required: Not NULL
+          //default: デフォルト値
+          public $columns = [
+              'address' => ['type' => 'varchar', 'length' => 256, 'old_name' => 'address'],
+              'amedas_alphabet_name' => ['type' => 'varchar', 'length' => 256, 'old_name' => 'amedas_alphabet_name'],
+              'amedas_temperature_autoscale_type' => ['type' => 'varchar', 'length' => 8, 'old_name' => 'amedas_temperature_autoscale_type'],
+              'amedas_temperature_lower_limit' => ['type' => 'float8', 'old_name' => 'amedas_temperature_lower_limit'],
+              'amedas_temperature_upper_limit' => ['type' => 'float8', 'old_name' => 'amedas_temperature_upper_limit'],
+              'amedas_warn_code' => ['type' => 'varchar', 'length' => 8, 'old_name' => 'amedas_warn_code'],
+              'code' => ['type' => 'varchar', 'length' => 16, 'is_required' => true, 'old_name' => 'code'],
+              'construction_type' => ['type' => 'varchar', 'length' => 2, 'old_name' => 'construction_type'],
+              'created_at' => ['type' => 'timestamp'],
+              'data_host_id' => ['type' => 'int4'],
+              'default_hight_magnification' => ['type' => 'varchar', 'length' => 16, 'old_name' => 'default_hight_scale', 'default' => '1'],
+              'default_interval' => ['type' => 'int2', 'old_name' => 'default_interval', 'default' => 60],
+              'domain_id' => ['type' => 'int4', 'is_required' => true, 'old_name' => 'domain_id'],
+              'end_at' => ['type' => 'timestamp', 'old_name' => 'end_date'],
+              'full_name' => ['type' => 'varchar', 'length' => 128, 'old_name' => 'full_name'],
+              'graph_value_visible_days' => ['type' => 'int2', 'old_name' => 'graph_value_visible_days'],
+              'is_active' => ['type' => 'bool', 'old_name' => 'active', 'default' => false],
+              'is_amedas_continuous_line' => ['type' => 'bool', 'default' => false],
+              'is_amedas_temperature_visible' => ['type' => 'bool', 'old_name' => 'amedas_temperature_visible', 'default' => false],
+              'is_csv_download' => ['type' => 'bool', 'default' => false],
+              'is_csv_download_term' => ['type' => 'bool', 'old_name' => 'csv_download_term_provide', 'default' => false],
+              'is_daily_precipitation' => ['type' => 'bool', 'old_name' => 'daily_precipitation', 'default' => true],
+              'is_height_magnification' => ['type' => 'bool', 'old_name' => 'is_height_scale', 'default' => true],
+              'is_opened' => ['type' => 'bool', 'old_name' => 'provide', 'default' => false],
+              'is_opened_rainfall' => ['type' => 'bool', 'old_name' => 'rainfall_visible', 'default' => true],
+              'is_opened_report' => ['type' => 'bool', 'default' => false],
+              'is_report_download' => ['type' => 'bool', 'default' => false],
+              'is_signal_orange' => ['type' => 'bool', 'old_name' => 'is_signal_orange', 'default' => false],
+              'is_signal_pink' => ['type' => 'bool', 'old_name' => 'is_signal_pink', 'default' => false],
+              'is_temperature_visible' => ['type' => 'bool', 'old_name' => 'temperature_visible', 'default' => false],
+              'is_use_graph_invalid_value' => ['type' => 'bool', 'default' => false],
+              'is_use_interval' => ['type' => 'bool', 'default' => false],
+              'is_use_weather' => ['type' => 'bool', 'old_name' => 'use_weather', 'default' => false],
+              'is_web_link_active' => ['type' => 'bool', 'old_name' => 'web_link_active', 'default' => false],
+              'lang' => ['type' => 'varchar', 'length' => 8, 'default' => 'ja'],
+              'lat' => ['type' => 'float8'],
+              'lng' => ['type' => 'float8'],
+              'login_at' => ['type' => 'timestamp'],
+              'login_name' => ['type' => 'varchar', 'length' => 256],
+              'logout_at' => ['type' => 'timestamp'],
+              'name' => ['type' => 'varchar', 'length' => 32, 'is_required' => true, 'old_name' => 'name'],
+              'note' => ['type' => 'text', 'old_name' => 'note'],
+              'old_db' => ['type' => 'varchar', 'length' => 64],
+              'old_host' => ['type' => 'varchar', 'length' => 256],
+              'old_id' => ['type' => 'int4', 'old_name' => 'rid'],
+              'password' => ['type' => 'text'],
+              'prefecture_id' => ['type' => 'int4', 'old_name' => 'prefecture_id'],
+              'priority' => ['type' => 'varchar', 'length' => 2, 'old_name' => 'priority'],
+              'rain_cloud_radar_name' => ['type' => 'varchar', 'length' => 64],
+              'rainfall_area_id' => ['type' => 'int4', 'old_name' => 'rainfall_area_id'],
+              'rainfall_autoscale_type' => ['type' => 'varchar', 'length' => 2, 'old_name' => 'rainfall_autoscale_type'],
+              'rainfall_exceed_color' => ['type' => 'varchar', 'length' => 8, 'old_name' => 'rainfall_exceed_color', 'default' => '#ff0000'],
+              'rainfall_max_value' => ['type' => 'int2', 'old_name' => 'rainfall_max_value', 'default' => 100],
+              'rainfall_normal_color' => ['type' => 'varchar', 'length' => 8, 'old_name' => 'rainfall_normal_color', 'default' => '#0000ff'],
+              'sort_order' => ['type' => 'int2', 'old_name' => 'sort_order'],
+              'start_at' => ['type' => 'timestamp', 'old_name' => 'start_date'],
+              'temperature_autoscale_type' => ['type' => 'varchar', 'length' => 8, 'old_name' => 'temperature_autoscale_type'],
+              'temperature_instrument_id' => ['type' => 'int4', 'old_name' => 'temperature_instrument_id'],
+              'temperature_lower_limit' => ['type' => 'float8', 'old_name' => 'temperature_lower_limit'],
+              'temperature_upper_limit' => ['type' => 'float8', 'old_name' => 'temperature_upper_limit'],
+              'updated_at' => ['type' => 'timestamp'],
+              'web_link_name' => ['type' => 'varchar', 'length' => 64, 'old_name' => 'web_link_name'],
+              'web_link_url' => ['type' => 'varchar', 'length' => 255, 'old_name' => 'web_link_url'],
+          ];
+      
+          //primary key
+          public $primary_key = 'users_pkey';
+
+          //foreign key
+          public $foreign = [
+                  'users_domain_id_fkey' => [
+                                        'column' => 'domain_id',
+                                        'class_name' => 'Domain',
+                                        'foreign_table' => 'domains',
+                                        'foreign_column' => 'id',
+                                        'cascade_update_type' => 'a',
+                                        'cascade_delete_type' => 'c',
+                                        ],
+                  'users_prefecture_id_fkey' => [
+                                        'column' => 'prefecture_id',
+                                        'class_name' => 'Prefecture',
+                                        'foreign_table' => 'prefectures',
+                                        'foreign_column' => 'id',
+                                        'cascade_update_type' => 'a',
+                                        'cascade_delete_type' => 'c',
+                                        ],
+                  'users_rainfall_area_id_fkey' => [
+                                        'column' => 'rainfall_area_id',
+                                        'class_name' => 'RainfallArea',
+                                        'foreign_table' => 'rainfall_areas',
+                                        'foreign_column' => 'id',
+                                        'cascade_update_type' => 'a',
+                                        'cascade_delete_type' => 'c',
+                                        ],
+                  'users_data_host_id_fkey' => [
+                                        'column' => 'data_host_id',
+                                        'class_name' => 'DataHost',
+                                        'foreign_table' => 'data_hosts',
+                                        'foreign_column' => 'id',
+                                        'cascade_update_type' => 'a',
+                                        'cascade_delete_type' => 'c',
+                                        ],
+          ];
+      
+          //unique
+          public $unique = [
+                  'users_code_key' => [
+                              'code',
+                              ],
+          ];
+
+          //index
+          public $index_keys = [
+          'users_pkey' => 'CREATE UNIQUE INDEX users_pkey ON users USING btree (id)',
+          'users_code_key' => 'CREATE UNIQUE INDEX users_code_key ON users USING btree (code)',
+          'users_sort_order' => 'CREATE INDEX users_sort_order ON users USING btree (sort_order)',
+          ];
+
+
+          //データ移行用 旧テーブル
+          public $old_name = 'tb_user';
+      
+          //データ移行用 旧ID
+          public $old_id_column = 'rid';
+      
+          function __construct($params = null) {
+              parent::__construct($params);
+          }
+      
+         /**
+          * validate
+          *
+          * @param
+          * @return void
+          */
+          function validate() {
+              parent::validate();
+          }
+      
+      }
+  </code>
+</pre>
+<h2>Modelファイル概要</h2>
+<table class="table">
+  <tr>
+    <th>継承</th>
+    <td colspan="2">User < _User < PwPgsql < PwEntity</td>
+  </tr>
+  <tr>
+    <th>DB定義クラス</th>
+    <td>models/vo/_User.php</td>
+    <td>
+      <ul>
+        <li>このファイルでDB定義を行う</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>PostgreSQL接続設定</th>
+    <td>app/settings/pgsql/{hostname}.php</td>
+    <td>
+
+    </td>
+  </tr>
+  <tr>
+    <th>型</th>
+    <td>
+      (string) $columns['type']
+    </td>
+    <td>
+      <ul>
+        <li>int2</li>
+        <li>int4</li>
+        <li>int8</li>
+        <li>real</li>
+        <li>double</li>
+        <li>double precision</li>
+        <li>float</li>
+        <li>float4</li>
+        <li>float8</li>
+        <li>varchar</li>
+        <li>text</li>
+        <li>timestamp</li>
+        <li>bytea *非推奨</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>データ長</th>
+    <td>
+      (integer) $columns['length']
+    </td>
+    <td>
+      <ul>
+        <li>現状、varchar のみ有効</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>Not Null</th>
+    <td>
+      (boolean) $columns['is_require']
+    </td>
+    <td>
+
+    </td>
+  </tr>
+  <tr>
+    <th>default値</th>
+    <td>
+      (mixed) $columns['default']
+    </td>
+    <td>
+      <ul>
+        <li>init(), defaultValue() 実行時: $this->value[カラム名] に設定値がバインド</li>
+        <li>SQL実行時の初期値ではない</li>
+        <li>最新のデフォルト値情報は、doc/default_values.csv を参照</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>旧テーブルカラム名</th>
+    <td>
+      (string) $columns['old_name']
+    </td>
+    <td>
+      <ul>
+        <li>旧DBからデータ移行時に利用</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>外部キー</th>
+    <td>$foreign</td>
+    <td>
+      <ul>
+        <li>PostgreSQLに設定されている Foreign Key設定</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
+<h2 class="h2">PostgreSQL設定</h2>
+<h3>DBデフォルト設定</h3>
+app/settings/pgsql/{hostname}.php
+<pre class="line-numbers">
+  <code class="language-php">
+    define('DB_NAME', 'sample');
+    define('DB_HOST', 'localhost');
+    define('DB_USER', 'postgres');
+    define('DB_PORT', '5432');
+  </code>
+</pre>
+
+<h3>DB任意設定</h3>
+<ul>
+  <li>デフォルト設定以外にDB設定する場合</li>
+  <li>コンストラクタにパラメータを設定</li>
+</ul>
+<pre class="line-numbers">
+  <code class="language-php">
+  require_once 'models/vo/_InstrumentMeasureError.php';
+
+  class InstrumentMeasureError extends _InstrumentMeasureError {
+
+    public $date;
+    public $interval = 0;
+    public $user;
+    public $error_mail_template = 'instrument_error';
+        function __construct($params = null)
+        {
+            // $params['dbname'] = DB_CUSTOM_NAME;
+            // $params['host'] = DB_CUSTOM_HOST;
+            // $params['user'] = DB_CUSTOM_USER;
+            // $params['port'] = DB_CUSTOM_PORT;
+            // $params['password'] = DB_CUSTOM_PASS;
+            //parent::__construct($params);
+            parent::__construct(DB_CUSTOM_INFO);
+        }
+    }
+  </code>
+</pre>
+app/settings/pgsql/{hostname}.php
+<pre class="line-numbers">
+  <code class="language-php">
+    define('DB_CUSTOM_NAME', 'custom');
+    define('DB_CUSTOM_DATA_HOST', 'custom.com');
+    define('DB_CUSTOM_DATA_USER', 'postgres');
+    define('DB_CUSTOM_DATA_PORT', '5432');
+    //define('DB_CUSTOM_DATA_PASS', '');
+  </code>
+</pre>
+app/application_db_setting.php
+<pre class="line-numbers">
+  <code class="language-php">
+    define('DB_CUSTOM_INFO',
+        [
+          'dbname' => DB_CUSTOM_NAME,
+          'host' => DB_CUSTOM_DATA_HOST,
+          'user' => DB_CUSTOM_DATA_USER,
+          'port' => DB_CUSTOM_DATA_PORT,
+          //'password' => DB_CUSTOM_DATA_PASS
+        ]
+    );
+  </code>
+</pre>
+
+<h3>DB動的設定: 計測データ(item_measures)</h3>
+app/application_db_setting.php
+
+

@@ -1,0 +1,143 @@
+<? include('menu.phtml') ?>
+
+<h1 class="h1">View</h1>
+<h2 class="h2">Controller設定</h2>
+<pre class="line-numbers">
+  <code class="language-php">
+      class SampleController extends AuthController
+      {
+            //Viewディレクトリ: app/views/sample/
+            public $name = 'sample';     
+      
+            //Layoutファイル: app/views/layouts/sample.phtml
+            public $layout = 'sample';
+      }
+  </code>
+</pre>
+
+<h2 class="h2">Layout</h2>
+<table class="table">
+  <tr>
+    <th>Layout</th>
+    <th></th>
+    <th>パス</th>
+    <th>Controller</th>
+  </tr>
+  <tr>
+    <td>root</td>
+    <td>通常</td>
+    <td>app/views/layouts/root.phtml</td>
+    <td>
+      <ul>
+        <li>AdminController</li>
+        <li>AppController</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>login</td>
+    <td>ログイン</td>
+    <td>app/views/layouts/login.phtml</td>
+    <td>
+      <ul>
+        <li>LoginController</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>pw_admin</td>
+    <td>フレームワーク管理者用</td>
+    <td>app/views/layouts/pw_admin.phtml</td>
+    <td>
+      <ul>
+        <li>PwAdminController</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+<h2 class="h2">View</h2>
+<table class="table">
+  <tr>
+    <th>ファイルパス</th>
+    <td>app/views/コントローラ名/アクション名.phtml</td>
+  </tr>
+  <tr>
+    <th>レイアウトファイルがある場合</th>
+    <td>レイアウトファイル内の $this->content_for_layout に表示</td>
+  </tr>
+  <tr>
+    <th>レイアウトがない場合</th>
+    <td>そのまま表示</td>
+  </tr>
+</table>
+
+<h2 class="h2">基本Method</h2>
+
+<h3 class="h3">PwTag::javascript('ファイルパス') : javascriptタグ</h3>
+<ul>
+  <li>public/javascripts/ からのパスを記述</li>
+  <li>現在からの相対パスが表示</li>
+</ul>
+<pre class="line-numbers">
+  <code class="language-php">
+  PwTag::javascript('jquery/jquery-3.3.1.min');
+  </code>
+</pre>
+<pre class="line-numbers">
+  <code class="language-html">
+  <?= htmlspecialchars(PwTag::javascript('jquery/jquery-3.3.1.min')) ?>
+  </code>
+</pre>
+
+<h3 class="h3">PwTag::stylesheet('ファイルパス') : stylesheetタグ</h3>
+<ul>
+  <li>public/stylesheets/ からのパスを記述</li>
+  <li>現在からの相対パスが表示</li>
+</ul>
+<pre class="line-numbers">
+  <code class="language-php">
+  PwTag::stylesheet('bootstrap.min');
+  </code>
+</pre>
+<pre class="line-numbers">
+  <code class="language-html">
+  <?= htmlspecialchars(PwTag::javascript('bootstrap.min')) ?>
+  </code>
+</pre>
+
+<h3 class="h3">$this->urlFor($params, $http_params = null) : URLタグ</h3>
+<pre class="line-numbers">
+  <code class="language-php">
+  $this->urlFor(['action' => 'user', 'action' => 'list'], ['user_id' => 1]);
+  //<?= $this->urlFor(['action' => 'user', 'action' => 'list'], ['user_id' => 1]); ?>
+  </code>
+</pre>
+
+<h3 class="h3">$this->linkTo($params, $html_params = null) : aリンクタグ</h3>
+<pre class="line-numbers">
+  <code class="language-php">
+  $this->linkTo(['controller' => 'user', 'action' => 'list'], 
+                [
+                 'label' => 'Label',
+                 'target' => '_blank',
+                 'http_params' => ['user_id' => 1],
+                ]
+                );
+  </code>
+</pre>
+<?= $this->linkTo(['controller' => 'user', 'action' => 'list'], 
+                  [
+                    'label' => 'Label',
+                    'target' => '_blank',
+                    'http_params' => ['user_id' => 1],
+                  ]
+                  );
+                  ?>
+
+<h3 class="h3">$this->image($file_name, $dir = 'images') : image URLタグ</h3>
+<pre class="line-numbers">
+  <code class="language-php">
+  $this->image('signal_1.png');
+  </code>
+</pre>
+<?= $this->image('signal_1.png'); ?>

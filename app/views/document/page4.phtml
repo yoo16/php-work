@@ -1,0 +1,86 @@
+<div>
+  <h2>PwFile</h2>
+
+
+  <h3>getImageTypes()</h3>
+  <pre>PwFile::getImageTypes()</pre>
+  <ul>
+    <? foreach(PwFile::getImageTypes() as $key => $value): ?>
+    <li><?= $key ?> => <?= $value ?></li>
+    <? endforeach ?>
+  </ul>
+
+  <h3>getImageExts()</h3>
+  <pre>PwFile::getImageExts()</pre>
+  <ul>
+    <? foreach(PwFile::getImageExts() as $key => $value): ?>
+    <li><?= $key ?> => <?= $value ?></li>
+    <? endforeach ?>
+  </ul>
+
+  <h3>getImageTypeWithFileName($file_name)</h3>
+  <pre>PwFile::getImageTypeWithFileName('sample.jpg')</pre>
+  <?= PwFile::getImageTypeWithFileName('sample.jpg'); ?>
+
+
+  <h3>getImageExt($file_type)</h3>
+  <pre>PwFile::getImageExt('image/x-png')</pre>
+  <?= PwFile::getImageExt('image/x-png'); ?>
+
+  <h3>loadContents($base_dir, $params=null)</h3>
+  <pre>PwFile::loadFiles(BASE_DIR.'app/controllers/')</pre>
+
+
+  <? foreach(PwFile::loadFiles(BASE_DIR.'app/controllers/') as $key => $values): ?>
+  <table class="table">
+    <? foreach($values as $column => $value): ?>
+    <tr>
+      <th><?= $column ?><th>
+        <td><?= $value ?></td>
+      </tr>
+      <? endforeach ?>
+    </table>
+    <? endforeach ?>
+
+    <h3>loadContents($key='file')</h3>
+    <pre>PwFile::loadContents(BASE_DIR.'app/controllers/')</pre>
+
+    <h3>uploadFilePath($key='file')</h3>
+    <pre>PwFile::uploadFilePath()</pre>
+
+    <h3>uploadFileType($key='file')</h3>
+    <pre>PwFile::uploadFileType()</pre>
+
+    <h3>uploadFileName($key='file')</h3>
+    <pre>PwFile::uploadFileName()</pre>
+
+    <h3>uploadImageExt($key='file')</h3>
+    <pre>PwFile::uploadImageExt()</pre>
+
+    <form action="upload_file" method="post" enctype="multipart/form-data">
+      <input type="file" name="file">
+      <input type="submit" value="アップロード">
+    </form>
+
+    <h3>uploadFile($to_path, $key='file'))</h3>
+    <pre>PwFile::uploadFile('/home/telepath/upload_files/sample.txt')</pre>
+
+
+    <h3>uploadImage($to_path, $key='file'))</h3>
+    <pre>PwFile::uploadImage('/home/telepath/upload_files/sample.jpg')</pre>
+
+
+    <h3>getFileBaseName($path)</h3>
+    <pre>PwFile::getFileBaseName('http://wwww.sample.com/sample.jpg')</pre>
+    <?= PwFile::getFileBaseName('http://wwww.sample.com/sample.jpg') ?>
+
+
+    <h3>getFileName($path)</h3>
+    <pre>PwFile::getFileName('http://wwww.sample.com/sample.jpg')</pre>
+    <?= PwFile::getFileName('http://wwww.sample.com/sample.jpg') ?>
+
+
+    <h3>getFileExt($path)</h3>
+    <pre>PwFile::getFileExt('http://wwww.sample.com/sample.jpg')</pre>
+    <?= PwFile::getFileExt('http://wwww.sample.com/sample.jpg') ?>
+  </div>

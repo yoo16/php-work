@@ -1,0 +1,59 @@
+[<a href="<?= $this->urlFor(['action' => 'index']) ?>">Back</a>]
+<pre class="line-numbers">
+    <code class="language-php">
+    function action_edit()
+    {
+        //SELECT * FROM users WHERE id = 3;
+        $this->user = new User();
+        $this->user->fetch($this->pw_gets['id']);
+
+        //$this->user->value として array バインド *Objectではない
+        //$this->pw_gets['id'] は URIから自動取得
+
+        //別記述
+        //$this->user = DB::model('User')->fetch($this->pw_gets['id']);
+
+        //view で利用するには $this でController のインスタンスにしておく
+        //Laravel のように ローカル変数を blade に引き渡す関数は原則ない
+
+        //コントローラー内の処理を echo で表示
+        echo ('SampleController.php -> action_edit() 内の実行処理') . PHP_EOL;
+        echo ($this->user->value['name']);
+    }
+    </code>
+</pre>
+
+<table class="table">
+  <tr>
+    <th>controller</th>
+    <td>sample</td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <th>action</th>
+    <td>edit</td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <th>id</th>
+    <td>3</td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <th>users.name</th>
+    <td nowrap="nowrap">
+      $this->user->value['name']
+    </td>
+    <td><?= $this->user->value['name'] ?></td>
+    <td></td>
+  </tr>
+  <tr>
+    <th>user vlaue</th>
+    <td>$this->user->value</td>
+    <td><? var_export($this->user->value) ?></td>
+    <td></td>
+  </tr>
+</table>

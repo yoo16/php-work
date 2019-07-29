@@ -1,0 +1,42 @@
+<h1 class="h1">Documents</h1>
+
+<h2 class="h2">URL命名規則</h2>
+<ul>
+  <li>URLから コントローラー、アクション、ID、その他パラメータを解析</li>
+  <li>https://hostname/controller/action/id?param1=xxxx&...</li>
+  <li>https://ホスト名(/プロジェクト名)/コントローラー/アクション/ID?GETパラメータ</li>
+</ul>
+
+<h2 class="h2">Setting</h2>
+<ul>
+  <li><a href="<?= $this->urlFor(['action' => 'setting']) ?>">概要</a></li>
+</ul>
+
+<h2 class="h2">Model</h2>
+<ul>
+  <li><a href="<?= $this->urlFor(['action' => 'ex_model']) ?>">概要</a></li>
+  <li><a href="<?= $this->urlFor(['action' => 'ex_model_sql']) ?>">SQL</a></li>
+  <li><a href="<?= $this->urlFor(['action' => 'ex_model_select']) ?>">SELECT</a></li>
+  <li><a href="<?= $this->urlFor(['action' => 'ex_model_update']) ?>">INSERT & UPDATE</a></li>
+</ul>
+
+<h2 class="h2">Controller</h2>
+<ul>
+  <li><a href="<?= $this->urlFor(['action' => 'ex_controller', 'id' => 3]) ?>">概要</a></li>
+  <li><a href="<?= $this->urlFor(['action' => 'edit', 'id' => 3]) ?>">DBデータ取得&バインド</a></li>
+  <li><a href="<?= $this->urlFor(['action' => 'list']) ?>">DBデータ一覧表示</a></li>
+  <li><a href="<?= $this->urlFor(['action' => 'ex_controller_session']) ?>">セッション</a></li>
+  <li><a href="<?= $this->urlFor(['action' => 'ex_model_session'], ['rainfall_area_id' => 1]) ?>">その他機能</a></li>
+</ul>
+
+<h2 class="h2">View</h2>
+<ul>
+  <li><a href="<?= $this->urlFor(['action' => 'ex_view']) ?>">概要</a></li>
+  <li><a href="<?= $this->urlFor(['action' => 'ex_form']) ?>">Form</a></li>
+  <li><a href="<?= $this->urlFor(['action' => 'ex_js']) ?>">Javascript</a></li>
+</ul>
+
+<h2 class="h2">ex</h2>
+<ul>
+  <li><a href="<?= $this->urlFor(['action' => 'ex_item']) ?>">ItemController</a></li>
+</ul>

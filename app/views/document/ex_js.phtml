@@ -1,0 +1,307 @@
+<? include('menu.phtml') ?>
+
+<h1 class="h1">Javascript</h1>
+<table class="table table-auto">
+  <tr>
+    <th>Base Path</th>
+    <td>public/javascripts/</td>
+  </tr>
+  <tr>
+    <th>Lib Path</th>
+    <td>public/javascripts/lib/</td>
+  </tr>
+  <tr>
+    <th>Controller Path</th>
+    <td>public/javascripts/controllers/</td>
+  </tr>
+</table>
+
+<h3>jQuery</h3>
+<table class="table table-auto">
+  <tr>
+    <th>jquery-3.3.1.min.js</th>
+    <td>public/javascripts/jquery/jquery-3.3.1.min.js</td>
+    <td>3.3.1</td>
+  </tr>
+  <tr>
+    <th>jquery-ui-1.12.1.min.js</th>
+    <td>public/javascripts/jquery/jquery-ui-1.12.1.min.js</td>
+    <td>1.12.1</td>
+  </tr>
+</table>
+<h3>Bootstrap</h3>
+<table class="table table-auto">
+  <tr>
+    <th>bootstrap.min.js</th>
+    <td>public/javascripts/bootstrap/bootstrap.min.js</td>
+    <td>v4.0.0</td>
+  </tr>
+</table>
+<h3>Plugin</h3>
+<table class="table table-auto">
+  <tr>
+    <th>spectrum.js</th>
+    <td>カラーパレット</td>
+    <td>public/javascripts/spectrum.js</td>
+    <td>jQuery</td>
+  </tr>
+  <tr>
+    <th>colorpicker.js</th>
+    <td>spectrum.js 設定</td>
+    <td>public/javascripts/colorpicker.js</td>
+    <td>jQuery</td>
+  </tr>
+  <tr>
+    <th>flatpickr.js</th>
+    <td>日付選択</td>
+    <td>public/javascripts/flatpickr.js</td>
+    <td>jQuery</td>
+  </tr>
+  <tr>
+    <th>confirmDate.js</th>
+    <td>flatpickr.js プラグイン</td>
+    <td>public/javascripts/confirmDate.js</td>
+    <td></td>
+  </tr>
+  <tr>
+    <th>datepicker.js</th>
+    <td>flatpickr.js 設定・起動ファイル</td>
+    <td>public/javascripts/datepicker.js</td>
+    <td>jQuery</td>
+  </tr>
+  <tr>
+    <th>flatpickr-ja.js</th>
+    <td>flatpickr.js 日本語設定</td>
+    <td>public/javascripts/datepicker.js</td>
+    <td>jQuery</td>
+  </tr>
+</table>
+<h2 class="class">Lib読み込み</h2>
+<pre class="line-numbers">
+  <code class="language-php">
+<?= htmlspecialchars('<?= PwTag::javascript(\'lib/PwController\') ?>      //pw_app: 主要コントローラー
+<?= PwTag::javascript(\'lib/PwNode\') ?>            //pw_node: Node管理
+<?= PwTag::javascript(\'lib/PwUI\') ?>              //pw_ui: UI用
+<?= PwTag::javascript(\'lib/PwLoadingOverlay\') ?>  //pw_loading_overlay: Loadin Overlay用
+<?= PwTag::javascript(\'lib/PwForm\') ?>            //pw_form: formヘルパー
+<?= PwTag::javascript(\'lib/PwTableDND\') ?>        //pw_table_dnd: テーブル並び替え
+<?= PwTag::javascript(\'lib/PwDate\') ?>            //pw_date: 日付ヘルパー
+<?= PwTag::javascript(\'lib/PwModal\') ?>           //pw_modal: Modal処理
+<?= PwTag::javascript(\'lib/PwScroller\') ?>        //pw_scroller: スクロール処理
+<?= PwTag::javascript(\'lib/PwAnimation\') ?>       //pw_animation: アニメーション（スクロール用）
+<?= PwTag::javascript(\'lib/PwLog\') ?>             //pw_log: サーバログ管理（検証用）
+<?= PwTag::javascript(\'pw_functions\') ?>
+') ?>
+  </code>
+</pre>
+
+<h2 class="h2">コントローラパラメータ設定</h2>
+<ul>
+  <li>controller, action, id を javascript に設定</li>
+  <li>Javascript で現在の controller, action, id を利用したい場合に利用</li>
+</ul>
+<pre class="line-numbers">
+  <code class="language-html"><?= htmlspecialchars('
+<script>
+    pw_app.setCurrentController(\'<?= $this->pw_controller ?>\');
+    pw_app.setCurrentAction(\'<?= $this->pw_action ?>\');
+    pw_app.setCurrentId(\'<?= $this->pw_id ?>\');
+</script>') ?>
+  </code>
+</pre>
+
+<table class="table table-auto">
+  <tr>
+    <th>controller</th>
+    <td>currentController()</td>
+    <td><a class="btn btn-secondary" onClick="PwNode.id('sample_controller').html(pw_app.currentController())">click</a></td>
+    <td id="sample_controller"></td>
+  </tr>
+  <tr>
+    <th>action</th>
+    <td>currentAction()</td>
+    <td><a class="btn btn-secondary" onClick="PwNode.id('sample_action').html(pw_app.currentAction())">click</a></td>
+    <td id="sample_action"></td>
+  </tr>
+  <tr>
+    <th>id</th>
+    <td>currentID()</td>
+    <td><a class="btn btn-secondary" onClick="PwNode.id('sample_id').html(pw_app.currentID())">click</a></td>
+    <td id="sample_id"></td>
+  </tr>
+</table>
+
+<h2 class="h2">並び替え: PwTableDND.js</h2>
+<h4>HTML</h4>
+<pre class="line-numbers">
+  <code class="language-html">
+    <?= htmlspecialchars('
+    //編集ボタン
+    //class に pw_table_dnd を設定
+    //pw-on-click="edit" を設定
+    <a class="btn btn-outline-primary pw_table_dnd" pw-on-click="edit"><?= LABEL_SORT_ORDER ?></a>
+
+    //更新ボタン
+    //pw-on-click="update_sort" を設定
+    //更新API コントローラー、アクション設定 api-controller="コントローラ" api-action="アクション"
+    <a class="btn btn-primary pw-tablednd-menu pw_table_dnd" pw-on-click="update_sort" api-controller="sample" api-action="update_sort" style="display: none"><?= LABEL_UPDATE ?></a>
+
+    //閉じるボタン
+    //pw-on-click="reset" を設定
+    <a class="btn btn-outline-primary pw-tablednd-menu pw_table_dnd" pw-on-click="reset" style="display: none"><?= LABEL_CLOSE ?></a>
+
+    //テーブル
+    //table id に sortable-table を設定(*デフォルト)
+    <table id="sortable-table">
+      <thead>
+        <tr>
+          <th>City</th>
+        </tr>
+      </thead>
+      //tbody 必須
+      <tbody>
+        //tr row-id に レコードID を設定
+        <tr row-id="50">
+          <td>Tokyo</td>
+        </tr>
+        <tr row-id="31">
+          <td>Osaka</td>
+        </tr>
+        <tr row-id="3">
+          <td>Nagoya</td>
+        </tr>
+        <tr row-id="14">
+          <td>Kobe</td>
+        </tr>
+      </tbody>
+    </table>
+    ') ?>
+  </code>
+</pre>
+
+<h4>PHP</h4>
+<pre class="line-numbers">
+  <code class="language-html">
+  class UserController extends AdminController
+  {
+    ...
+
+    function action_update_sort()
+    {
+        $this->updateSort('user');
+    }
+  }
+  </code>
+</pre>
+
+<table class="table">
+  <tr>
+    <th>パス</th>
+    <td>public/javascripts/lib/PwTableDND.js</td>
+    <td>必須ライブラリ
+      <ul>
+        <li>PwController.js</li>
+        <li>PwNode.js</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <th>標準コンポーネント</th>
+    <td>views/components/lib/sortable.phtml</td>
+    <td>標準ナビゲーション</td>
+  </tr>
+  <tr>
+    <th>fontawesome</th>
+    <td>public/stylesheets/fontawesome/fontawesome-all.min.css</td>
+    <td><a href="https://fontawesome.com/" target="_blank">https://fontawesome.com/</a></td>
+  </tr>
+</table>
+
+<table class="table">
+  <tr>
+    <th>Table ID設定</th>
+    <td>sortable-table</td>
+    <td>デフォルト</td>
+  </tr>
+  <tr>
+    <th>row-id</th>
+    <td>レコードID</td>
+    <td>tr タグに記述</td>
+  </tr>
+  <tr>
+    <th>イベントClass設定</th>
+    <td>class="pw_table_dnd"</td>
+    <td>編集、更新、閉じるイベントなどを有効にする</td>
+  </tr>
+  <tr>
+    <th>イベント登録</th>
+    <td>pw-on-click="イベント名"</td>
+    <td></td>
+  </tr>
+  <tr>
+    <th>更新APIコントローラ</th>
+    <td>api-controller="コントローラ名"</td>
+    <td></td>
+  </tr>
+  <tr>
+    <th>更新APIアクション</th>
+    <td>api-action="アクション名"</td>
+    <td>基本的に統一: update_sort</td>
+  </tr>
+  <tr>
+    <th>edit()</th>
+    <td>編集モード</td>
+    <td></td>
+  </tr>
+  <tr>
+    <th>reset()</th>
+    <td>閉じる</td>
+    <td></td>
+  </tr>
+  <tr>
+    <th>update_sort()</th>
+    <td>API更新</td>
+    <td>
+      データ変更があった場合、 JSONデータがPOST送信される
+      <ul>
+        <li>api-controller="APIコントローラ名"</li>
+        <li>api-action="APIアクション名"</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
+<? include('views/components/lib/sortable.phtml') ?>
+<table id="sortable-table" class="table table-auto">
+  <thead class="thead-default">
+    <tr>
+      <th><?= LABEL_users_NAME ?></th>
+    </tr>
+  </thead>
+<? foreach($this->user->values as $value): ?>
+  <tr row-id="<?= $value['id'] ?>">
+    <td><?= $value['name'] ?></td>
+  </tr>
+<? endforeach ?>
+</table>
+<div id="sort_info"></div>
+<?= $this->linkJs([
+  'label' => 'Info',
+  'class' => 'btn btn-secondary',
+  'pw-controller' => 'sample',
+  'pw-on-click' => 'sortInfo',
+  ]) ?>
+
+<h2 class="h2">マルチセッション設定</h2>
+<pre class="line-numbers">
+  <code class="language-html"><?= htmlspecialchars('
+  <script>
+  <? if ($this->is_use_multi_sid): ?>
+  <script>
+    pw_app.setMultiSid(\'<?= $this->user->value["id"] ?>\');
+  </script>
+  <? endif ?>
+  ') ?>
+  </code>
+</pre>
+

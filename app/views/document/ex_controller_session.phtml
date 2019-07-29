@@ -1,0 +1,341 @@
+<? include('menu.phtml') ?>
+<h1 class="h2">Session</h1>
+
+<table class="table">
+  <tr>
+    <th>Application Session</th>
+    <td>$_SESSION[APP_NAME]</td>
+    <td>フレームワークのセッションは全てここに登録される</td>
+  </tr>
+  <tr>
+    <th>APP_NAME</th>
+    <td><?= APP_NAME ?></td>
+    <td>app/application_setting.php で設定</td>
+  </tr>
+</table>
+
+<h2 class="h2">$this->pw_gets</h2>
+<ul>
+  <li>$_GET をセッション登録（原則自動）</li>
+  <li>$_GET 以外に、controller, action, id がバインド</li>
+  <li>$this->pw_gets を利用する関数に有効</li>
+</ul>
+<table class="table table-auto">
+  <tr>
+    <th nowrap="nowrap">$this->pw_gets</th>
+    <td>
+      <? var_export($this->pw_gets) ?>
+    </td>
+  </tr>
+  <tr>
+    <th nowrap="nowrap">$_SESSION[APP_NAME][0]['pw_gets']</th>
+    <td>
+      <? var_export($_SESSION[APP_NAME][0]['pw_gets']) ?>
+    </td>
+    <td>
+    </td>
+  </tr>
+</table>
+
+<h2 class="h2">$this->pw_posts</h2>
+<ul>
+  <li>$_POST をセッション登録（原則自動）</li>
+  <li>$this->pw_posts を利用する関数に有効</li>
+  <li>Model->insert(), Model->update() 成功の際にクリアされる</li>
+</ul>
+<table class="table table-auto">
+  <tr>
+    <th nowrap="nowrap">$this->pw_posts</th>
+    <td>
+      <?var_export($this->pw_posts) ?>
+    </td>
+  </tr>
+  <tr>
+    <th nowrap="nowrap">$_SESSION[APP_NAME][0]['pw_posts']</th>
+    <td>
+      <? var_export($_SESSION[APP_NAME][0]['pw_posts']) ?>
+    </td>
+  </tr>
+</table>
+<form action="<?= $this->urlFor(['action' => $this->pw_action]) ?>" method="post">
+  <input class="form-control col-3" type="text" name="item[name]" value="Pen">
+  <input class="btn btn-secondary" type="submit" value="POST">
+  <?= $this->linkTo(['action' => $this->pw_action], [ 'label' => 'Reload', 'class' => 'btn btn-secondary' ]) ?>
+  <?= $this->linkTo(['action' => 'ex_controller_clear_post'], [ 'label' => 'Clear', 'class' => 'btn btn-secondary' ]) ?>
+</form>
+
+<h2 class="h2">PwSession</h2>
+
+<ul>
+  <li>
+    セッションライブラリだが、直接 $_SESSION[APP_NAME] を利用しても良い
+  </li>
+</ul>
+
+<table class="table table-auto">
+  <tr>
+    <th nowrap="nowrap">set($key, $value, $sid = 0)</th>
+    <td>PwSession::set('test', 'hello')</td>
+    <td>
+      <?= $this->linkTo(['action' => 'ex_set_session'], [ 'label' => 'Set', 'class' => 'btn btn-secondary' ]) ?>
+      <?= $this->linkTo(['action' => 'ex_clear_session'], [ 'label' => 'Clear', 'class' => 'btn btn-secondary' ]) ?>
+    </td>
+  </tr>
+  <tr>
+    <th nowrap="nowrap">get($key, $sid = 0)</th>
+    <td>
+      PwSession::get('test')
+    </td>
+    <td>
+      <?= PwSession::get('test') ?>
+    </td>
+  </tr>
+  <tr>
+    <th nowrap="nowrap">$_SESSION[APP_NAME][0][$key]</th>
+    <td>
+      $_SESSION[APP_NAME][0]['test']
+    </td>
+    <td>
+      <?= $_SESSION[APP_NAME][0]['test'] ?>
+    </td>
+  </tr>
+</table>
+
+<pre class="line-numbers">
+  <code class="language-php">
+      //セッション登録
+      PwSession::set('test', 'hello');
+
+      //セッション取得
+      PwSession::get('test');
+
+      //セッションクリア
+      PwSession::clear('test');
+  </code>
+</pre>
+
+<h2 class="h2">コントローラーセッション： $_REQUEST パラメータ登録</h2>
+<ul>
+  <li>特定のコントローラーだけで利用したい場合に利用</li>
+  <li>$_REQUEST パラメータをコントローラーセッション登録し、インスタンス変数にバインド</li>
+  <li>セッション名：$this->session_name（原則自動設定）</li>
+</ul>
+<pre class="line-numbers">
+  <code class="language-php">
+    //コントローラーセッション名($this->session_name)で登録
+    //明示的にクリアされるまで保持
+    public $session_request_columns = ['item_id', 'interval', 'average_type'];
+
+    function action_ex_controller_session()
+    {
+    }
+
+    function action_ex_controller_clear_session()
+    {
+        //コントローラセッションクリア
+        $this->clearRequestSession();
+
+        $this->redirectTo(['action' => 'ex_controller_session']);
+    }
+  </code>
+</pre>
+<?= $this->linkTo(
+  ['action' => $this->pw_action],
+  [
+  'label' => 'Add Session',
+  'class' => 'btn btn-secondary',
+  'http_params' => [ 'item_id' => 1, 'interval' => 60, 'average_type' => 'N' ]
+  ]
+) ?>
+
+<?= $this->linkTo(
+  ['action' => $this->pw_action],
+  [
+  'label' => 'Reload',
+  'class' => 'btn btn-secondary',
+  ]
+) ?>
+
+<?= $this->linkTo(
+  ['action' => 'ex_controller_clear_session'],
+  [
+  'label' => 'Clear Session',
+  'class' => 'btn btn-secondary'
+  ]
+) ?>
+<table class="table table-auto">
+  <tr>
+    <th>Instance</th>
+    <th>value</th>
+    <th></th>
+  </tr>
+  <tr>
+    <td>$this->session_name</td>
+    <td><?= $this->session_name ?></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td nowrap="nowrap">$_SESSION[APP_NAME][0]['sample_controller']</td>
+    <td>
+      <? var_export($_SESSION[APP_NAME][0][$this->session_name]) ?>
+    </td>
+    <td>
+    </td>
+  </tr>
+  <tr>
+    <td>$this->item_id</td>
+    <td><?= $this->item_id ?></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>$this->interval</td>
+    <td><?= $this->interval ?></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>$this->average_type</th>
+    <td><?= $this->average_type ?></td>
+    <td></td>
+  </tr>
+</table>
+
+<h2 class="h2">グローバルセッション自動登録・読み込み</h2>
+<ul>
+  <li>全てのコントローラーで使用可能なパラメータを利用する</li>
+  <li>$_REQUEST[{キー}] を検知してセッションに登録</li>
+  <li>$this->{キー} にバインドされる</li>
+</ul>
+<?= $this->linkTo(
+  ['action' => $this->pw_action],
+  [
+  'label' => LABEL_TRUE,
+  'class' => 'btn btn-secondary',
+  'http_params' => ['is_side_bar_hide' => 1]
+  ]
+  ) ?>
+
+<?= $this->linkTo(
+  ['action' => $this->pw_action],
+  [
+  'label' => 'Reload',
+  'class' => 'btn btn-secondary'
+  ]
+  ) ?>
+
+<?= $this->linkTo(
+  ['action' => $this->pw_action],
+  [
+  'label' => LABEL_FALSE,
+  'class' => 'btn btn-secondary',
+  'http_params' => ['is_side_bar_hide' => 0]
+  ]
+  ) ?>
+<table class="table table-auto">
+  <tr>
+    <th>Method</th>
+    <td>$this->loadGlobalSession($key)</td>
+    <td></td>
+  </tr>
+  <tr>
+    <th>Instance</th>
+    <td>$this->is_side_bar_hide</td>
+    <td><?= $this->is_side_bar_hide ?></td>
+  </tr>
+  <tr>
+    <th>Session</th>
+    <td>$_SESSION[APP_NAME][0]['is_side_bar_hide']</td>
+    <td><?= $_SESSION[APP_NAME][0]['is_side_bar_hide'] ?></td>
+  </tr>
+</table>
+<pre class="line-numbers">
+  <code class="language-php">
+    $this->loadGlobalSession('is_side_bar_hide');
+  </code>
+</pre>
+
+<h2 class="h2">CSVセッション登録（起動時）</h2>
+<ul>
+  <li>起動時に、locale に応じたCSVデータをセッション登録</li>
+  <li>db/records/{$this->lang}/***.csv</li>
+</ul>
+
+<pre class="line-numbers">
+  <code class="language-php">
+  //全取得
+  $csv_sessions = PwCsv::loadSessions();
+
+  //db/records/{locale}/signal_type.csv
+  $signal_types = $this->recordValues('signal_type');
+
+  $signal_type = $this->recordValue('signal_type', 0);
+  </code>
+</pre>
+<table class="table table-auto">
+  <tr>
+    <th>セッション登録先</th>
+    <td>$_SESSION[APP_NAME][0]['app']['csv']</td>
+    <td></td>
+  </tr>
+  <tr>
+    <th>CSV</th>
+    <td>db/records/ja/signal_type.csv</td>
+    <td>
+    *value,label をキーとするCSV
+    <pre class="line-numbers">
+    <code class="language-php">
+      value,label
+      "0","調整中"
+      "1","青"
+      "2","黄"
+      "3","橙"
+      "4","桃"
+      "5","赤"
+    </code>
+    </pre>
+    </td>
+  </tr>
+  <tr>
+    <th>レコード取得</th>
+    <td>
+        $this->recordValues('signal_type')
+    </td>
+    <td>
+      <? var_export($this->recordValues('signal_type')) ?>
+    </td>
+  </tr>
+  <tr>
+    <th>1レコード取得</th>
+    <td>
+        $this->recordValue('signal_type', 0)
+    </td>
+    <td>
+      <?= $this->recordValue('signal_type', 0) ?>
+    </td>
+  </tr>
+</table>
+
+<h2 class="h2">Modelセッション登録（起動時）</h2>
+<ul>
+  <li>マスターデータを毎回 SELECT を発行しないために、起動時にモデルをセッション登録</li>
+  <li>セッションにない場合は、SELECT で取得</li>
+  <li>リロードしたい場合は、$this->reloadModelSession() を実行</li>
+</ul>
+<pre class="line-numbers">
+  <code class="language-php">
+    //モデル名を設定
+    public $session_by_models = ['Prefecture', 'DataHost', 'Domain', 'Area'];
+    //Prefecture, DataHost, Domain, Area がセッション登録 & インスタンス変数にバインド
+  </code>
+</pre>
+
+Domain
+<table class="table table-auto">
+  <tr>
+    <th>fqdn</th>
+  </tr>
+  <? foreach ($this->domain->values as $value): ?>
+  <tr>
+    <td><?= $value['fqdn'] ?></td>
+  </tr>
+  <? endforeach ?>
+</table>

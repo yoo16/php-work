@@ -1,0 +1,226 @@
+<? include('menu.phtml') ?>
+
+<h1 class="h1">View</h1>
+<h3 class="h3">input submit: PwForm::submit($value = null, $params = null, $name = null) </h3>
+<ul>
+  <li>これを利用しなくても、通常にHTML記述で良い</li>
+</ul>
+<pre class="line-numbers">
+  <code class="language-php">PwForm::submit('Update');</code>
+</pre>
+
+<h3 class="h3">select: PwEntity->formInput($column, $params = null)</h3>
+<ul>
+  <li>Modelインスタンス値(value)を利用して inputタグ表示</li>
+  <li>name, value は自動で設定される</li>
+  <li>インスタンスがない場合はエラー表示されるので注意</li>
+</ul>
+<pre class="line-numbers">
+  <code class="language-php">$this->user->formInput('code', ['class' => 'form-control col-6 required']);</code>
+</pre>
+formInput() を利用しない場合、
+<pre class="line-numbers">
+  <code class="language-html"><?= htmlspecialchars('<input class="form-control col-6 required" type="text" name="user[code]" value="<?= $this->user->value[\'code\']  ?>">') ?></code>
+</pre>
+
+<h3 class="h3">select: PwForm::select($params, $selected = null)</h3>
+<ul>
+  <li>Modelインスタンス値(value)を利用して selectタグ表示</li>
+  <li>Model->values, SQL, CSV で取得した値を一覧表示</li>
+</ul>
+<h4>Modelデータ(values)一覧表示</h4>
+<pre class="line-numbers">
+  <code class="language-php">
+  //Model に values がバインドされている場合
+  PwForm::select
+      (
+        [
+        'unselect' => true, //未選択
+        'unselect_label' => '--- '.LABEL_AREAS.' ---', //未選択ラベル
+        'class' => 'form-control', //class アトリビュート
+        'name' => 'area_id', //name アトリビュート
+        'value' => 'id', //value 表示するカラム名
+        'label' => 'name',  //表示ラベルカラム名（string or array）
+        'values' => $this->area->values,  //areas の連想配列の配列データ(values)
+        ],
+        5 //選択値
+      );
+
+    //SELECT クエリーを利用する場合
+    PwForm::select
+    (
+      [
+        'unselect' => true,
+        'unselect_label' => '--- '.LABEL_AREAS.' ---',
+        'name' => 'area_id',
+        'value' => 'id',
+        'label' => 'name',
+        'select_columns' => ['id', 'name'], //SELECTカラム名: SELECT id, name FROM ...
+        'model' => 'Area', //Model名
+        'order' => 'id',
+      ],
+      5
+    );
+  </code>
+</pre>
+
+<?= PwForm::select(
+  [
+    'unselect' => true,
+    'unselect_label' => '--- '.LABEL_AREAS.' ---',
+    'name' => 'area_id',
+    'value' => 'id',
+    'label' => 'name',
+    'select_columns' => ['id', 'name'],
+    'values' => $this->area->values,
+    'class' => 'form-control',
+    'order' => 'id',
+  ], 5
+)
+?>
+
+<h4>CSV一覧表示</h4>
+<pre class="line-numbers">
+  <code class="language-php">
+  PwForm::select(
+        [
+          'unselect' => true, //未選択有効
+          'unselect_label' => '--- '.LABEL_OPENED.' ---', //未選択ラベル
+          'name' => 'is_opened', //name アトリビュート
+          'value' => 'value', //value に表示されるキー
+          'csv' => 'opened',  //csv ファイル名: db/records/{$this->lang}/opened.csv
+          'class' => 'form-control', //class アトリビュート
+        ],
+        $this->is_opened  //選択値
+      );
+  </code>
+</pre>
+<?= PwForm::select
+(
+  [
+    'unselect' => true,
+    'unselect_label' => '--- '.LABEL_OPENED.' ---',
+    'name' => 'is_opened',
+    'value' => 'value',
+    'csv' => 'opened',
+    'class' => 'form-control',
+  ],
+  $this->is_opened
+)
+?>
+
+<h3 class="h3">select by model: PwEntity->formSelect($column, $params = null)</h3>
+<ul>
+  <li>Modelインスタンス値(value)を利用して selectタグ表示</li>
+  <li>name, value は自動設定される</li>
+  <li>option値は、配列、SQL、CSVの値から生成</li>
+  <li>インスタンスがない場合はエラー表示されるので注意</li>
+</ul>
+<h4>Model一覧表示</h4>
+<pre class="line-numbers">
+  <code class="language-php">
+  $this->user->formSelect('domain_id', //カラム名: user[domain_id], $this->user->value['domain_id']
+      ['class' => 'form-control', //class アトリビュート
+       'unselect' => false,   //未選択無効
+       'label_separate' => '-', //ラベル配列時のセパレータ
+       'label' => ['fqdn'], //ラベル表示するカラム(string or array)
+       'model' => 'Domain',  //モデル名: SELECT * FROM domains
+       //'wheres' => [ ['id', 1] ], //WHERE設定: WHERE id = 1
+       //'order' => 'id',
+       ];
+  </code>
+</pre>
+
+<h4>CSV一覧表示</h4>
+<pre class="line-numbers">
+  <code class="language-php">
+  $this->item->formSelect('interval',
+                            [
+                            'csv' => 'interval', //CSVファイル名
+                            'unselect' => true   //未選択
+                            ]
+  );
+  </code>
+</pre>
+
+
+<h3 class="h3">radio by model: PwEntity->formRadio($column, $params = null)</h3>
+<ul>
+  <li>Modelインスタンス値(value)を利用して radioタグ表示</li>
+  <li>name, value, checked は自動設定される</li>
+  <li>インスタンスがない場合はエラー表示されるので注意</li>
+</ul>
+<pre class="line-numbers">
+  <code class="language-php">
+  $this->user->formRadio('is_opened', ['csv' => 'active', 'unselect' => true]);
+  </code>
+</pre>
+
+<h3 class="h3">radio: PwForm::radio($params, $selected = null)</h3>
+<ul>
+  <li>radioタグ表示</li>
+</ul>
+<pre class="line-numbers">
+  <code class="language-php">
+  PwForm::radio(
+      [
+      'id' => 'user_is_opened', //id アトリビュート: 任意に指定する場合
+      'name' => 'user[is_opened]', //name アトリビュート
+      'class' => 'form-control',  //class アトリビュート
+      ],
+      $this->user->value['is_opened'] //選択値
+  );
+  </code>
+</pre>
+<pre class="line-numbers">
+  <code class="language-html">
+<?= htmlspecialchars(PwForm::radio(
+                [
+                'id' => 'user_is_opened',
+                'name' => 'user[is_opened]',
+                'csv' => 'opened',
+                ],
+                $this->user->value['is_opened'])
+  ) ?>
+  </code>
+</pre>
+<?= PwForm::radio(
+              [
+              'id' => 'user_is_opened',
+              'name' => 'user[is_opened]',
+              'csv' => 'opened',
+              ],
+              $this->user->value['is_opened']
+              ) ?>
+
+<h3 class="h3">削除確認ダイアログリンク: PwEntity->confirmDelete($params = null) </h3>
+<ul>
+  <li>Modelインスタンス値(value)を利用して 削除確認ダイアログコンポーネントを表示(app/views/components/lib/form_delete.phtml)</li>
+  <li>[削除] をクリックすると "削除確認ダイアログ" を表示</li>
+  <li>対象モデルの value['id'] が delete_id に自動設定</li>
+</ul>
+<pre class="line-numbers">
+  <code class="language-php">$this->user->confirmDelete();</code>
+</pre>
+
+<h4>削除確認ダイアログ</h4>
+<ul>
+  <li>"app/views/components/lib/form_delete.phtml"</li>
+  <li>"form_delete.phtml" は "app/views/components/lib/pw_component.phtml" から include</li>
+  <li>原則、"app/views/components/lib/pw_component.phtml" は、layoutファイルで include 済</li>
+  <li>"削除確認ダイアログ" の[削除] をクリックすると、現Controller の delete() に post リクエスト</li>
+  <li>id="from_delete_id" の value に delete_id(対象モデルの id ) 値が自動設定</li>
+</ul>
+<pre class="line-numbers">
+  <code class="language-html">
+  <?= htmlspecialchars('<form action="sample/delete" method="post">') ?>
+
+  ...
+  <?= htmlspecialchars('<input id="from_delete_id" type="hidden" name="id" value="1">') ?>
+
+  value に $this->user->value['id'] が バインド
+
+  ...
+  <?= htmlspecialchars('</form>') ?>
+  </code>
+</pre>
