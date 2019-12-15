@@ -16,8 +16,8 @@
       </div>
       <nav class="nav nav-pills flex-column flex-sm-row">
         <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlFor(['action' => 'index']) ?>">Index</a>
-        <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlFor(['action' => 'ex_controller']) ?>">Controller</a>
-        <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlFor(['action' => 'ex_model']) ?>">PwEntity(Model)</a>
+        <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlFor(['action' => 'controller_ex']) ?>">Controller</a>
+        <a class="flex-sm-fill text-sm-center nav-link" href="<?= $this->urlFor(['action' => 'model_ex']) ?>">PwEntity(Model)</a>
       </nav>
     </div>
   </div>
@@ -28,6 +28,6 @@
 
   </div>
 
-  <? include('views/components/form_delete.phtml') ?>
+  <? include('views/components/lib/pw_component.phtml') ?>
 </body>
 </html>

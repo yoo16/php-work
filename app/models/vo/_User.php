@@ -1,13 +1,13 @@
 <?php
 /**
- * Student 
+ * User 
  * 
  * @create  2019/12/14 10:09:58 
  */
 
 require_once 'PwPgsql.php';
 
-class _Student extends PwPgsql {
+class _User extends PwPgsql {
 
     public $id_column = 'id';
     public $name = 'students';

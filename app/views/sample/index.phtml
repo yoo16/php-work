@@ -7,7 +7,6 @@
   <h2>Model</h2>
   <div class="alert alert-success">
     <ul>
-      <li>M is Model.</li>
       <li>Model file is possible O/R mapping with vo file.</li>
       <li>vo fil is O/R mapping file on Database table.</li>
       <li>vo file path is 'app/models/vo/xxxx.php'.</li>
@@ -179,7 +178,6 @@
   <h2>Controller</h2>
   <div class="alert alert-success">
     <ul>
-      <li>C is Controller.</li>
       <li>Controller file is necessary extends 'Controller.php'.</li>
       <li>Controller file control Model file and View file.</li>
       <li>Controller file determines url and processes it.</li>
@@ -332,14 +330,4 @@
       </div>
     ") ?>
     </pre>
-
-  <h4>result</h4>
-  <div>
-    <form action="<?= $this->urlFor('country', 'update', $this->country->value['id']) ?>" method="post">
-      id :
-      <?= $this->country->value['id'] ?>
-      <?= $this->country->formInput('name', ['class' => 'form-control']) ?>
-      <?= PwForm::submit(LABEL_SAVE) ?>
-    </form>
-  </div>
 </div>

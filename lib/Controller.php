@@ -13,7 +13,7 @@ class Controller extends RuntimeException
     static $routes = ['controller', 'action', 'id'];
 
     public $lang = 'ja';
-    public $name;
+    public $name = 'root';
     public $with_layout = true;
     public $pw_layout = null;
     public $pw_layout_file = null;

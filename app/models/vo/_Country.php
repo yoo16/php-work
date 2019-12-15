@@ -1,13 +1,13 @@
 <?php
 /**
- * Report 
+ * Country 
  * 
  * @create  2019/12/14 11:18:38 
  */
 
 require_once 'PwPgsql.php';
 
-class _Report extends PwPgsql {
+class _Country extends PwPgsql {
 
     public $id_column = 'id';
     public $name = 'reports';
@@ -15,10 +15,9 @@ class _Report extends PwPgsql {
 
     public $columns = [
         'created_at' => ['type' => 'timestamp'],
-        'report' => ['type' => 'text'],
+        'name' => ['type' => 'varchar', 'length' => 64],
         'reported_at' => ['type' => 'timestamp'],
         'sort_order' => ['type' => 'int4'],
-        'student_id' => ['type' => 'int4'],
         'updated_at' => ['type' => 'timestamp'],
     ];
 

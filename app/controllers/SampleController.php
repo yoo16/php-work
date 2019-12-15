@@ -10,11 +10,10 @@ require_once 'AppController.php';
 class SampleController extends AppController {
 
 	var $layout = 'sample';
-	var $name = 'sampleaa';
+	var $name = 'sample';
 
     function index() {
-		$this->country = DB::model('Country');
-		$this->country->fetch(1);
+		//$this->country = DB::model('Country')->fetch(1);
 	}
 	
 	/**
