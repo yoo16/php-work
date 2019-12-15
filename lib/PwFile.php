@@ -556,12 +556,12 @@ class PwFile {
     * @param  array $path
     * @return void
     */ 
-    static function chmodFile($path) {
+    static function chmodFile($path, $mod = 0755) {
         if (file_exists($path)) {
             if (defined('PHP_FUNCTION_MODE') && PHP_FUNCTION_MODE) {
-                return chmod($path, 0777);
+                return chmod($path, $mod);
             } else {
-                $cmd = "chmod 777 {$path}";
+                $cmd = "chmod {$mod} {$path}";
                 exec($cmd);
             }
         }
@@ -820,7 +820,7 @@ class PwFile {
         $last_value = end($values);
         $last_index = key($values);
 
-        if (array_key_exists(strtolower($last_value), $irregular_rules)) {
+        if (in_array(strtolower($last_value), $irregular_rules)) {
             $last_value = $irregular_rules[strtolower($last_value)];
         } else {
             foreach($singular_rules as $key => $singular_rule) {
@@ -933,4 +933,75 @@ class PwFile {
             if ($iterator) return $iterator->count();
         }
     }
+
+    /**
+     * git clone
+     *
+     * @param string $url
+     * @return void
+     */
+    static function gitClone($url, $path)
+    {
+        if (!$path) return;
+        if ($path && !file_exists($path)) PwFile::createDir($path);
+        if ($path && file_exists($path)) {
+            $cmd = "chmod 775 {$path}";
+            exec($cmd, $output, $return);
+            $results['cmd'] = $cmd;
+            $results['output'] = $output;
+            $results['return'] = $return;
+
+            $cmd = "git clone {$url} {$path}";
+            exec($cmd, $output, $return);
+            $results['cmd'] = $cmd;
+            $results['output'] = $output;
+            $results['return'] = $return;
+        }
+        return $results;
+    }
+
+    /**
+     * delete .git
+     *
+     * @param string $path
+     * @return void
+     */
+    static function deleteDotGit($path)
+    {
+        $dot_git_path = "{$path}/.git";
+        if (file_exists($dot_git_path)) {
+            $cmd = "rm -rf {$dot_git_path}";
+            exec($cmd, $output, $return);
+        }
+    }
+
+
+    /**
+     * curl get
+     *
+     * @param string $url
+     * @return boolean
+     */
+    static function curlGet($url, $options = []) {
+        $ch  = curl_init($url);
+        $tmp = tmpfile();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_HEADERFUNCTION => function($ch, $header) use (&$filename) {
+                $regex = '/^Content-Disposition: attachment; filename="*(.+?)"*$/i';
+                if (preg_match($regex, $header, $matches)) {
+                    $filename = rtrim($matches[1]);
+                }
+                return strlen($header);
+            },
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_MAXREDIRS => 5,
+            CURLOPT_FILE => $tmp,
+            CURLOPT_FAILONERROR => true,
+            CURLOPT_SSL_VERIFYPEER => $options['is_ssl_verifypeer'],
+        ]);
+        if (!curl_exec($ch)) return false;
+        return true;
+    }
+
 }

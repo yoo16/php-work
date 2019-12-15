@@ -30,6 +30,9 @@ class PwForm {
                               'effective-digit',
                               'is_associative_array',
                               'is_key_value_array',
+                              'label_models',
+                              'label_values',
+                              'is_no_label',
                             ];
 
     //TODO refactoring
@@ -438,6 +441,14 @@ class PwForm {
         $value_key = isset($params['value']) ? $params['value'] : 'value';
 
         $tag = self::unselectOption($params);
+        if ($params['label_models']) {
+            foreach ($params['label_models'] as $model_name => $options) {
+                $entity = DB::model($model_name);
+                if ($options['wheres']) $entity->wheres($options['wheres']);
+                $entity->all(true, $options['relation_column']);
+                $params['label_values'][$model_name] = $entity->values;
+            }
+        }
         foreach ($values as $key => $value) {
             if (isset($params['is_key_value_array']) && $params['is_key_value_array']) {
                 $attributes['value'] = $key;
@@ -567,7 +578,22 @@ class PwForm {
         $label_keys = isset($params['label']) ? $params['label'] : 'label';
         if (is_array($label_keys)) {
             foreach ($label_keys as $label_key) {
-                $labels[] = $values[$label_key];
+                $model_name = '';
+                $model_column = '';
+                $label_key_column = '';
+                if ($params['label_values'] && strpos($label_key, ':') > 0) {
+                    $label_params = explode(':', $label_key);
+                    $model_name = $label_params[0];
+                    $model_column = $label_params[1];
+                    $label_key_column = $label_params[2];
+                }
+                if ($model_name && $model_column && $label_key_column) {
+                    $id = $values[$label_key_column]; 
+                    $label_values = $params['label_values'][$model_name];
+                    if ($label_values && $id > 0) $labels[] = $label_values[$id][$model_column];
+                } else {
+                    $labels[] = $values[$label_key];
+                }
             }
             $label_separate = (isset($params['label_separate'])) ? $params['label_separate'] : ' ';
             $label = implode($label_separate, $labels);
@@ -687,13 +713,16 @@ class PwForm {
         if (is_array($params['label'])) {
             $label = implode(' ', $params['label']);
         } else {
-            $label = (isset($params['label'])) ? $params['label'] : LABEL_TRUE;
+            if (!$params['is_no_label']) {
+                $label = (isset($params['label'])) ? $params['label'] : LABEL_TRUE;
+            }
         }
         if (is_null($params['value'])) $params['value'] = 1;
 
         $tag = '';
         if (!$params['unused_hidden']) $tag.= self::hidden($params['name'], 0);
         $id = ($params['id']) ? "{$params['id']}_{$params['value']}" : $params['value'];
+        $params['class'].= ' form-check-input';
         $checkbox_attributes = [
             'id' => $id,
             'class' => $params['class'],
@@ -706,7 +735,7 @@ class PwForm {
         $tag = '';
         $tag.= self::input($checkbox_attributes);
 
-        $label_attributes['class'] = 'checkbox';
+        $label_attributes['class'] = 'form-check-label';
         $label_attributes['for'] = $id;
         $tag.= self::labelTag($label, $label_attributes);
         return $tag;
@@ -857,7 +886,7 @@ class PwForm {
         if ($attributes['class']) {
             $attributes['class'].= " col-form-label";
         } else {
-            $attributes['class'] = "col-2 col-form-label";
+            $attributes['class'] = "col-form-label";
         }
         $tag = self::labelTag($tag, $attributes);
         return $tag;
@@ -889,6 +918,7 @@ class PwForm {
      */
     static function textarea($name, $value = null, $params = null) {
         if (isset($name)) $params['name'] = $name;
+        $params['class'].= ' form-control';
         if (!$params['rows']) $params['rows'] = '10';
 
         $tag = self::tag('textarea', $value, $params);

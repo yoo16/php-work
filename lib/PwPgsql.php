@@ -9,6 +9,7 @@
 
 require_once 'PwEntity.php';
 
+//TODO any methods move to PwEntity.php
 //TODO pg_escape_identifier
 //TODO pg_escape_literal
 //TODO pg_field_num, pg_field_name
@@ -105,7 +106,10 @@ class PwPgsql extends PwEntity
     function createDatabase()
     {
         if (!$this->dbname) return;
+        if (pg_connect($this->pg_info)) return;
+
         $cmd = "createdb -U {$this->user} -E UTF8 --host {$this->host} --port {$this->port} {$this->dbname} 2>&1";
+
         exec($cmd, $output, $return);
 
         $results['cmd'] = $cmd;
@@ -309,7 +313,13 @@ class PwPgsql extends PwEntity
      */
     function defaultDBInfo()
     {
-        if (!defined('DB_NAME') || !DB_NAME) exit('not found DB_NAME');
+        if (!defined('DB_NAME') || !DB_NAME) {
+            $file_path = PwSetting::hostSettingFilePath();
+            $errors['title'] = 'Setting File Error';
+            $errors['message'] = "Not found DB_NAME";
+            $errors['file_path'] = $file_path;
+            Controller::showError($errors);
+        }
         if (defined('DB_NAME')) $this->dbname = DB_NAME;
         if (defined('DB_HOST')) $this->host = DB_HOST;
         if (defined('DB_PORT')) $this->port = DB_PORT;
@@ -318,7 +328,6 @@ class PwPgsql extends PwEntity
         $this->loadDBInfo();
         return $this;
     }
-
     /**
      * database name
      * 
@@ -726,6 +735,8 @@ class PwPgsql extends PwEntity
                 $this->sql_files[$db_name].= $indexes_sql[$db_name];
             }
         }
+
+        return $this->sql_files;
     }
 
     /**
@@ -777,8 +788,12 @@ class PwPgsql extends PwEntity
      */
     function createTablesForProject()
     {
-        $sql = $this->createTablesSQLForProject();
-        return $this->query($sql);
+        $sql_files = $this->createTablesSQLForProject();
+        if (!$sql_files) return;
+        foreach ($sql_files as $sql) {
+            $this->query($sql);
+        }
+        return;
     }
 
     /**
@@ -1044,7 +1059,7 @@ class PwPgsql extends PwEntity
     function fetchRows($sql)
     {
         if ($rs = $this->query($sql)) {
-            $rows = pg_fetch_all($rs, PGSQL_ASSOC);
+            $rows = pg_fetch_all($rs);
             if ($this->is_cast && $this->columns) $rows = $this->castRows($rows);
             return $rows;
         } else {
@@ -1636,8 +1651,7 @@ class PwPgsql extends PwEntity
      */
     public function allBy($column)
     {
-        $columns = array_keys($this->columns);
-        if (!in_array($column, $columns)) exit("Not found column: {$column}");
+        if (!in_array($column, $this->columns)) exit("Not found column: {$column}");
         $this->values_index_column = $column;
         $this->get();
         return $this;
@@ -3850,17 +3864,19 @@ class PwPgsql extends PwEntity
      * @param string $table_name
      * @return array
      **/
-    function pgAttributes($table_name = null)
+    function pgAttributes($table_name = null, $schema_name = 'public')
     {
         $sql = "SELECT pg_class.oid AS pg_class_id, * FROM pg_class 
                 LEFT JOIN pg_attribute ON pg_class.oid = pg_attribute.attrelid
                 LEFT JOIN information_schema.columns ON information_schema.columns.table_name = pg_class.relname
                 AND information_schema.columns.column_name = pg_attribute.attname 
                 WHERE pg_attribute.attnum > 0
+                AND table_schema = '{$schema_name}'
                 AND atttypid > 0";
 
         if ($table_name) $sql .= " AND relname = '{$table_name}'";
         $sql .= ' ORDER BY pg_attribute.attname;';
+
         return $this->fetchRows($sql);
     }
 
@@ -4708,7 +4724,7 @@ class PwPgsql extends PwEntity
      * @return PwPgsql
      */
     function updatesEmptySortOrder() {
-        if (!array_key_exists('sort_order', $this->columns)) return $this;
+        if (!in_array('sort_order', $this->columns)) return $this;
         $this->select([$this->id_column, 'sort_order'])->where('sort_order IS NULL')->get();
         if (!$this->values) return $this;
 

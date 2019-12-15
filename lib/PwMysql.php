@@ -1,6 +1,7 @@
 <?php
 /**
  * PwMysql 
+ * TODO: under construction
  *
  * @copyright  Copyright (c) 2017 Yohei Yoshikawa (https://github.com/yoo16/)
  */
@@ -4418,7 +4419,7 @@ class PwMysql extends PwEntity
      * @return PwPgsql
      */
     function updatesEmptySortOrder() {
-        if (!array_key_exists('sort_order', $this->columns)) return $this;
+        if (!in_array('sort_order', $this->columns)) return $this;
         $this->select([$this->id_column, 'sort_order'])->where('sort_order IS NULL')->get();
         if (!$this->values) return $this;
 

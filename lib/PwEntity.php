@@ -433,7 +433,7 @@ class PwEntity {
     public function takeValues($values) {
         if (!$values) return $this;
         foreach ($values as $column_name => $value) {
-            if (array_key_exists($column_name, $this->columns)) {
+            if (in_array($column_name, $this->columns)) {
                 $this->value[$column_name] = $this->cast($this->columns[$column_name]['type'], $value);
             }
         }
@@ -1532,6 +1532,20 @@ class PwEntity {
         if (!$this->values) return;
         $file_name = "{$this->name}.csv";
         PwCSv::streamDownload($file_name, $this->values, $options);
+    }
+
+    /**
+     * json decode
+     *
+     * @param string $key
+     * @return PwEntity
+     */
+    public function jsonDecode($key)
+    {
+        if (in_array($key, $this->value)) {
+            $this->value[$key] = json_decode($this->value[$key], true);
+        }
+        return $this;
     }
 
 }

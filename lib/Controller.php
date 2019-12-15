@@ -67,6 +67,7 @@ class Controller extends RuntimeException
         'PwColor',
         'PwPython',
         'PwModel',
+        'PwLaravel',
     ];
 
     function __construct($name = null)
@@ -201,6 +202,19 @@ class Controller extends RuntimeException
     {
         $controller = str_replace(" ", "", ucwords(str_replace("_", " ", $name))) . "Controller";
         return $controller;
+    }
+
+    /**
+     * controller class file name
+     *
+     * @param  string $name
+     * @return string
+     */
+    static function fileName($name, $ext = 'php')
+    {
+        $name = Controller::className($name);
+        $file_name = "{$name}.{$ext}";
+        return $file_name;
     }
 
     /**
@@ -489,6 +503,7 @@ class Controller extends RuntimeException
      * renderError
      *
      * @param  array $errors
+     * @param  boolean $is_continue
      * @return void
      */
     function renderError($errors, $is_continue = true)
@@ -506,6 +521,28 @@ class Controller extends RuntimeException
             echo ($content_for_layout);
         }
         if (!$is_continue) exit;
+    }
+
+    /**
+     * showError
+     *
+     * @param  array $errors
+     * @return void
+     */
+    static function showError($errors)
+    {
+        if (!$errors) return;
+        $error_layout = BASE_DIR . "app/views/layouts/error.phtml";
+        if (file_exists($error_layout)) include $error_layout;
+        $error_template = BASE_DIR . "app/views/components/lib/php_error.phtml";
+        if (file_exists($error_template)) {
+            ob_start();
+            include $error_template;
+            $content_for_layout = ob_get_contents();
+            ob_end_clean();
+            echo ($content_for_layout);
+        }
+        exit;
     }
 
     /**
@@ -932,6 +969,10 @@ class Controller extends RuntimeException
     {
         if ($_POST) PwSession::set('pw_posts', $_POST);
         $this->pw_posts = PwSession::get('pw_posts');
+        //TODO multi session
+        if (isset($this->pw_posts['csrf_token'])) {
+            $this->isCsrf();
+        }
     }
 
     /**
@@ -1331,6 +1372,8 @@ class Controller extends RuntimeException
 
     /**
      * after action
+     * 
+     * TODO
      *
      * @param string $action
      * @return void
@@ -1804,6 +1847,29 @@ class Controller extends RuntimeException
     }
 
     /**
+     * csrf
+     *
+     * @return void
+     */
+    function csrf()
+    {
+        $toke_byte = openssl_random_pseudo_bytes(16);
+        $csrf_token = bin2hex($toke_byte);
+        PwSession::set('csrf_token', $csrf_token);
+    }
+
+    /**
+     * is csrf
+     *
+     * @return boolean
+     */
+    function isCsrf()
+    {
+        //TODO multi session
+        return ($this->pw_posts['csrf_token'] == PwSession::get('csrf_token'));
+    }
+
+    /**
      * pwlogin
      *
      * @return void
@@ -1909,11 +1975,8 @@ class Controller extends RuntimeException
      */
     function jsControllerName()
     {
-        if ($this->js_controller) {
-            return $this->js_controller;
-        } else {
-            return $this->pw_controller;
-        }
+        if ($this->js_controller) return $this->js_controller;
+        return $this->pw_controller;
     }
 
     /**
@@ -1929,6 +1992,8 @@ class Controller extends RuntimeException
     /**
      * images dirctory path
      *
+     * @param string $file_name
+     * @return string $dir
      * @return string
      */
     function image($file_name, $dir = 'images')
@@ -2015,6 +2080,7 @@ class Controller extends RuntimeException
         $memory_mb = round($memory_peak / (1024 * 1024));
         if ($memory_mb > APP_MEMORY_LIMIT) {
             $msg = "memory peak : {$memory_mb}MB";
+            dump($msg);
             return true;
         }
     }
@@ -2022,6 +2088,6 @@ class Controller extends RuntimeException
 
 PwSetting::load();
 Controller::loadLib();
-if (!$_REQUEST) PwLocalize::loadLocalizeFile($lang);
+PwLocalize::loadLocalizeFile($lang);
 PwLoader::autoloadModel();
 PwSetting::loadApplication();
