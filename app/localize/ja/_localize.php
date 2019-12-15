@@ -1,0 +1,19 @@
+<?php
+define('LABEL_STUDENTS', '生徒');
+define('LABEL_STUDENTS_CREATED_AT', '作成日');
+define('LABEL_STUDENTS_ID', 'ID');
+define('LABEL_STUDENTS_SORT_ORDER', '並び順');
+define('LABEL_STUDENTS_UPDATED_AT', '更新日');
+define('LABEL_STUDENTS_LAST_NAME', '名');
+define('LABEL_STUDENTS_FIRST_NAME', '姓');
+define('LABEL_STUDENTS_FIRST_NAME_KANA', 'めい');
+define('LABEL_STUDENTS_LAST_NAME_KANA', 'せい');
+define('LABEL_STUDENTS_BIRTHDAY_AT', '生年月日');
+define('LABEL_STUDENTS_CODE', '生徒番号');
+define('LABEL_REPORTS', 'レポート');
+define('LABEL_REPORTS_CREATED_AT', '作成日');
+define('LABEL_REPORTS_ID', 'ID');
+define('LABEL_REPORTS_SORT_ORDER', '並び順');
+define('LABEL_REPORTS_UPDATED_AT', '更新日');
+define('LABEL_REPORTS_REPORT', 'レポート内容');
+define('LABEL_REPORTS_REPORTED_AT', '報告日');

@@ -1,0 +1,29 @@
+
+<table class="table">
+
+    <tr>
+      <th><?= LABEL_STUDENTS ?></th>
+      <td>
+          <?= $this->report->formInput('student_id', ['class' => 'form-control col-4 number']) ?>
+      </td>
+    </tr>
+
+
+    <tr>
+      <th><?= LABEL_REPORTS_REPORT ?></th>
+      <td>
+          <?= $this->report->formInput('report', ['class' => 'form-control']) ?>
+      </td>
+    </tr>
+
+
+    <tr>
+      <th><?= LABEL_REPORTS_REPORTED_AT ?></th>
+      <td>
+          <?= $this->report->formInput('reported_at', ['class' => 'form-control']) ?>
+      </td>
+    </tr>
+
+</table>
+
+      

@@ -1,0 +1,36 @@
+<? include('_header.phtml') ?>
+
+<div class="pt-3">
+  <?= $this->linkTo(['action' => 'new'], ['label' => LABEL_ADD, 'class' => 'btn btn-primary'] ) ?>
+  <? include('views/components/lib/sortable.phtml') ?>
+
+</div>
+
+<table id="sortable-table" class="table">
+  <thead class="thead-default">
+    <tr>
+      <th>&nbsp;</th>
+      <th><?= LABEL_STUDENTS_BIRTHDAY_AT ?></th>
+            <th><?= LABEL_STUDENTS_CODE ?></th>
+            <th><?= LABEL_STUDENTS_FIRST_NAME ?></th>
+            <th><?= LABEL_STUDENTS_FIRST_NAME_KANA ?></th>
+            <th><?= LABEL_STUDENTS_LAST_NAME ?></th>
+            <th><?= LABEL_STUDENTS_LAST_NAME_KANA ?></th>
+          </tr>
+  </thead>
+
+  <? if ($this->student->values): ?>
+  <? foreach ($this->student->values as $values): ?>
+  <tr row-id="<?= $values['id'] ?>">
+    <td><?= $this->student->linkEdit([], $values) ?></td>
+    <td><?= $values['birthday_at'] ?></td>
+    <td><?= $values['code'] ?></td>
+    <td><?= $values['first_name'] ?></td>
+    <td><?= $values['first_name_kana'] ?></td>
+    <td><?= $values['last_name'] ?></td>
+    <td><?= $values['last_name_kana'] ?></td>
+  </tr>
+  <? endforeach ?>
+  <? endif ?>
+
+</table>
