@@ -6,6 +6,7 @@
  */
 
 //namespace Libs;
+//require_once 'impl/iPwEntity.php';
 
 class PwEntity {
     public $id_column = 'id';
@@ -433,7 +434,7 @@ class PwEntity {
     public function takeValues($values) {
         if (!$values) return $this;
         foreach ($values as $column_name => $value) {
-            if (in_array($column_name, $this->columns)) {
+            if (array_key_exists($column_name, $this->columns)) {
                 $this->value[$column_name] = $this->cast($this->columns[$column_name]['type'], $value);
             }
         }
@@ -1542,7 +1543,7 @@ class PwEntity {
      */
     public function jsonDecode($key)
     {
-        if (in_array($key, $this->value)) {
+        if (array_key_exists($key, $this->value)) {
             $this->value[$key] = json_decode($this->value[$key], true);
         }
         return $this;

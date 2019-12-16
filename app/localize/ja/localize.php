@@ -25,6 +25,7 @@ define('LABEL_USER_ID', 'ユーザID');
 define('LABEL_LOGIN_NAME', 'ログイン名');
 define('LABEL_DB', 'DB');
 
+define('LABEL_ERROR', 'エラー');
 define('LABEL_FILE', 'ファイル');
 define('LABEL_PDF', 'PDF');
 define('LABEL_SEARCH', '検索');

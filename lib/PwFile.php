@@ -42,6 +42,7 @@ class PwFile {
         'penises'   =>  'penis',
         'equipment' =>  'equipment',
         'information'   =>  'information',
+        'database'   =>  'database',
         'rice'      =>  'rice',
         'money'     =>  'money',
         'species'   =>  'species',

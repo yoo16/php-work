@@ -23,6 +23,7 @@ define('LABEL_PASSWORD', 'Password');
 define('LABEL_USER_ID', 'User id');
 define('LABEL_LOGIN_NAME', 'Login name');
 
+define('LABEL_ERROR', 'Error');
 define('LABEL_SEARCH', 'Search');
 define('LABEL_CANCEL', 'Cancel');
 define('LABEL_BACK', 'Back');
