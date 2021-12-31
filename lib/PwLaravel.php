@@ -2,9 +2,9 @@
 class PwLaravel
 {
     public $path;
-    public $dev_null = '> /dev/null 2>&1';
+    static $dev_null = '> /dev/null 2>&1';
 
-    public $resource_actions = [
+    static public $resource_actions = [
         'index',
         'create',
         'store',
@@ -14,11 +14,82 @@ class PwLaravel
         'destroy',
     ];
 
+    static public $escape_functions = [
+        'id',
+        'created_at',
+        'updated_at',
+    ];
+
+    static public $nullable_attributes = [
+        'created_at',
+    ];
+
+    static public $migration_types = [
+        'primary' => ['name' => 'bigIncrements'], //mediumIncrements
+        'varchar' => ['name' => 'string'],
+        'bool' => ['name' => 'boolean'],
+        'int2' => ['name' => 'integer'],
+        'int4' => ['name' => 'integer'],
+        'int8' => ['name' => 'bigInteger'],
+        'real' => ['name' => 'float'],
+        'float' => ['name' => 'float'],
+        'float8' => ['name' => 'float'],
+        'double' => ['name' => 'double'],
+        'double precision' => ['name' => 'double'],
+        'text' => ['name' => 'text'],
+        'jsonb' => ['name' => 'jsonb'],
+        'timestamp' => ['name' => 'timestamp'],
+        'datetime' =>['name' => 'dateTime'],
+        'date' => ['name' => 'date'],
+        'cidr' => ['name' => 'ipAddress'],
+        'inet' => ['name' => 'ipAddress'],
+        'macaddr' => ['name' => 'macAddress'],
+        'geometry' => ['name' => 'geometry'],
+        'point' => ['name' => 'point'],
+    ];
+
+    static public $migration_optional_functions = [
+        'is_required' => ['name' => 'nullable'],
+    ];
+
     function __construct($params = null)
     {
         if ($params['path']) $this->path = $params['path'];
     }
 
+    /**
+     * create project
+     *
+     * @param string $name
+     * @param array $options
+     * @return void
+     */
+    public static function createProject($name, $options = null)
+    {
+        $cmd = "composer create-project laravel/laravel {$name} --prefer-dist";
+        if ($options) {
+            $option = implode(' ', $options);
+            $cmd.= " {$option}";
+        }
+        exec($cmd);
+    }
+
+
+    /**
+     * add VueJS
+     *
+     * @param string $name
+     * @param array $options
+     * @return void
+     */
+    public static function addVueJS($name, $options = null)
+    {
+        $cmd = 'composer require laravel/ui --dev';
+        exec($cmd);
+        $cmd = 'php artisan preset vue';
+        exec($cmd);
+    }
+    
     /**
      * command make
      *
@@ -34,7 +105,7 @@ class PwLaravel
             $option = implode(' ', $options);
             $cmd.= " {$option}";
         }
-        //$cmd.= " {$this->dev_null}";
+        $cmd.= " ".self::$dev_null;
         return $cmd;
     }
 
@@ -44,14 +115,15 @@ class PwLaravel
      * @param string $type
      * @param string $name
      * @param array $options
-     * @return void
+     * @return string
      */
-    public function artisanMake($type, $name, $options = null)
+    public function artisanMakeCmd($type, $name, $options = null)
     {
+        $this->cmd = '';
         if (!defined('COMAND_PHP_PATH')) exit('Not defined COMAND_PHP_PATH.');
-        if ($this->path) $cmd = "cd {$this->path} && ";
-        $cmd.= PwLaravel::cmdMake($type, $name, $options);
-        return $cmd;
+        if ($this->path) $this->cmd = "cd {$this->path} && ";
+        $this->cmd.= PwLaravel::cmdMake($type, $name, $options);
+        return $this->cmd;
     }
 
     /**
@@ -63,8 +135,11 @@ class PwLaravel
      */
     public function makeController($name, $options = null)
     {
-        $cmd = $this->artisanMake('controller', $name, $options);
-        exec($cmd);
+        $this->cmd = $this->artisanMakeCmd('controller', $name, $options);
+        exec($this->cmd, $output, $return_var);
+        dump($this->cmd);
+        dump($output);
+        dump($return_var);
     }
 
     /**
@@ -228,6 +303,93 @@ class PwLaravel
     {
         $path = "{$this->path}resources/views/";
         return $path;
+    }
+
+    /**
+     * migrateFunctions
+     *
+     * @param Attribute $attribute
+     * @return void
+     */
+    static public function migrateFunctions($attribute)
+    {
+        if (!$attribute->values) return;
+        foreach ($attribute->values as $attribute->value) {
+            $result.= self::migrateFunction($attribute).';';
+        }
+        return $result;
+    }
+
+    /**
+     * migrateFunctionName
+     *
+     * @param Attribute $attribute
+     * @param array $value
+     * @return string
+     */
+    static public function migrateFunction($attribute, $is_end_tag = false)
+    {
+        if (!$attribute->value) return;
+        //if (self::isEscapeAttribute($attribute)) return;
+
+        $params = [];
+        $params['name'] = 'table';
+        $params['function'] = self::migrateTypeFunctionName($attribute->value['type']);
+        $params['value'] = $attribute->value['name'];
+        $params['is_string_value'] = true;
+        $tag =  PwTag::phpObjFunction($params);
+        if (self::isNullableAttribute($attribute)) {
+            $tag.= PwTag::phpObjArrow().PwTag::phpFunction(
+                ['function' => self::migrateOptionalFunctionName('is_required')]
+            );
+        }
+        if ($is_end_tag) $tag.= ';';
+        return $tag;
+    }
+
+    /**
+     * migrate function name
+     *
+     * @param string $type
+     * @return void
+     */
+    static public function migrateTypeFunctionName($type)
+    {
+        return self::$migration_types[$type]['name'];
+    }
+
+    /**
+     * migrate optional function name
+     *
+     * @param string key$
+     * @return void
+     */
+    static public function migrateOptionalFunctionName($key)
+    {
+        return self::$migration_optional_functions[$key]['name'];
+    }
+
+    /**
+     * isNullablAttrivute
+     *
+     * @param Attribute $attribute
+     * @return boolean
+     */
+    static public function isNullableAttribute($attribute)
+    {
+        return (in_array($attribute->value['name'], self::$nullable_attributes));
+    }
+
+    /**
+     * isEscapeAttrivute
+     *
+     * @param Attribute $attribute
+     * @return boolean
+     */
+    static public function isEscapeAttribute($attribute)
+    {
+        return (in_array($attribute->value['name'], self::$nullable_attributes));
+        return ($attribute->value['is_required']);
     }
 
 }

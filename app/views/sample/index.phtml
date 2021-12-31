@@ -8,14 +8,10 @@
   <div class="alert alert-success">
     <ul>
       <li>Model file is possible O/R mapping with vo file.</li>
-      <li>vo fil is O/R mapping file on Database table.</li>
+      <li>vo file is O/R mapping file on Database table.</li>
       <li>vo file path is 'app/models/vo/xxxx.php'.</li>
-      <li>If you need use O/R mapping with DB, Model file must inherit vo file.</li>
-      <li>vo file must inherit 'PwEntity.php'.</li>
-      <li>You need define the vo file with table's attributes.</li>
-      <li>If you use 'DB' class library in php-work, you can control the model.</li>
     </ul>
-  </div>
+  </div>1
 </div>
 
 <div>
@@ -207,14 +203,14 @@
     }
     </pre>
   </div>
-  <h3>(3) 'id' is taked by http query $this->pw_params['id']</h3>
+  <h3>(3) 'id' is taked by http query $this->pw_gets['id']</h3>
   <div>
     <pre>
     function edit() {
-        $this->country = DB::table('Country')->fetch($this->pw_params['id']);
+        $this->country = DB::table('Country')->fetch($this->pw_gets['id']);
         var_export($this->country->value);
 
-        //$this->pw_params['id'] = 1
+        //$this->pw_gets['id'] = 1
         //this method is SQL => SELECT * FROM countries WHERE id = 1;'
     }
     </pre>
@@ -223,14 +219,14 @@
   <div>
     http://domain/country/search/?name=Japan.
   </div>
-  <h3>(4) 'url params (GET)' is taked $this->pw_params[xxxx]</h3>
+  <h3>(4) 'url params (GET)' is taked $this->pw_gets[xxxx]</h3>
   <div>
     <pre>
     function search() {
-        $this->country = DB::table('Country')->where('name', $this->pw_params['name'])->all();
+        $this->country = DB::table('Country')->where('name', $this->pw_gets['name'])->all();
         var_export($this->country->values);
 
-        //$this->pw_params['name'] = Japan
+        //$this->pw_gets['name'] = Japan
         //this method means SQL => SELECT * FROM countries WHERE name = 'Japan';
     }
     </pre>
@@ -275,7 +271,7 @@
 
         function edit() {
             //app/views/country/edit.phtml
-            $this->country = DB::table('Country')->fetch($this->pw_params['id']);
+            $this->country = DB::table('Country')->fetch($this->pw_gets['id']);
         }
     
     }

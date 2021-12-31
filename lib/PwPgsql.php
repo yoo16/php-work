@@ -50,7 +50,7 @@ class PwPgsql extends PwEntity
         'd' => 'SET DEFAULT'
     ];
 
-    public static $number_types = ['int2', 'int4', 'int8', 'float', 'float8', 'double', 'real'];
+    public static $number_types = ['int2', 'int4', 'int8', 'float', 'float8', 'double', 'double precision', 'real'];
 
     /**
      * constructor
@@ -1316,15 +1316,7 @@ class PwPgsql extends PwEntity
      */
     public function relationMany($class_name, $foreign_key = null, $value_key = null)
     {
-        if (!class_exists($class_name)) exit('relation class_name: not found '.$class_name);
-        if (!$foreign_key) $foreign_key = "{$this->entity_name}_id";
-        if (!$value_key) $value_key = $this->id_column;
-        $relation = DB::model($class_name);
-
-        if (is_null($this->value)) return $relation;
-        $value = $this->value[$value_key];
-        if (is_null($value)) return $relation;
-        return $relation->where($foreign_key, $value);
+        return $this->relation($class_name, $foreign_key, $value_key);
     }
 
     /**

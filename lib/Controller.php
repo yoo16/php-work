@@ -139,7 +139,7 @@ class Controller extends RuntimeException
                 $errors['request'] = $_SERVER['REQUEST_URI'];
                 $errors['controller'] = $this->name;
                 $errors['action'] = $this->pw_action;
-                $errors['params'] = $this->pw_params;
+                $errors['request'] = $this->pw_request;
                 $errors['signature'] = $_SERVER['SERVER_SIGNATURE'];
                 $this->renderError($errors);
             }
@@ -235,6 +235,7 @@ class Controller extends RuntimeException
      */
     static function controllerPath($name)
     {
+        var_dump(BASE_DIR);
         $controller = Controller::className($name);
         $path = BASE_DIR . "app/controllers/{$controller}.php";
         return $path;
@@ -342,6 +343,7 @@ class Controller extends RuntimeException
     private function run($params = [])
     {
         $GLOBALS['controller'] = $this;
+        $this->pw_hostname = PwSetting::hostname();
         $this->loadPwGets($params);
         $this->loadPwPosts();
         $this->loadPwErrors();
@@ -957,6 +959,7 @@ class Controller extends RuntimeException
         if (isset($params['action'])) $this->pw_gets['action'] = $params['action'];
         if (isset($params['id'])) $this->pw_gets['id'] = $params['id'];
         $this->pw_params = $this->pw_gets;
+        $this->pw_request = $_REQUEST;
         if ($this->pw_gets) PwSession::set('pw_gets', $this->pw_gets);
     }
 
@@ -1523,6 +1526,22 @@ class Controller extends RuntimeException
     {
         header("Location: {$this->pw_prev_request_uri}");
         exit;
+    }
+
+    /**
+     * fetch By Model
+     * 
+     * @param string $class_name
+     * @param string $column
+     * @return PwEntity
+     */
+    function fetchByModel($class_name, $column = null)
+    {
+        if (!class_exists($class_name)) return;
+        $model = DB::model($class_name);
+        if (!$column) $column = 'id';
+        $model->fetch($this->pw_request[$column]);
+        return $model;
     }
 
     /**
